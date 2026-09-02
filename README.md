@@ -1,0 +1,73 @@
+# DMDC
+
+**Desktop Mobile Data Center** ist eine lokale Desktopanwendung für kontrollierte Dateiübertragungen zwischen einem PC und Mobilgeräten im selben Netzwerk. Die Desktop-App startet den Dienst und legt die zwei möglichen Freigaben fest; Uploads und Downloads werden ausschließlich im Browser des Handys ausgelöst.
+
+## Sicherheitsmodell
+
+DMDC v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gibt keine Cloud, kein Konto, keine öffentliche Webseite, keine Portweiterleitung und keine externen Web-Ressourcen. HTTP ist jedoch keine Ende-zu-Ende-Verschlüsselung: Andere Teilnehmer oder Administratoren des lokalen Netzes könnten Verkehr grundsätzlich mitlesen oder manipulieren. DMDC darf deshalb nur in einem bewusst bestätigten Netzwerk eingesetzt werden.
+
+- Der achtstellige Code steht nie in URL oder QR-Code. Verteilte Fehlversuche besitzen zusätzlich einen dienstweiten Grenzwert. Eine aktive Abkühlphase wird vor dem Codevergleich geprüft und rotiert den Code nicht, damit fremde Geräte weder einen Codewechsel erzwingen noch den gültigen Code als Prüf-Orakel verwenden können.
+- Sitzungen sind an Dienstinstanz und Client-IP gebunden, laufen nach 6 Stunden 15 Minuten Inaktivität beziehungsweise nach 24 Stunden absolut ab und enden spätestens beim Dienststopp.
+- Die Downloadfreigabe ist ausschließlich lesbar.
+- Der Upload-Eingang erlaubt nur neue Dateien und zeigt seinen vorhandenen Inhalt nicht an. Das Backend weist gleiche oder verschachtelte Download-/Uploadwurzeln ab, damit diese Zusage auch bei abweichenden Pfadschreibweisen gilt.
+- Gleichzeitig sind höchstens 12 Downloads insgesamt, 4 pro Client-IP und 3 pro Handysitzung aktiv; pro Client-IP sind höchstens 4 unvollständige Uploads reserviert. Zusätzlich begrenzen standardmäßig 100 GiB und 10.000 Dateien den gesamten Upload-Eingang einschließlich bereits abgeschlossener Dateien. Diese beiden Werte sind in den Sicherheitseinstellungen anpassbar.
+- Verbindungen, gleichzeitig bearbeitete HTTP-Anfragen, Dateisystemprüfungen, Ordnerlistings und Sitzungen besitzen globale, klassenspezifische, Geräte-/IP- und soweit passend sitzungsbezogene Kapazitätsgrenzen sowie Zeitlimits. Windows gruppiert mehrere IP-Aliase nach Möglichkeit anhand der lokalen Nachbartabelle zu einem physischen Peer; fehlt diese Information, gilt die IP als konservativer Ersatzschlüssel. Nicht angemeldete Verbindungen haben eine eigene kleine Kapazität und enden nach spätestens 30 Sekunden; angemeldete Verbindungen können diese Klasse nicht verdrängen. Neue Sitzungen verdrängen niemals frische Geräte oder deren Übertragungen.
+- Unvollständige Uploads laufen nach 30 Minuten ohne übertragenen Block oder spätestens nach 24 Stunden ab. Live-Uploads werden ausschließlich über bereits geöffnete, stabile Dateihandles verwaltet und gelöscht. Nach einem Absturz bleiben nicht mehr zweifelsfrei zuordenbare `.part`-Dateien zur manuellen Prüfung erhalten.
+- Pro Upload-ID wird höchstens ein Datenblock gleichzeitig angenommen; insgesamt werden höchstens 8 Uploadblöcke vor dem Body-Puffern zugelassen. Jeder nicht abschließende Block ist exakt 8 MiB groß, damit ein Client keine beliebige Zahl winziger dauerhafter Schreib- und Fortschrittsvorgänge auslösen kann.
+- Mobile Uploads verwenden eine kryptografisch zufällige 128-Bit-Wiederaufnahme-ID. Eine begrenzte, ablaufende Abschlussquittung verhindert auch nach verlorener Antwort, neuer Anmeldung oder IP-Wechsel eine zweite Veröffentlichung derselben Datei.
+- Es existiert keine LAN-API zum Starten, Stoppen oder Umkonfigurieren des Dienstes.
+- Löschen, Überschreiben, Umbenennen, Verschieben und Ausführen von Dateien sind nicht implementiert.
+- Eingehende Dateien erhalten immer einen unvorhersagbaren serverseitigen Namenszusatz. Die atomare No-Replace-Übernahme bleibt erhalten, ohne durch den Antwortnamen die Existenz gleichnamiger Inbox-Dateien offenzulegen.
+
+Weitere Details stehen in [SECURITY.md](SECURITY.md) und [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Entwicklung
+
+Voraussetzungen unter Windows 10/11:
+
+- Node.js LTS und pnpm
+- Rust stable mit MSVC-Ziel
+- Visual Studio 2022 Build Tools mit „Desktopentwicklung mit C++“
+- WebView2 Runtime
+
+```powershell
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm test:rust
+pnpm build:web
+pnpm dev
+```
+
+Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und öffentliche Veröffentlichung sind nicht Bestandteil von v1.
+
+Der Uninstaller entfernt die Firewallregel, bewahrt aber Konfiguration, Logs und mögliche Nutzdaten in den DMDC-AppData-Verzeichnissen. Er löscht diese Verzeichnisse nicht rekursiv.
+
+`pnpm test:rust` bettet ausschließlich in den Windows-Test-Runner das Common-Controls-v6-Manifest ein, das Tauri beim normalen App-Build ohnehin erhält. Dadurch laufen die Rust-Unit- und Integrationstests ohne den Windows-Ladefehler `TaskDialogIndirect`; Produktions- und Installer-Manifeste werden nicht verändert.
+
+Auf Rechnern mit einer strikten Windows-Anwendungssteuerungsrichtlinie müssen lokal von Cargo erzeugte Build-Helfer für Entwicklungsbuilds zugelassen sein. Diese Einschränkung betrifft nur die Entwicklung, nicht die Architektur von DMDC.
+
+## Projektstruktur
+
+```text
+apps/desktop       Tauri-Desktopoberfläche (React/Vite)
+apps/mobile        eingebettete responsive Handyoberfläche (React/Vite)
+packages/shared    gemeinsame TypeScript-Verträge
+src-tauri/domain   Einstellungen, Netzwerk- und Dateisystemgrenzen
+src-tauri/service  Axum-Server, Sitzungen und Übertragungsprotokoll
+src-tauri/platform plattformspezifische Firewallintegration
+```
+
+Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals Tauri-IPC, sondern werden vom Rust-Server direkt gestreamt.
+
+## Bedienung
+
+1. Downloadordner und/oder Upload-Eingang wählen.
+2. Netzwerk, Port und Grenzen prüfen und die Firewallregel einmalig einrichten.
+3. Nur in einem vertrauten Netz den Dienst starten.
+4. Die angezeigte URL oder den QR-Code am Handy öffnen und den separat angezeigten Code eingeben.
+5. Nach der Übertragung den Dienst manuell stoppen. Solange er läuft, minimiert das Schließen des Fensters DMDC in den System-Tray.
+
+DMDC führt empfangene Dateien nicht aus und enthält keinen Virenscanner. Empfangene Dateien sollten wie jeder andere externe Inhalt behandelt werden.
+Windows-Autostartverzeichnisse dürfen nicht als Upload-Eingang verwendet werden. Download- und Uploadwurzel müssen vollständig getrennt sein.
+DMDC akzeptiert Upload-Eingänge nur auf lokalen festen, entfernbaren oder RAM-Laufwerken. Effektive Windows-Startordner, bekannte Office-Autoload-Verzeichnisse und nachträglich umgebogene beziehungsweise ausgetauschte Freigabewurzeln werden abgewiesen. Nicht auflösbare Windows-Netzwerkprofile gelten als nicht vertrauenswürdig und benötigen nach jeder Identitätsänderung eine neue Bestätigung.

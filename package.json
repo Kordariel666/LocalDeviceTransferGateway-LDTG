@@ -1,0 +1,18 @@
+{
+  "name": "dmdc",
+  "version": "0.1.3",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "dev": "pnpm tauri dev",
+    "build": "pnpm tauri build",
+    "build:web": "pnpm --filter @dmdc/mobile build && pnpm --filter @dmdc/desktop build",
+    "test": "pnpm -r test",
+    "test:rust": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-rust.ps1",
+    "typecheck": "pnpm -r typecheck",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.8.0"
+  }
+}
