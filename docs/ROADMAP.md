@@ -99,7 +99,7 @@ Abnahme:
 
 ### R0.3 Kontinuierliche Prüfungen einführen
 
-Status: lokal abgeschlossen am 2. September 2026; der erste GitHub-Lauf folgt nach dem Verbinden eines Remote-Repositories.
+Status: abgeschlossen am 2. September 2026.
 
 Aufgaben:
 
