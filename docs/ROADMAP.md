@@ -329,12 +329,36 @@ Umgesetzt:
 
 ### R2.2 Strukturierte Tauri-Fehler
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - Delimiter-Strings wie `NETWORK_UNTRUSTED|...`, `BROAD_SHARE|...` und `ACTIVE_TRANSFERS|...` durch serialisierbare Fehlerobjekte ersetzen.
 - Stabile Fehlercodes, sichere Nutzermeldung und typisierte Kontextfelder definieren.
 - Desktop-Dialoge ausschließlich anhand von Fehlercodes und Kontext aufbauen.
 - Interne Fehlerdetails weiterhin nur datensparsam protokollieren.
+
+Umgesetzt:
+
+- Alle falliblen Tauri-Befehle verwenden an der IPC-Grenze denselben generierten
+  `CommandError` mit stabilem `CommandErrorCode`, sicherer Nutzermeldung und
+  optionalem diskriminiertem `CommandErrorContext`. Nackte Anwendungsfehlerstrings
+  verlassen das Rust-Backend nicht mehr.
+- Netzwerkvertrauen und breite Freigaben liefern Bestätigungstoken sowie
+  Netzwerkname beziehungsweise Pfad in typisierten Kontextvarianten. Aktive
+  Übertragungen liefern ihre Anzahl; ungespeicherte Änderungen benötigen keinen
+  zusätzlichen Kontext.
+- Der Desktop erkennt Bestätigungsabläufe nur noch über exakte Fehlercodes und
+  passende Kontextarten. Sämtliches `startsWith`-, Delimiter- und
+  `split("|")`-Parsing wurde entfernt; ein Regressionstest verwendet bewusst
+  einen Freigabepfad mit `|`.
+- Unerwartete Task-, Datei-, Firewall- und Dienstfehler werden auf konstante,
+  sichere UI-Texte abgebildet. Das lokale Log enthält dazu ausschließlich den
+  stabilen Fehlercode und die betroffene Operation, niemals rohe interne Details
+  oder darin vorkommende Pfade.
+- Der generierte Shared-Vertrag enthält Fehlercodes, Kontextunion und Fehlerkörper.
+  Zwei Rust-Regressionstests verankern JSON-Form und Detailabschirmung; die nun
+  15 Desktoptests decken Netzwerk-, Freigabe-, Stop- und Quit-Bestätigungen ab.
 
 ### R2.3 Große Module zerlegen
 

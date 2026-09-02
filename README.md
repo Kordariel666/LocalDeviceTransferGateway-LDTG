@@ -49,6 +49,11 @@ genutzten Datenverträge. Nach einer DTO-Änderung aktualisiert
 `pnpm contracts:generate` das Paket `@dmdc/shared`; `pnpm contracts:check` meldet
 vergessene Exporte, ohne Dateien zu verändern.
 
+Fallible Tauri-Aufrufe lehnen Promises mit einem typisierten `CommandError` ab.
+Stabile Codes und diskriminierte Kontextobjekte steuern Bestätigungsdialoge;
+interne System- oder Dateifehler werden weder als Delimiter-Strings ausgewertet
+noch ungefiltert in der Oberfläche angezeigt.
+
 Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und öffentliche Veröffentlichung sind nicht Bestandteil von v1.
 
 Der Uninstaller entfernt die Firewallregel, bewahrt aber Konfiguration, Logs und mögliche Nutzdaten in den DMDC-AppData-Verzeichnissen. Er löscht diese Verzeichnisse nicht rekursiv.

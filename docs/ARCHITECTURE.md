@@ -21,6 +21,16 @@ auf TypeScript-Seite als benannte String-Unions dargestellt. Der Generator gibt
 Tauri-Grenze JSON und kein BigInt transportiert. Ein read-only Drift-Vergleich ist
 Teil des lokalen und des CI-Qualitätsgates.
 
+Fallible Tauri-Befehle geben einen einheitlichen `CommandError` zurück. Sein
+generierter Vertrag besteht aus stabilem Code, sicherem Anzeigetext und optionalem
+diskriminiertem Kontext. Bestätigungstoken, Netzwerkname, breit gewählter Pfad und
+Anzahl aktiver Übertragungen werden ausschließlich in den dafür vorgesehenen
+Kontextvarianten transportiert; der Desktop verzweigt nur anhand von Code und
+Kontextart. Interne Task-, Betriebssystem-, Datei- und Dienstursachen werden vor
+der IPC-Grenze auf sichere Meldungen reduziert. Lokal wird datensparsam nur Code
+und Operation protokolliert, nicht die rohe Ursache oder ein darin enthaltener
+Pfad.
+
 ## Zustandsmodell
 
 Konfiguration ist nur im Zustand `stopped` änderbar. Start, Stop, Quit, Status-Reaping, Speichern und Firewallkonfiguration teilen einen Lifecycle-Transition-Mutex; ein zweiter Übergang kann daher weder einen noch nicht veröffentlichten Start überholen noch den Zustand einer neueren Dienstinstanz überschreiben. Jeder Übergang nach `running` erzeugt eine neue Dienst-ID und einen neuen Zugangscode. Sitzungen, Uploadzuordnungen und Übertragungsverlauf leben nur in dieser Instanz.

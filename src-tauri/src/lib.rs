@@ -6,7 +6,10 @@ use crate::domain::{
     network,
     settings::{self, AppSettings},
     shares,
-    types::{AppSnapshot, FirewallStatus, ServiceStatus, ShareValidation},
+    types::{
+        AppSnapshot, CommandError, CommandErrorCode, CommandErrorContext, FirewallStatus,
+        ServiceStatus, ShareValidation,
+    },
 };
 use crate::service::ServiceHandle;
 use std::{
@@ -53,6 +56,16 @@ struct BroadShareApproval {
     token: String,
     path: String,
     expires_at: Instant,
+}
+
+fn internal_command_error<T>(
+    code: CommandErrorCode,
+    message: &'static str,
+    operation: &'static str,
+    _detail: T,
+) -> CommandError {
+    tracing::warn!(error_code = ?code, operation, "Tauri-Befehl fehlgeschlagen; internes Detail wird nicht protokolliert");
+    CommandError::new(code, message)
 }
 
 pub struct AppState {
@@ -140,7 +153,7 @@ async fn service_state(
         .map(|service| service.state.clone())
 }
 
-async fn stop_runtime(state: &AppState, force: bool) -> Result<(), String> {
+async fn stop_runtime(state: &AppState, force: bool) -> Result<(), CommandError> {
     let _transition = state.lifecycle_transition.lock().await;
     let service = {
         let mut runtime = state.runtime.lock().await;
@@ -148,8 +161,15 @@ async fn stop_runtime(state: &AppState, force: bool) -> Result<(), String> {
             state.running.store(false, Ordering::Relaxed);
             return Ok(());
         };
-        if !force && service.state.active_transfers().await > 0 {
-            return Err("ACTIVE_TRANSFERS|Mindestens eine Übertragung ist noch aktiv.".into());
+        let active_transfers = service.state.active_transfers().await;
+        if !force && active_transfers > 0 {
+            return Err(CommandError::with_context(
+                CommandErrorCode::ActiveTransfers,
+                "Mindestens eine Übertragung ist noch aktiv.",
+                CommandErrorContext::ActiveTransfers {
+                    count: active_transfers,
+                },
+            ));
         }
         runtime.service.take().expect("service was checked")
     };
@@ -226,7 +246,7 @@ async fn current_service_status(state: &AppState) -> ServiceStatus {
 }
 
 #[tauri::command]
-async fn get_service_status(state: State<'_, AppState>) -> Result<ServiceStatus, String> {
+async fn get_service_status(state: State<'_, AppState>) -> Result<ServiceStatus, CommandError> {
     Ok(current_service_status(&state).await)
 }
 
@@ -234,7 +254,7 @@ async fn get_service_status(state: State<'_, AppState>) -> Result<ServiceStatus,
 async fn get_app_snapshot(
     app: AppHandle,
     state: State<'_, AppState>,
-) -> Result<AppSnapshot, String> {
+) -> Result<AppSnapshot, CommandError> {
     let service = current_service_status(&state).await;
     let (settings, configuration_warning) = {
         let runtime = state.runtime.lock().await;
@@ -259,17 +279,35 @@ async fn get_app_snapshot(
 async fn save_settings(
     state: State<'_, AppState>,
     settings: AppSettings,
-) -> Result<AppSettings, String> {
-    let settings = settings::normalize_for_save(settings)?;
+) -> Result<AppSettings, CommandError> {
+    let settings = settings::normalize_for_save(settings)
+        .map_err(|message| CommandError::new(CommandErrorCode::SettingsInvalid, message))?;
     let _transition = state.lifecycle_transition.lock().await;
     let mut runtime = state.runtime.lock().await;
     if runtime.service.is_some() {
-        return Err("Einstellungen können nur bei gestopptem Dienst geändert werden.".into());
+        return Err(CommandError::new(
+            CommandErrorCode::ServiceAlreadyRunning,
+            "Einstellungen können nur bei gestopptem Dienst geändert werden.",
+        ));
     }
     if runtime.configuration_warning.is_some() {
-        settings::backup_for_recovery(&state.settings_path)?;
+        settings::backup_for_recovery(&state.settings_path).map_err(|error| {
+            internal_command_error(
+                CommandErrorCode::SettingsSaveFailed,
+                "Die Einstellungen konnten nicht gespeichert werden.",
+                "settings recovery backup",
+                error,
+            )
+        })?;
     }
-    let settings = settings::save(&state.settings_path, &settings)?;
+    let settings = settings::save(&state.settings_path, &settings).map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::SettingsSaveFailed,
+            "Die Einstellungen konnten nicht gespeichert werden.",
+            "settings save",
+            error,
+        )
+    })?;
     runtime.settings = settings.clone();
     runtime.configuration_warning = None;
     state.unsaved_changes.store(false, Ordering::Release);
@@ -282,10 +320,17 @@ fn set_unsaved_changes(state: State<'_, AppState>, dirty: bool) {
 }
 
 #[tauri::command]
-async fn validate_share_settings(settings: AppSettings) -> Result<ShareValidation, String> {
+async fn validate_share_settings(settings: AppSettings) -> Result<ShareValidation, CommandError> {
     tauri::async_runtime::spawn_blocking(move || shares::validate_share_settings(&settings))
         .await
-        .map_err(|error| format!("Freigabenprüfung konnte nicht gestartet werden: {error}"))
+        .map_err(|error| {
+            internal_command_error(
+                CommandErrorCode::ShareValidationFailed,
+                "Die Freigaben konnten nicht geprüft werden.",
+                "share validation task",
+                error,
+            )
+        })
 }
 
 #[tauri::command]
@@ -294,22 +339,42 @@ async fn start_service(
     state: State<'_, AppState>,
     network_approval: Option<String>,
     broad_share_approval: Option<String>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     let _transition = state.lifecycle_transition.lock().await;
     let settings = {
         let runtime = state.runtime.lock().await;
         if runtime.service.is_some() {
-            return Err("Der Dienst läuft bereits.".into());
+            return Err(CommandError::new(
+                CommandErrorCode::ServiceAlreadyRunning,
+                "Der Dienst läuft bereits.",
+            ));
         }
         runtime.settings.clone()
     };
-    settings.validate_for_start()?;
+    settings
+        .validate_for_start()
+        .map_err(|message| CommandError::new(CommandErrorCode::SettingsInvalid, message))?;
     let preferred_adapter = settings.preferred_adapter_id.clone();
     let interface = tauri::async_runtime::spawn_blocking(move || {
         network::select_interface(preferred_adapter.as_deref())
     })
     .await
-    .map_err(|error| format!("Netzwerkprüfung konnte nicht gestartet werden: {error}"))??;
+    .map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::NetworkUnavailable,
+            "Keine geeignete private Netzwerkschnittstelle ist verfügbar.",
+            "network selection task",
+            error,
+        )
+    })?
+    .map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::NetworkUnavailable,
+            "Keine geeignete private Netzwerkschnittstelle ist verfügbar.",
+            "network selection",
+            error,
+        )
+    })?;
     let network_was_approved = if settings.trusted_networks.contains(&interface.network_id) {
         false
     } else {
@@ -334,7 +399,14 @@ async fn start_service(
                     expires_at: Instant::now() + Duration::from_secs(2 * 60),
                 });
             }
-            return Err(format!("NETWORK_UNTRUSTED|{token}|{}", interface.name));
+            return Err(CommandError::with_context(
+                CommandErrorCode::NetworkUntrusted,
+                "Dieses Netzwerk ist noch nicht als vertrauenswürdig bestätigt.",
+                CommandErrorContext::NetworkApproval {
+                    token,
+                    network_name: interface.name.clone(),
+                },
+            ));
         }
         true
     };
@@ -361,7 +433,11 @@ async fn start_service(
                     expires_at: Instant::now() + Duration::from_secs(2 * 60),
                 });
             }
-            return Err(format!("BROAD_SHARE|{token}|{path}"));
+            return Err(CommandError::with_context(
+                CommandErrorCode::BroadShare,
+                "Eine sehr breit gewählte Freigabe muss ausdrücklich bestätigt werden.",
+                CommandErrorContext::BroadShareApproval { token, path },
+            ));
         }
     }
     let roots = tauri::async_runtime::spawn_blocking(move || {
@@ -377,16 +453,47 @@ async fn start_service(
         )
     })
     .await
-    .map_err(|error| format!("Freigabenprüfung konnte nicht gestartet werden: {error}"))??;
+    .map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::SharePreparationFailed,
+            "Die Freigabeordner konnten nicht sicher vorbereitet werden.",
+            "share preparation task",
+            error,
+        )
+    })?
+    .map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::SharePreparationFailed,
+            "Die Freigabeordner konnten nicht sicher vorbereitet werden.",
+            "share preparation",
+            error,
+        )
+    })?;
     let mut persisted = settings.clone();
     if network_was_approved && !persisted.trusted_networks.contains(&interface.network_id) {
         persisted
             .trusted_networks
             .push(interface.network_id.clone());
-        persisted = settings::save(&state.settings_path, &persisted)?;
+        persisted = settings::save(&state.settings_path, &persisted).map_err(|error| {
+            internal_command_error(
+                CommandErrorCode::SettingsSaveFailed,
+                "Das bestätigte Netzwerk konnte nicht gespeichert werden.",
+                "trusted network save",
+                error,
+            )
+        })?;
         state.runtime.lock().await.settings = persisted.clone();
     }
-    let handle = service::start(persisted, interface, roots, Some(app.clone())).await?;
+    let handle = service::start(persisted, interface, roots, Some(app.clone()))
+        .await
+        .map_err(|error| {
+            internal_command_error(
+                CommandErrorCode::ServiceStartFailed,
+                "Der Dienst konnte nicht gestartet werden.",
+                "service start",
+                error,
+            )
+        })?;
     {
         let mut runtime = state.runtime.lock().await;
         runtime.service = Some(handle);
@@ -408,7 +515,7 @@ async fn stop_service(
     app: AppHandle,
     state: State<'_, AppState>,
     force: bool,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     stop_runtime(&state, force).await?;
     if let Some(tray) = app.tray_by_id("main-tray") {
         let _ = tray.set_tooltip(Some("DMDC – Dienst gestoppt"));
@@ -421,30 +528,47 @@ async fn stop_service(
 }
 
 #[tauri::command]
-async fn rotate_access_code(state: State<'_, AppState>) -> Result<String, String> {
+async fn rotate_access_code(state: State<'_, AppState>) -> Result<String, CommandError> {
     service_state(&state)
         .await
         .map(|service| service.rotate_code())
-        .ok_or_else(|| "Der Dienst läuft nicht.".into())
+        .ok_or_else(|| {
+            CommandError::new(
+                CommandErrorCode::ServiceNotRunning,
+                "Der Dienst läuft nicht.",
+            )
+        })
 }
 
 #[tauri::command]
-async fn revoke_session(state: State<'_, AppState>, session_id: String) -> Result<(), String> {
-    let service = service_state(&state)
-        .await
-        .ok_or_else(|| "Der Dienst läuft nicht.".to_string())?;
+async fn revoke_session(
+    state: State<'_, AppState>,
+    session_id: String,
+) -> Result<(), CommandError> {
+    let service = service_state(&state).await.ok_or_else(|| {
+        CommandError::new(
+            CommandErrorCode::ServiceNotRunning,
+            "Der Dienst läuft nicht.",
+        )
+    })?;
     if service.revoke_session(&session_id).await {
         Ok(())
     } else {
-        Err("Die Sitzung wurde nicht gefunden.".into())
+        Err(CommandError::new(
+            CommandErrorCode::SessionNotFound,
+            "Die Sitzung wurde nicht gefunden.",
+        ))
     }
 }
 
 #[tauri::command]
-async fn revoke_all_sessions(state: State<'_, AppState>) -> Result<(), String> {
-    let service = service_state(&state)
-        .await
-        .ok_or_else(|| "Der Dienst läuft nicht.".to_string())?;
+async fn revoke_all_sessions(state: State<'_, AppState>) -> Result<(), CommandError> {
+    let service = service_state(&state).await.ok_or_else(|| {
+        CommandError::new(
+            CommandErrorCode::ServiceNotRunning,
+            "Der Dienst läuft nicht.",
+        )
+    })?;
     service.revoke_all().await;
     Ok(())
 }
@@ -453,17 +577,23 @@ async fn revoke_all_sessions(state: State<'_, AppState>) -> Result<(), String> {
 async fn configure_firewall(
     app: AppHandle,
     state: State<'_, AppState>,
-) -> Result<FirewallStatus, String> {
+) -> Result<FirewallStatus, CommandError> {
     let _transition = state.lifecycle_transition.lock().await;
     let port = {
         let runtime = state.runtime.lock().await;
         if runtime.service.is_some() {
-            return Err("Die Firewallregel kann nur bei gestopptem Dienst geändert werden.".into());
+            return Err(CommandError::new(
+                CommandErrorCode::ServiceAlreadyRunning,
+                "Die Firewallregel kann nur bei gestopptem Dienst geändert werden.",
+            ));
         }
         runtime.settings.port
     };
     if !(1024..=65535).contains(&port) {
-        return Err("Der Port muss zwischen 1024 und 65535 liegen.".into());
+        return Err(CommandError::new(
+            CommandErrorCode::SettingsInvalid,
+            "Der Port muss zwischen 1024 und 65535 liegen.",
+        ));
     }
     let _check = state.firewall_check.lock().await;
     let app_for_task = app.clone();
@@ -480,7 +610,22 @@ async fn configure_firewall(
         Ok::<FirewallStatus, String>(checked)
     })
     .await
-    .map_err(|error| error.to_string())??;
+    .map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::FirewallConfigurationFailed,
+            "Die Firewallregel konnte nicht eingerichtet werden.",
+            "firewall task",
+            error,
+        )
+    })?
+    .map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::FirewallConfigurationFailed,
+            "Die Firewallregel konnte nicht eingerichtet werden.",
+            "firewall configuration",
+            error,
+        )
+    })?;
     if let Ok(mut cache) = state.firewall.lock() {
         cache.checked_at = Some(Instant::now());
         cache.port = port;
@@ -489,9 +634,11 @@ async fn configure_firewall(
     if checked.configured {
         Ok(checked)
     } else {
-        Err(format!(
-            "Die Firewallregel wurde angelegt, konnte danach aber nicht bestätigt werden: {}",
-            checked.detail
+        Err(internal_command_error(
+            CommandErrorCode::FirewallConfigurationFailed,
+            "Die Firewallregel wurde angelegt, konnte danach aber nicht bestätigt werden.",
+            "firewall verification",
+            checked.detail,
         ))
     }
 }
@@ -501,7 +648,7 @@ async fn export_diagnostics(
     app: AppHandle,
     state: State<'_, AppState>,
     destination: String,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     let (settings, service) = {
         let runtime = state.runtime.lock().await;
         (
@@ -535,11 +682,32 @@ async fn export_diagnostics(
         "firewall": firewall,
         "privacy": "Keine Dateiliste, Dateiinhalte, Zugangscodes oder Sitzungstoken enthalten.",
     });
-    let bytes = serde_json::to_vec_pretty(&report).map_err(|error| error.to_string())?;
+    let bytes = serde_json::to_vec_pretty(&report).map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::DiagnosticsExportFailed,
+            "Die Diagnose konnte nicht gespeichert werden.",
+            "diagnostics serialization",
+            error,
+        )
+    })?;
     tauri::async_runtime::spawn_blocking(move || std::fs::write(destination, bytes))
         .await
-        .map_err(|error| format!("Diagnosespeicherung konnte nicht gestartet werden: {error}"))?
-        .map_err(|error| format!("Diagnose konnte nicht gespeichert werden: {error}"))
+        .map_err(|error| {
+            internal_command_error(
+                CommandErrorCode::DiagnosticsExportFailed,
+                "Die Diagnose konnte nicht gespeichert werden.",
+                "diagnostics task",
+                error,
+            )
+        })?
+        .map_err(|error| {
+            internal_command_error(
+                CommandErrorCode::DiagnosticsExportFailed,
+                "Die Diagnose konnte nicht gespeichert werden.",
+                "diagnostics write",
+                error,
+            )
+        })
 }
 
 #[tauri::command]
@@ -548,9 +716,12 @@ async fn quit_app(
     state: State<'_, AppState>,
     force: bool,
     discard_unsaved: bool,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     if state.unsaved_changes.load(Ordering::Acquire) && !discard_unsaved {
-        return Err("UNSAVED_CHANGES".into());
+        return Err(CommandError::new(
+            CommandErrorCode::UnsavedChanges,
+            "Es gibt ungespeicherte Änderungen.",
+        ));
     }
     stop_runtime(&state, force).await?;
     app.exit(0);
@@ -690,7 +861,8 @@ pub fn run() {
 
 #[cfg(test)]
 mod capability_tests {
-    use super::{settings, stop_runtime, AppState};
+    use super::{internal_command_error, settings, stop_runtime, AppState};
+    use crate::domain::types::CommandErrorCode;
     use std::sync::Arc;
     use tokio::time::{timeout, Duration};
 
@@ -712,6 +884,22 @@ mod capability_tests {
                 "missing capability permission: {required}"
             );
         }
+    }
+
+    #[test]
+    fn internal_command_errors_do_not_expose_raw_details() {
+        let error = internal_command_error(
+            CommandErrorCode::DiagnosticsExportFailed,
+            "Die Diagnose konnte nicht gespeichert werden.",
+            "diagnostics write",
+            r"C:\private\diagnose.json: Zugriff verweigert",
+        );
+        let serialized = serde_json::to_string(&error).unwrap();
+
+        assert!(serialized.contains("DIAGNOSTICS_EXPORT_FAILED"));
+        assert!(serialized.contains("Die Diagnose konnte nicht gespeichert werden."));
+        assert!(!serialized.contains("private"));
+        assert!(!serialized.contains("Zugriff verweigert"));
     }
 
     #[tokio::test]

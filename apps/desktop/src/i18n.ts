@@ -158,6 +158,10 @@ export const text = {
   connection: "Verbindung",
   trustNetwork: (name: string) => `DMDC soll in „${name}“ erreichbar sein. Verwende den Dienst nur, wenn du diesem lokalen Netzwerk vertraust.`,
   broadShareWarning: (path: string) => `„${path}“ ist ein sehr breiter Benutzerordner. Dadurch könnten viele persönliche Dateien im Downloadbereich sichtbar werden. Wirklich freigeben?`,
-  activeStopWarning: "Mindestens eine Datei wird übertragen. Trotzdem stoppen?",
-  activeQuitWarning: "Mindestens eine Datei wird übertragen. DMDC wirklich beenden und die Übertragung abbrechen?",
+  activeStopWarning: (count: number) => count === 1
+    ? "Eine Übertragung ist aktiv. Trotzdem stoppen?"
+    : `${count} Übertragungen sind aktiv. Trotzdem stoppen?`,
+  activeQuitWarning: (count: number) => count === 1
+    ? "Eine Übertragung ist aktiv. DMDC wirklich beenden und die Übertragung abbrechen?"
+    : `${count} Übertragungen sind aktiv. DMDC wirklich beenden und die Übertragungen abbrechen?`,
 } as const;

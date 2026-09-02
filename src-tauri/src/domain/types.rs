@@ -207,3 +207,95 @@ pub struct ErrorBody {
     pub code: String,
     pub message: String,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CommandErrorCode {
+    ActiveTransfers,
+    BroadShare,
+    DiagnosticsExportFailed,
+    FirewallConfigurationFailed,
+    NetworkUnavailable,
+    NetworkUntrusted,
+    ServiceAlreadyRunning,
+    ServiceNotRunning,
+    ServiceStartFailed,
+    SessionNotFound,
+    SettingsInvalid,
+    SettingsSaveFailed,
+    SharePreparationFailed,
+    ShareValidationFailed,
+    UnsavedChanges,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum CommandErrorContext {
+    NetworkApproval { token: String, network_name: String },
+    BroadShareApproval { token: String, path: String },
+    ActiveTransfers { count: usize },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CommandError {
+    pub code: CommandErrorCode,
+    pub message: String,
+    pub context: Option<CommandErrorContext>,
+}
+
+impl CommandError {
+    pub fn new(code: CommandErrorCode, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: message.into(),
+            context: None,
+        }
+    }
+
+    pub fn with_context(
+        code: CommandErrorCode,
+        message: impl Into<String>,
+        context: CommandErrorContext,
+    ) -> Self {
+        Self {
+            code,
+            message: message.into(),
+            context: Some(context),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_error_serializes_as_stable_tagged_object() {
+        let error = CommandError::with_context(
+            CommandErrorCode::NetworkUntrusted,
+            "Dieses Netzwerk ist noch nicht als vertrauenswürdig bestätigt.",
+            CommandErrorContext::NetworkApproval {
+                token: "approval-token".into(),
+                network_name: "WLAN".into(),
+            },
+        );
+
+        assert_eq!(
+            serde_json::to_value(error).unwrap(),
+            serde_json::json!({
+                "code": "NETWORK_UNTRUSTED",
+                "message": "Dieses Netzwerk ist noch nicht als vertrauenswürdig bestätigt.",
+                "context": {
+                    "kind": "networkApproval",
+                    "token": "approval-token",
+                    "networkName": "WLAN"
+                }
+            })
+        );
+    }
+}

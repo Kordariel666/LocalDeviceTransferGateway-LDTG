@@ -31,6 +31,10 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Gemeinsame Desktop-, Mobile- und HTTP-Verträge werden aus den Rust-DTOs
   generiert. Endliche Zustands-, Richtungs- und Eintragsarten sind typisierte
   Enums beziehungsweise String-Unions; das Qualitätsgate weist Vertragsdrift ab.
+- Tauri-Befehle liefern einheitliche Fehlerobjekte mit stabilen Codes, sicheren
+  Meldungen und typisierten Bestätigungskontexten. Der Desktop zerlegt keine
+  delimiter-basierten Backendfehler mehr; rohe interne Details bleiben außerhalb
+  der IPC-Antworten und lokalen Logs.
 
 ### Added
 

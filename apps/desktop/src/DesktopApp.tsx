@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import type {
   AppSettings,
   AppSnapshot,
+  CommandError,
   FirewallStatus,
   NetworkInterfaceInfo,
   ServiceStatus,
@@ -70,9 +71,18 @@ function formatDateTime(value: string): string {
 }
 
 function errorMessage(error: unknown): string {
+  const structured = commandError(error);
+  if (structured) return structured.message;
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "message" in error) return String(error.message);
   return text.unknownError;
+}
+
+function commandError(error: unknown): CommandError | null {
+  if (!error || typeof error !== "object") return null;
+  const candidate = error as Partial<CommandError>;
+  if (typeof candidate.code !== "string" || typeof candidate.message !== "string") return null;
+  return candidate as CommandError;
 }
 
 function settingsEqual(left: AppSettings | null, right: AppSettings | null): boolean {
@@ -540,9 +550,6 @@ export function App() {
       const prepared = await invoke<AppSnapshot>("get_app_snapshot");
       setSnapshot(prepared);
       setDraft(prepared.settings);
-      const preparedNetwork = prepared.networks.find((item) => item.id === prepared.settings.preferredAdapterId)
-        ?? prepared.networks.find((item) => item.preferred)
-        ?? prepared.networks[0];
       if (!prepared.firewall.configured) {
         const continueWithoutRule = await ask(text.firewallWarning, {
           title: text.firewallMissing,
@@ -559,31 +566,27 @@ export function App() {
           await invoke("start_service", { networkApproval, broadShareApproval });
           break;
         } catch (error) {
-          const message = errorMessage(error);
-          if (message.startsWith("NETWORK_UNTRUSTED|")) {
-            const [, token, suppliedName] = message.split("|");
-            const networkName = suppliedName || preparedNetwork?.name || text.connection;
-            const approved = await ask(text.trustNetwork(networkName), {
+          const failure = commandError(error);
+          if (failure?.code === "NETWORK_UNTRUSTED" && failure.context?.kind === "networkApproval") {
+            const approved = await ask(text.trustNetwork(failure.context.networkName), {
               title: text.networkConfirm,
               kind: "warning",
               okLabel: text.trustAndStart,
               cancelLabel: text.cancel,
             });
-            if (!approved || !token) return;
-            networkApproval = token;
+            if (!approved) return;
+            networkApproval = failure.context.token;
             continue;
           }
-          if (message.startsWith("BROAD_SHARE|")) {
-            const [, token, ...pathParts] = message.split("|");
-            const path = pathParts.join("|");
-            const approved = await ask(text.broadShareWarning(path), {
+          if (failure?.code === "BROAD_SHARE" && failure.context?.kind === "broadShareApproval") {
+            const approved = await ask(text.broadShareWarning(failure.context.path), {
               title: text.broadShare,
               kind: "warning",
               okLabel: text.confirmBroadShare,
               cancelLabel: text.cancel,
             });
-            if (!approved || !token) return;
-            broadShareApproval = token;
+            if (!approved) return;
+            broadShareApproval = failure.context.token;
             continue;
           }
           throw error;
@@ -605,16 +608,16 @@ export function App() {
       await invoke("stop_service", { force });
       await refreshService();
     } catch (error) {
-      const message = errorMessage(error);
-      if (message.startsWith("ACTIVE_TRANSFERS")) {
-        const accepted = await ask(text.activeStopWarning, {
+      const failure = commandError(error);
+      if (failure?.code === "ACTIVE_TRANSFERS" && failure.context?.kind === "activeTransfers") {
+        const accepted = await ask(text.activeStopWarning(failure.context.count), {
           title: text.transferRunning,
           kind: "warning",
           okLabel: text.stopAnyway,
           cancelLabel: text.keepRunning,
         });
         if (accepted) await stop(true);
-      } else setNotice({ kind: "error", text: message });
+      } else setNotice({ kind: "error", text: errorMessage(error) });
     } finally {
       setBusyAction(null);
     }
@@ -625,8 +628,8 @@ export function App() {
     try {
       await invoke("quit_app", { force, discardUnsaved });
     } catch (error) {
-      const message = errorMessage(error);
-      if (message.startsWith("UNSAVED_CHANGES")) {
+      const failure = commandError(error);
+      if (failure?.code === "UNSAVED_CHANGES") {
         const accepted = await ask(text.unsavedQuitWarning, {
           title: text.unsavedChanges,
           kind: "warning",
@@ -635,8 +638,8 @@ export function App() {
         });
         if (accepted) await quit(force, true);
         else allowUnload.current = false;
-      } else if (message.startsWith("ACTIVE_TRANSFERS")) {
-        const accepted = await ask(text.activeQuitWarning, {
+      } else if (failure?.code === "ACTIVE_TRANSFERS" && failure.context?.kind === "activeTransfers") {
+        const accepted = await ask(text.activeQuitWarning(failure.context.count), {
           title: text.quit,
           kind: "warning",
           okLabel: text.quitNow,
@@ -646,7 +649,7 @@ export function App() {
         else allowUnload.current = false;
       } else {
         allowUnload.current = false;
-        setNotice({ kind: "error", text: message });
+        setNotice({ kind: "error", text: errorMessage(error) });
       }
     }
   }

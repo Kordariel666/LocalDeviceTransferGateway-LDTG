@@ -2,9 +2,10 @@ use dmdc_lib::domain::{
     network::NetworkInterfaceInfo,
     settings::{AppSettings, ShareSettings},
     types::{
-        AppSnapshot, CompleteResponse, DirectoryEntry, DirectoryEntryKind, DirectoryResponse,
-        ErrorBody, FirewallStatus, ServiceState, ServiceStatus, SessionInfo, SessionResponse,
-        ShareValidation, TransferDirection, TransferInfo, TransferState, UploadResponse,
+        AppSnapshot, CommandError, CommandErrorCode, CommandErrorContext, CompleteResponse,
+        DirectoryEntry, DirectoryEntryKind, DirectoryResponse, ErrorBody, FirewallStatus,
+        ServiceState, ServiceStatus, SessionInfo, SessionResponse, ShareValidation,
+        TransferDirection, TransferInfo, TransferState, UploadResponse,
     },
 };
 use std::{env, error::Error, fs, path::PathBuf};
@@ -38,6 +39,9 @@ fn bindings() -> String {
         declaration::<UploadResponse>(),
         declaration::<CompleteResponse>(),
         declaration::<ErrorBody>(),
+        declaration::<CommandErrorCode>(),
+        declaration::<CommandErrorContext>(),
+        declaration::<CommandError>(),
     ];
     format!("{HEADER}{}\n", declarations.join("\n\n"))
 }

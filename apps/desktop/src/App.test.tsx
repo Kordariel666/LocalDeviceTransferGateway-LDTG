@@ -275,7 +275,18 @@ describe("Desktop-Dashboard", () => {
       if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
       if (command === "save_settings") return args?.settings;
       if (command === "start_service" && !args?.networkApproval) {
-        throw "NETWORK_UNTRUSTED|approval-token|WLAN";
+        throw {
+          code: "NETWORK_UNTRUSTED",
+          message: "Dieses Netzwerk ist noch nicht als vertrauenswürdig bestätigt.",
+          context: { kind: "networkApproval", token: "network-token", networkName: "WLAN" },
+        };
+      }
+      if (command === "start_service" && !args?.broadShareApproval) {
+        throw {
+          code: "BROAD_SHARE",
+          message: "Eine sehr breit gewählte Freigabe muss ausdrücklich bestätigt werden.",
+          context: { kind: "broadShareApproval", token: "share-token", path: "C:\\Freigabe|Fotos" },
+        };
       }
       return undefined;
     });
@@ -284,11 +295,12 @@ describe("Desktop-Dashboard", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Dienst starten" }));
 
     await waitFor(() => {
-      expect(mocks.ask).toHaveBeenCalledTimes(1);
+      expect(mocks.ask).toHaveBeenCalledTimes(2);
       expect(mocks.invoke).toHaveBeenCalledWith("start_service", {
-        networkApproval: "approval-token",
-        broadShareApproval: null,
+        networkApproval: "network-token",
+        broadShareApproval: "share-token",
       });
+      expect(mocks.ask).toHaveBeenCalledWith(expect.stringContaining("C:\\Freigabe|Fotos"), expect.any(Object));
     });
   });
 
@@ -298,7 +310,9 @@ describe("Desktop-Dashboard", () => {
       if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
       if (command === "get_service_status") return structuredClone(currentSnapshot.service);
       if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
-      if (command === "quit_app" && !args?.discardUnsaved) throw "UNSAVED_CHANGES";
+      if (command === "quit_app" && !args?.discardUnsaved) {
+        throw { code: "UNSAVED_CHANGES", message: "Es gibt ungespeicherte Änderungen.", context: null };
+      }
       return undefined;
     });
 
@@ -317,6 +331,40 @@ describe("Desktop-Dashboard", () => {
       okLabel: "Verwerfen und beenden",
     }));
     expect(mocks.invoke).toHaveBeenCalledWith("quit_app", { force: false, discardUnsaved: true });
+  });
+
+  it("bestätigt aktive Übertragungen anhand des strukturierten Fehlercodes", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.service = {
+      ...currentSnapshot.service,
+      state: "running",
+      serviceId: "service",
+      activeTransfers: 1,
+    };
+    mocks.ask.mockResolvedValue(true);
+    mocks.invoke.mockImplementation(async (command: string, args?: Record<string, unknown>) => {
+      if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
+      if (command === "get_service_status") return structuredClone(currentSnapshot.service);
+      if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
+      if (command === "stop_service" && !args?.force) {
+        throw {
+          code: "ACTIVE_TRANSFERS",
+          message: "Mindestens eine Übertragung ist noch aktiv.",
+          context: { kind: "activeTransfers", count: 1 },
+        };
+      }
+      return undefined;
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Dienst stoppen" }));
+
+    await waitFor(() => {
+      expect(mocks.ask).toHaveBeenCalledWith(expect.stringContaining("Eine Übertragung ist aktiv"), expect.objectContaining({
+        okLabel: "Trotzdem stoppen",
+      }));
+      expect(mocks.invoke).toHaveBeenCalledWith("stop_service", { force: true });
+    });
   });
 
   it("behält Navigation und einsehbare Einstellungen auch beim laufenden Dienst", async () => {

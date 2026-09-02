@@ -37,3 +37,9 @@ export type UploadCreated = { uploadId: string, offset: number, totalBytes: numb
 export type CompleteResponse = { name: string, };
 
 export type ApiError = { code: string, message: string, };
+
+export type CommandErrorCode = "ACTIVE_TRANSFERS" | "BROAD_SHARE" | "DIAGNOSTICS_EXPORT_FAILED" | "FIREWALL_CONFIGURATION_FAILED" | "NETWORK_UNAVAILABLE" | "NETWORK_UNTRUSTED" | "SERVICE_ALREADY_RUNNING" | "SERVICE_NOT_RUNNING" | "SERVICE_START_FAILED" | "SESSION_NOT_FOUND" | "SETTINGS_INVALID" | "SETTINGS_SAVE_FAILED" | "SHARE_PREPARATION_FAILED" | "SHARE_VALIDATION_FAILED" | "UNSAVED_CHANGES";
+
+export type CommandErrorContext = { "kind": "networkApproval", token: string, networkName: string, } | { "kind": "broadShareApproval", token: string, path: string, } | { "kind": "activeTransfers", count: number, };
+
+export type CommandError = { code: CommandErrorCode, message: string, context: CommandErrorContext | null, };
