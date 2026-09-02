@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const snapshot: AppSnapshot = {
-  appVersion: "0.1.3",
+  appVersion: "0.2.0-rc.1",
   configurationWarning: null,
   settings: {
     version: 3,

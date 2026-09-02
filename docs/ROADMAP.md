@@ -26,6 +26,9 @@ Diese Eigenschaften gelten für alle Phasen als unveränderliche Abnahmekriterie
 - Beide Produktions-Webbuilds bestehen.
 - Der verifizierte Ausgangsstand ist im Git-Commit `d4e4751` und Tag `v0.1.3`
   gesichert; nachfolgende Arbeit wird in thematischen Commits fortgeführt.
+- Der abgeschlossene Stand der Phasen 1 bis 4 wird als `0.2.0-rc.1` für die
+  manuelle Installations- und Bedienprüfung gebaut. Der finale Tag `v0.2.0`
+  folgt erst nach dieser Abnahme und gegebenenfalls notwendigen Korrekturen.
 - Die Windows-Netzwerkprofilerkennung sowie der echte Start-/Stopp-Ablauf wurden
   am 2. September 2026 auf `Ethernet` mit einem öffentlichen Windows-Profil geprüft.
 - Ein Online-Abhängigkeitsaudit und die physische Windows-/Browser-Abnahmematrix sind noch nicht Bestandteil dieses Nachweises.

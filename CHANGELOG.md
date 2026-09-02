@@ -8,6 +8,8 @@ die Versionsnummern folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
+## [0.2.0-rc.1] - 2026-09-03
+
 ### Changed
 
 - API-, Architektur- und Testdokumentation an die tatsächlich implementierten

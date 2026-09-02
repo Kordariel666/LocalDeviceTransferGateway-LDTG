@@ -1,6 +1,6 @@
 [package]
 name = "dmdc"
-version = "0.1.3"
+version = "0.2.0-rc.1"
 description = "Lokaler Dateitransfer zwischen Desktop und Mobilgerät"
 authors = ["DMDC"]
 edition = "2021"
