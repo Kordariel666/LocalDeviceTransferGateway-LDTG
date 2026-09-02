@@ -99,7 +99,7 @@ Abnahme:
 
 ### R0.3 Kontinuierliche Prüfungen einführen
 
-Status: als nächstes Arbeitspaket vorgesehen.
+Status: lokal abgeschlossen am 2. September 2026; der erste GitHub-Lauf folgt nach dem Verbinden eines Remote-Repositories.
 
 Aufgaben:
 
@@ -113,6 +113,14 @@ Abnahme:
 
 - Jeder Pull Request erhält reproduzierbare grüne oder rote Qualitäts-Gates.
 - Fehler der Laufzeitumgebung werden klar von Produktfehlern getrennt.
+
+Umgesetzt:
+
+- `pnpm check` bildet lokal und in GitHub Actions dieselbe vollständige Prüfkette ab.
+- ESLint prüft React/TypeScript einschließlich der empfohlenen Hooks- und React-Refresh-Regeln; drei absichtliche Lifecycle-Abhängigkeiten sind eng begrenzt und im Code begründet.
+- V8-Coverage ist für Desktop und Mobile sichtbar. Der erste Nachweis erreicht 77,49 % beziehungsweise 92,3 % Statements/Lines; verbindliche Mindestwerte werden nach dem ersten Trend festgelegt.
+- Dependabot ist mit wöchentlichen, gruppierten Minor-/Patch-Aktualisierungen ohne Auto-Merge eingerichtet; Review-, Lockfile- und Sicherheitsregeln stehen in `docs/DEPENDENCIES.md`.
+- Die komplette Prüfkette bestand lokal mit 9 Desktop-, 14 Mobile- und 90 Rust-Tests sowie beiden Produktions-Webbuilds.
 
 ## 6. Phase 1 – Korrektheit und Laufzeitrobustheit
 

@@ -2,8 +2,10 @@
 
 ## Automatisiert
 
+- `pnpm check`: vollständige lokale Prüfkette aus Typprüfung, ESLint, Frontendtests mit Coverage, Rust-Tests, Formatierung, Clippy und beiden Produktions-Webbuilds; derselbe Befehl läuft in der Windows-CI.
 - `pnpm typecheck`: beide React-Anwendungen und gemeinsame Verträge.
 - `pnpm test`: Frontendtests ohne reale Benutzerordner.
+- `pnpm test:coverage`: Frontendtests mit V8-Coverageberichten je Anwendung.
 - `pnpm test:rust`: Pfad-, Subnetz-, Zustands-, Sitzungs-, Upload- und Downloadtests mit temporären Ordnern; der Wrapper ergänzt nur für den Windows-Test-Runner das von Tauri benötigte Common-Controls-v6-Manifest.
 - `pnpm build:web`: reproduzierbare Produktionsassets für Desktop und Handy.
 - `pnpm build`: Windows-Binärdatei und per-user NSIS-Installer.

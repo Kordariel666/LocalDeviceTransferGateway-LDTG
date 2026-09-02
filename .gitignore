@@ -4,10 +4,10 @@ dist/
 target/
 src-tauri/target/
 apps/*/dist/
+apps/*/coverage/
 .idea/
 .vscode/
 *.log
 *.tmp
 .DS_Store
 Thumbs.db
-

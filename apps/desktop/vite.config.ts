@@ -10,5 +10,12 @@ export default defineConfig({
     port: 1420,
   },
   envPrefix: ["VITE_", "TAURI_ENV_*"],
-  test: { environment: "jsdom" },
+  test: {
+    environment: "jsdom",
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      reportsDirectory: "coverage",
+    },
+  },
 });
