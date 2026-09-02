@@ -114,7 +114,7 @@ export const text = {
   service: "Dienst",
   network: "Netzwerk",
   firewall: "Firewall",
-  version: "UI-Version",
+  version: "App-Version",
   configured: "Eingerichtet",
   notConfigured: "Nicht bestätigt",
   exportDiagnostics: "Diagnose exportieren",

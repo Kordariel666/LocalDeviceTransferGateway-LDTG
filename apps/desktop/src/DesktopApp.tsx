@@ -713,7 +713,7 @@ export function App() {
             <div><dt>{text.service}</dt><dd>{statusLabel}</dd></div>
             <div><dt>{text.network}</dt><dd>{selectedNetwork ? `${selectedNetwork.name} · ${selectedNetwork.address}` : text.noNetworkShort}</dd></div>
             <div><dt>{text.firewall}</dt><dd>{currentSnapshot.firewall.configured ? text.configured : text.notConfigured}</dd></div>
-            <div><dt>{text.version}</dt><dd>{currentDraft.uiVersion}</dd></div>
+            <div><dt>{text.version}</dt><dd>{currentSnapshot.appVersion}</dd></div>
           </dl>
           <button className="button primary" type="button" disabled={busy} onClick={() => void exportDiagnostics()}>{text.exportDiagnostics}</button>
         </section>

@@ -47,6 +47,13 @@ Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und
 
 Der Uninstaller entfernt die Firewallregel, bewahrt aber Konfiguration, Logs und mögliche Nutzdaten in den DMDC-AppData-Verzeichnissen. Er löscht diese Verzeichnisse nicht rekursiv.
 
+Die Konfiguration besitzt ein eigenes versioniertes Schema. Ältere
+`settings.json`-Dateien werden beim Laden schrittweise migriert; zukünftige,
+beschädigte oder semantisch ungültige Dateien bleiben unverändert und führen zu
+sicheren Standardwerten mit sichtbarer Warnung. Vor einem bewussten Ersetzen legt
+DMDC eine nummerierte Recovery-Kopie an. Die App-Buildversion wird nicht als
+Benutzereinstellung gespeichert.
+
 `pnpm test:rust` bettet ausschließlich in den Windows-Test-Runner das Common-Controls-v6-Manifest ein, das Tauri beim normalen App-Build ohnehin erhält. Dadurch laufen die Rust-Unit- und Integrationstests ohne den Windows-Ladefehler `TaskDialogIndirect`; Produktions- und Installer-Manifeste werden nicht verändert.
 
 Auf Rechnern mit einer strikten Windows-Anwendungssteuerungsrichtlinie müssen lokal von Cargo erzeugte Build-Helfer für Entwicklungsbuilds zugelassen sein. Diese Einschränkung betrifft nur die Entwicklung, nicht die Architektur von DMDC.

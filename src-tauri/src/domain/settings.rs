@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use std::{
     fs,
     io::{self, Write},
@@ -9,6 +10,7 @@ pub const DEFAULT_PORT: u16 = 8765;
 pub const DEFAULT_MAX_UPLOAD: u64 = 20 * 1024 * 1024 * 1024;
 pub const DEFAULT_MAX_INBOX_BYTES: u64 = 100 * 1024 * 1024 * 1024;
 pub const DEFAULT_MAX_INBOX_FILES: u32 = 10_000;
+pub const CURRENT_SETTINGS_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -17,11 +19,10 @@ pub struct ShareSettings {
     pub path: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
     pub version: u32,
-    pub ui_version: String,
     pub download_share: ShareSettings,
     pub upload_share: ShareSettings,
     pub preferred_adapter_id: Option<String>,
@@ -36,8 +37,7 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            version: 1,
-            ui_version: env!("CARGO_PKG_VERSION").into(),
+            version: CURRENT_SETTINGS_VERSION,
             download_share: ShareSettings::default(),
             upload_share: ShareSettings::default(),
             preferred_adapter_id: None,
@@ -94,19 +94,109 @@ pub struct LoadedSettings {
     pub warning: Option<String>,
 }
 
+fn version_from(object: &Map<String, Value>) -> Result<u32, String> {
+    let Some(value) = object.get("version") else {
+        return Ok(0);
+    };
+    let version = value
+        .as_u64()
+        .ok_or_else(|| "Das Feld version muss eine nichtnegative ganze Zahl sein.".to_string())?;
+    u32::try_from(version).map_err(|_| "Die Konfigurationsversion ist zu groß.".to_string())
+}
+
+fn insert_missing(object: &mut Map<String, Value>, key: &str, value: Value) {
+    object.entry(key.to_string()).or_insert(value);
+}
+
+fn migrate_v0_to_v1(object: &mut Map<String, Value>) {
+    insert_missing(
+        object,
+        "downloadShare",
+        serde_json::json!({ "enabled": false, "path": "" }),
+    );
+    insert_missing(
+        object,
+        "uploadShare",
+        serde_json::json!({ "enabled": false, "path": "" }),
+    );
+    insert_missing(object, "preferredAdapterId", Value::Null);
+    insert_missing(object, "port", Value::from(DEFAULT_PORT));
+    insert_missing(object, "maxUploadBytes", Value::from(DEFAULT_MAX_UPLOAD));
+    insert_missing(
+        object,
+        "maxInboxBytes",
+        Value::from(DEFAULT_MAX_INBOX_BYTES),
+    );
+    insert_missing(
+        object,
+        "maxInboxFiles",
+        Value::from(DEFAULT_MAX_INBOX_FILES),
+    );
+    insert_missing(object, "idleTimeoutMinutes", Value::Null);
+    insert_missing(object, "trustedNetworks", Value::Array(vec![]));
+    object.insert("version".into(), Value::from(1));
+}
+
+fn migrate_v1_to_v2(object: &mut Map<String, Value>) {
+    object.remove("uiVersion");
+    object.insert("version".into(), Value::from(2));
+}
+
+fn migrate_value(mut value: Value) -> Result<AppSettings, String> {
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| "Die Wurzel der Einstellungsdatei muss ein JSON-Objekt sein.".to_string())?;
+    let mut version = version_from(object)?;
+    if version > CURRENT_SETTINGS_VERSION {
+        return Err(format!(
+            "Konfigurationsschema {version} ist neuer als das unterstützte Schema {CURRENT_SETTINGS_VERSION}."
+        ));
+    }
+    while version < CURRENT_SETTINGS_VERSION {
+        version = match version {
+            0 => {
+                migrate_v0_to_v1(object);
+                1
+            }
+            1 => {
+                migrate_v1_to_v2(object);
+                2
+            }
+            _ => {
+                return Err(format!(
+                    "Konfigurationsschema {version} kann nicht migriert werden."
+                ))
+            }
+        };
+    }
+    let settings: AppSettings = serde_json::from_value(value)
+        .map_err(|error| format!("Die Einstellungsfelder sind ungültig: {error}"))?;
+    settings
+        .validate()
+        .map_err(|error| format!("Die Einstellungen sind semantisch ungültig: {error}"))?;
+    Ok(settings)
+}
+
+fn unusable_settings(reason: impl std::fmt::Display) -> LoadedSettings {
+    LoadedSettings {
+        settings: AppSettings::default(),
+        warning: Some(format!(
+            "Die gespeicherten Einstellungen sind nicht verwendbar ({reason}). Sichere Standardwerte sind aktiv; die vorhandene settings.json wurde unverändert behalten."
+        )),
+    }
+}
+
 pub fn load(path: &Path) -> LoadedSettings {
     match fs::read_to_string(path) {
-        Ok(value) => match serde_json::from_str(&value) {
+        Ok(value) => match serde_json::from_str(&value)
+            .map_err(|error| error.to_string())
+            .and_then(migrate_value)
+        {
             Ok(settings) => LoadedSettings {
                 settings,
                 warning: None,
             },
-            Err(error) => LoadedSettings {
-                settings: AppSettings::default(),
-                warning: Some(format!(
-                    "Die gespeicherten Einstellungen sind beschädigt ({error}). Sichere Standardwerte sind aktiv; die vorhandene settings.json wurde unverändert behalten."
-                )),
-            },
+            Err(error) => unusable_settings(error),
         },
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => LoadedSettings {
             settings: AppSettings::default(),
@@ -121,12 +211,25 @@ pub fn load(path: &Path) -> LoadedSettings {
     }
 }
 
-pub fn save(path: &Path, settings: &AppSettings) -> Result<(), String> {
+pub fn normalize_for_save(mut settings: AppSettings) -> Result<AppSettings, String> {
+    if settings.version > CURRENT_SETTINGS_VERSION {
+        return Err(format!(
+            "Konfigurationsschema {} ist neuer als das unterstützte Schema {CURRENT_SETTINGS_VERSION}.",
+            settings.version
+        ));
+    }
+    settings.version = CURRENT_SETTINGS_VERSION;
+    settings.validate()?;
+    Ok(settings)
+}
+
+pub fn save(path: &Path, settings: &AppSettings) -> Result<AppSettings, String> {
+    let settings = normalize_for_save(settings.clone())?;
     let parent = path
         .parent()
         .ok_or_else(|| "Ungültiger Konfigurationspfad.".to_string())?;
     fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    let data = serde_json::to_vec_pretty(settings).map_err(|error| error.to_string())?;
+    let data = serde_json::to_vec_pretty(&settings).map_err(|error| error.to_string())?;
     let mut temporary =
         tempfile::NamedTempFile::new_in(parent).map_err(|error| error.to_string())?;
     temporary
@@ -138,8 +241,8 @@ pub fn save(path: &Path, settings: &AppSettings) -> Result<(), String> {
         .map_err(|error| error.to_string())?;
     temporary
         .persist(path)
-        .map(|_| ())
-        .map_err(|error| error.error.to_string())
+        .map_err(|error| error.error.to_string())?;
+    Ok(settings)
 }
 
 pub fn backup_for_recovery(path: &Path) -> Result<Option<PathBuf>, String> {
@@ -198,12 +301,75 @@ mod tests {
             port: 9000,
             ..Default::default()
         };
-        save(&path, &expected).unwrap();
+        let saved = save(&path, &expected).unwrap();
         let loaded = load(&path);
         assert!(loaded.warning.is_none());
-        assert_eq!(loaded.settings.version, 1);
-        assert_eq!(loaded.settings.ui_version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(saved.version, CURRENT_SETTINGS_VERSION);
+        assert_eq!(loaded.settings.version, CURRENT_SETTINGS_VERSION);
         assert_eq!(loaded.settings.port, 9000);
+        assert!(!fs::read_to_string(path).unwrap().contains("uiVersion"));
+    }
+
+    #[test]
+    fn migrates_unversioned_settings_with_missing_fields() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("settings.json");
+        fs::write(&path, r#"{"port":9123}"#).unwrap();
+
+        let loaded = load(&path);
+
+        assert!(loaded.warning.is_none());
+        assert_eq!(loaded.settings.version, CURRENT_SETTINGS_VERSION);
+        assert_eq!(loaded.settings.port, 9123);
+        assert_eq!(loaded.settings.max_inbox_bytes, DEFAULT_MAX_INBOX_BYTES);
+        assert_eq!(loaded.settings.max_inbox_files, DEFAULT_MAX_INBOX_FILES);
+    }
+
+    #[test]
+    fn migrates_v1_stepwise_and_idempotently() {
+        let v1 = serde_json::json!({
+            "version": 1,
+            "uiVersion": "0.1.0",
+            "port": 9124
+        });
+
+        let migrated = migrate_value(v1).unwrap();
+        let migrated_again = migrate_value(serde_json::to_value(&migrated).unwrap()).unwrap();
+
+        assert_eq!(migrated, migrated_again);
+        assert_eq!(migrated.version, CURRENT_SETTINGS_VERSION);
+        assert_eq!(migrated.port, 9124);
+        assert!(serde_json::to_value(migrated)
+            .unwrap()
+            .get("uiVersion")
+            .is_none());
+    }
+
+    #[test]
+    fn rejects_future_schema_without_replacing_file() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("settings.json");
+        let original = br#"{"version":999,"port":9123}"#;
+        fs::write(&path, original).unwrap();
+
+        let loaded = load(&path);
+
+        assert!(loaded.warning.unwrap().contains("Schema 2"));
+        assert_eq!(loaded.settings, AppSettings::default());
+        assert_eq!(fs::read(path).unwrap(), original);
+    }
+
+    #[test]
+    fn save_rejects_future_schema() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("settings.json");
+        let settings = AppSettings {
+            version: CURRENT_SETTINGS_VERSION + 1,
+            ..Default::default()
+        };
+
+        assert!(save(&path, &settings).is_err());
+        assert!(!path.exists());
     }
 
     #[test]
@@ -241,6 +407,36 @@ mod tests {
         save(&path, &AppSettings::default()).unwrap();
         assert_eq!(fs::read(backup).unwrap(), b"{not-json");
         assert!(load(&path).warning.is_none());
+    }
+
+    #[test]
+    fn semantically_invalid_settings_are_backed_up_before_replacement() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("settings.json");
+        let original = br#"{"version":2,"port":80}"#;
+        fs::write(&path, original).unwrap();
+
+        let loaded = load(&path);
+        assert!(loaded.warning.unwrap().contains("semantisch ungültig"));
+        let backup = backup_for_recovery(&path).unwrap().unwrap();
+        save(&path, &loaded.settings).unwrap();
+
+        assert_eq!(fs::read(backup).unwrap(), original);
+        assert!(load(&path).warning.is_none());
+    }
+
+    #[test]
+    fn syntactically_valid_settings_with_corrupt_values_are_preserved() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("settings.json");
+        let original = br#"{"version":2,"port":"kaputt"}"#;
+        fs::write(&path, original).unwrap();
+
+        let loaded = load(&path);
+
+        assert!(loaded.warning.is_some());
+        assert_eq!(loaded.settings, AppSettings::default());
+        assert_eq!(fs::read(path).unwrap(), original);
     }
 
     #[test]

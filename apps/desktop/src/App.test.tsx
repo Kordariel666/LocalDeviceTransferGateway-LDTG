@@ -12,10 +12,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const snapshot: AppSnapshot = {
+  appVersion: "0.1.3",
   configurationWarning: null,
   settings: {
-    version: 1,
-    uiVersion: "0.1.0",
+    version: 2,
     downloadShare: { enabled: false, path: "" },
     uploadShare: { enabled: false, path: "" },
     preferredAdapterId: null,
@@ -88,6 +88,18 @@ describe("Desktop-Dashboard", () => {
     expect(await screen.findByText("Snapshot vorübergehend nicht verfügbar")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Erneut versuchen" }));
     expect(await screen.findByRole("button", { name: "Dienst starten" })).toBeTruthy();
+  });
+
+  it("zeigt die vom Backend gelieferte Buildversion statt des Konfigurationsschemas", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.appVersion = "9.8.7-test";
+    currentSnapshot.settings.version = 42;
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Diagnose" }));
+
+    expect(await screen.findByText("9.8.7-test")).toBeTruthy();
+    expect(screen.getByText("App-Version")).toBeTruthy();
   });
 
   it("ordnet die laufende Dienst-URL nur einer exakt gleichen IP-Adresse zu", async () => {

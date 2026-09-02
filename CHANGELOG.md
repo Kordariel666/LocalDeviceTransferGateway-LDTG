@@ -22,6 +22,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Partial-Bereinigung laufen in einem eigenen fairen I/O-Pool außerhalb der
   Async-Worker; die periodische Rootprüfung blockiert den Accept-Loop ebenfalls
   nicht mehr.
+- Einstellungen verwenden jetzt ein eigenständiges Schema 2 mit schrittweisen,
+  idempotenten Migrationen; die App-Buildversion ist davon getrennt und wird
+  nicht mehr in `settings.json` gespeichert.
 
 ### Added
 
@@ -41,6 +44,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   den dienstbesessenen Chunkjob samt Blocking-Permits konsistent zu Ende laufen.
 - Doppeltes Login erzeugt nicht mehr mehrere parallele Auth-Anfragen; Logout räumt
   den lokalen Zustand auch bei einem bereits gestoppten Dienst auf.
+- Zukünftige Konfigurationsschemata sowie strukturell oder semantisch ungültige
+  Einstellungen werden mit sicheren Standardwerten und sichtbarer Warnung
+  abgefangen; die Originaldatei bleibt für ein Recovery erhalten.
 
 - Die vollständige Prüfkette baut eingebettete Mobile-Webassets nun vor Rust-
   Tests und Clippy; `pnpm test:rust` bereitet sie auch einzeln selbst vor und

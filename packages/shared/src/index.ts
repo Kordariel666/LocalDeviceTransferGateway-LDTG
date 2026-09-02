@@ -5,7 +5,6 @@ export type ShareSettings = {
 
 export type AppSettings = {
   version: number;
-  uiVersion: string;
   downloadShare: ShareSettings;
   uploadShare: ShareSettings;
   preferredAdapterId: string | null;
@@ -67,6 +66,7 @@ export type FirewallStatus = {
 };
 
 export type AppSnapshot = {
+  appVersion: string;
   settings: AppSettings;
   configurationWarning: string | null;
   service: ServiceStatus;

@@ -75,6 +75,7 @@ impl Default for FirewallStatus {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSnapshot {
+    pub app_version: String,
     pub settings: super::settings::AppSettings,
     pub configuration_warning: Option<String>,
     pub service: ServiceStatus,

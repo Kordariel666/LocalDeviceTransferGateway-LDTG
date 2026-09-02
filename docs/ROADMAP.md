@@ -210,6 +210,8 @@ Umgesetzt:
 
 ### R1.3 Versionierte Einstellungs-Migration
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - `version` als echtes Konfigurationsschema behandeln.
@@ -218,6 +220,29 @@ Aufgaben:
 - Semantisch ungültige, aber syntaktisch korrekte Einstellungen erkennen und mit Recovery-Backup behandeln.
 - Die laufende Appversion nicht als veraltbaren Benutzerwert persistieren; Diagnose und UI lesen die Buildversion direkt.
 - Migrationstests für fehlende Felder, alte Version, zukünftige Version und beschädigte Werte ergänzen.
+
+Umgesetzt:
+
+- `version` bezeichnet nun ausschließlich das aktuelle Konfigurationsschema 2.
+  Versionslose Dateien werden als Schema 0 eingeordnet und anschließend wie
+  Schema 1 schrittweise migriert; jeder Schritt lässt bereits migrierte Daten
+  unverändert.
+- Schema 1 verliert beim Übergang auf Schema 2 das früher persistierte
+  `uiVersion`. Die Desktopdiagnose erhält die tatsächliche Buildversion separat
+  aus dem Backend, und der Diagnoseexport liest sie weiterhin direkt aus dem
+  laufenden Build.
+- Ein neueres als das unterstützte Schema, eine ungültige Versionsangabe,
+  strukturell beschädigte Werte und semantisch unzulässige Grenzen aktivieren
+  sichere Standardwerte mit sichtbarer Warnung. Die Quelldatei bleibt bis zu
+  einem bewussten Speichern unverändert und wird davor als nummerierte
+  Recovery-Datei gesichert.
+- Der atomare Speicherpfad validiert erneut, normalisiert ältere Entwürfe auf
+  Schema 2 und verweigert zukünftige Schemata. Erfolgreiche Migrationen werden
+  beim nächsten Speichern reproduzierbar im aktuellen Format persistiert.
+- Sechs zusätzliche Rust-Regressionstests prüfen fehlende Felder, schrittweise
+  idempotente Altversionen, zukünftige Versionen, falsche Feldtypen sowie
+  semantische Fehler samt Recovery. Ein Desktoptest verankert die vom
+  Konfigurationsschema unabhängige Buildversionsanzeige.
 
 ### R1.4 Desktop-Validierung und ungespeicherte Änderungen
 

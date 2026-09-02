@@ -244,6 +244,7 @@ async fn get_app_snapshot(
     let firewall = cached_firewall(app, &state, settings.port).await;
     let networks = cached_networks(&state).await;
     Ok(AppSnapshot {
+        app_version: env!("CARGO_PKG_VERSION").into(),
         settings,
         configuration_warning,
         service,
@@ -257,7 +258,7 @@ async fn save_settings(
     state: State<'_, AppState>,
     settings: AppSettings,
 ) -> Result<AppSettings, String> {
-    settings.validate()?;
+    let settings = settings::normalize_for_save(settings)?;
     let _transition = state.lifecycle_transition.lock().await;
     let mut runtime = state.runtime.lock().await;
     if runtime.service.is_some() {
@@ -266,7 +267,7 @@ async fn save_settings(
     if runtime.configuration_warning.is_some() {
         settings::backup_for_recovery(&state.settings_path)?;
     }
-    settings::save(&state.settings_path, &settings)?;
+    let settings = settings::save(&state.settings_path, &settings)?;
     runtime.settings = settings.clone();
     runtime.configuration_warning = None;
     Ok(settings)
@@ -367,7 +368,7 @@ async fn start_service(
         persisted
             .trusted_networks
             .push(interface.network_id.clone());
-        settings::save(&state.settings_path, &persisted)?;
+        persisted = settings::save(&state.settings_path, &persisted)?;
         state.runtime.lock().await.settings = persisted.clone();
     }
     let handle = service::start(persisted, interface, roots, Some(app.clone())).await?;
@@ -498,7 +499,7 @@ async fn export_diagnostics(
     let report = serde_json::json!({
         "createdAt": chrono::Utc::now().to_rfc3339(),
         "appVersion": env!("CARGO_PKG_VERSION"),
-        "configSchema": settings.version,
+        "configSchema": settings::CURRENT_SETTINGS_VERSION,
         "platform": std::env::consts::OS,
         "settings": {
             "downloadEnabled": settings.download_share.enabled,
