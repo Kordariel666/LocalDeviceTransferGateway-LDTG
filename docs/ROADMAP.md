@@ -20,11 +20,14 @@ Diese Eigenschaften gelten für alle Phasen als unveränderliche Abnahmekriterie
 
 ## 2. Aktueller verifizierter Ausgangsstand
 
-- 89 Rust-Tests bestehen.
+- 90 Rust-Tests bestehen.
 - 9 Desktop- und 14 Mobile-Tests bestehen.
 - TypeScript-Typprüfung, `cargo fmt --check` und Clippy mit `-D warnings` bestehen.
 - Beide Produktions-Webbuilds bestehen.
-- Der aktuelle Git-Zweig `main` besitzt noch keinen Commit; sämtliche Projektdateien sind unversioniert.
+- Der verifizierte Ausgangsstand ist im Git-Commit `d4e4751` und Tag `v0.1.3`
+  gesichert; nachfolgende Arbeit wird in thematischen Commits fortgeführt.
+- Die Windows-Netzwerkprofilerkennung sowie der echte Start-/Stopp-Ablauf wurden
+  am 2. September 2026 auf `Ethernet` mit einem öffentlichen Windows-Profil geprüft.
 - Ein Online-Abhängigkeitsaudit und die physische Windows-/Browser-Abnahmematrix sind noch nicht Bestandteil dieses Nachweises.
 
 ## 3. Definition of Done
@@ -59,6 +62,8 @@ Die Größen sind relativ: S entspricht ungefähr einem kleinen, M mehreren zusa
 
 ### R0.1 Git-Ausgangsstand herstellen
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - `.gitignore` gegen Build-, IDE-, Log-, QA- und temporäre Artefakte prüfen.
@@ -74,6 +79,8 @@ Abnahme:
 - Ein Rollback auf den unveränderten Ausgangsstand ist möglich.
 
 ### R0.2 Dokumentation mit dem Code synchronisieren
+
+Status: abgeschlossen am 2. September 2026.
 
 Aufgaben:
 
@@ -91,6 +98,8 @@ Abnahme:
 - Aktuelle Screenshots zeigen ausschließlich den aktuellen UI- und Protokollstand.
 
 ### R0.3 Kontinuierliche Prüfungen einführen
+
+Status: als nächstes Arbeitspaket vorgesehen.
 
 Aufgaben:
 
@@ -410,4 +419,3 @@ Vor der jeweiligen Phase ist eine bewusste Produktentscheidung nötig:
 6. Ist Transportverschlüsselung ein tatsächliches v2-Ziel oder bleibt das bestätigte LAN die dauerhafte Produktgrenze?
 
 Diese Entscheidungen ändern nicht die frühen Phasen 0 bis 2. Sie bestimmen erst Umfang und Reihenfolge der Phasen 3 bis 7.
-

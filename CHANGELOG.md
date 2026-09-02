@@ -15,7 +15,13 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Frühere Audit- und Behebungsstufen eindeutig als historische Zwischenstände
   gekennzeichnet.
 - QA-Bilderzeugung von persönlichen absoluten Pfaden gelöst und aktuelle Mobile-
-  sowie Desktop-Stoppaufnahmen erneuert.
+  sowie Desktop-Aufnahmen für gestoppten und laufenden Dienst erneuert.
+
+### Fixed
+
+- Windows-Netzwerkprofile werden über `Get-NetConnectionProfile` einschließlich
+  stabiler Profil-ID ermittelt; der Dienststart hängt damit nicht mehr von der auf
+  manchen Systemen fehlschlagenden dynamischen `NetworkListManager`-COM-Abfrage ab.
 
 ## [0.1.3] - 2026-09-02
 
