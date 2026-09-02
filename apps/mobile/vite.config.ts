@@ -7,5 +7,12 @@ export default defineConfig({
     target: "es2020",
     assetsDir: "assets",
   },
-  test: { environment: "jsdom" },
+  test: {
+    environment: "jsdom",
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      reportsDirectory: "coverage",
+    },
+  },
 });

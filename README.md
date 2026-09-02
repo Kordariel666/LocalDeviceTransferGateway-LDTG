@@ -32,12 +32,16 @@ Voraussetzungen unter Windows 10/11:
 
 ```powershell
 pnpm install
-pnpm typecheck
-pnpm test
-pnpm test:rust
-pnpm build:web
+pnpm check
 pnpm dev
 ```
+
+`pnpm check` führt Typprüfung, ESLint mit React-Hooks-Regeln, Frontendtests samt
+Coverage-Bericht, Rust-Tests, Formatierung, Clippy und beide Webbuilds aus. Die
+Einzelbefehle wie `pnpm test`, `pnpm test:coverage`, `pnpm test:rust` und
+`pnpm build:web` bleiben für gezielte lokale Prüfungen verfügbar. Dasselbe
+Qualitätsgate läuft auf GitHub Actions unter Windows; HTML-Coverage-Berichte werden
+dort 14 Tage als Buildartefakt aufbewahrt.
 
 Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und öffentliche Veröffentlichung sind nicht Bestandteil von v1.
 
@@ -69,6 +73,7 @@ Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals
 - [Sicherheitsrichtlinie](SECURITY.md)
 - [Abnahmeplan](docs/TESTPLAN.md)
 - [Geprüfter Git-Ausgangsstand](docs/BASELINE_2026-09-02.md)
+- [Abhängigkeitsstrategie](docs/DEPENDENCIES.md)
 - [Letzter Sicherheits- und Fehlerbehebungsbericht](qa/security-fix-report-2026-09-02.md)
 
 ## Bedienung

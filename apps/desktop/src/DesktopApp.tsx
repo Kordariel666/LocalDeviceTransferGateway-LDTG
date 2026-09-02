@@ -276,6 +276,9 @@ export function App() {
       if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
       void unlisteners.then((items) => items.forEach((unlisten) => unlisten()));
     };
+    // Lifecycle commands use stable setters/invocations; rebinding on every render would
+    // create short listener gaps while the native application is dispatching events.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshService]);
 
   const selectedNetwork = useMemo(() => {

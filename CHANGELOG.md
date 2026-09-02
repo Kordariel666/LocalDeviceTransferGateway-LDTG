@@ -17,6 +17,13 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - QA-Bilderzeugung von persönlichen absoluten Pfaden gelöst und aktuelle Mobile-
   sowie Desktop-Aufnahmen für gestoppten und laufenden Dienst erneuert.
 
+### Added
+
+- Windows-CI-Gate für Typprüfung, ESLint, Frontend-Coverage, Rust-Tests,
+  Formatierung, Clippy und Produktions-Webbuilds.
+- Wöchentliche, nicht automatisch zusammengeführte Dependabot-Updates für pnpm,
+  Cargo und GitHub Actions mit dokumentierter Reviewstrategie.
+
 ### Fixed
 
 - Windows-Netzwerkprofile werden über `Get-NetConnectionProfile` einschließlich

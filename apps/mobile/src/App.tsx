@@ -130,7 +130,12 @@ export function App() {
     }
   }, [session, search, handleSessionLost]);
 
+  // Navigation calls loadDirectory directly. This effect is only the session/view entry trigger;
+  // adding path or search would repeat completed navigation and reload on every search keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (session?.downloadEnabled && view === "download") void loadDirectory(path); }, [session, view]);
+  // Queue processing is ref-backed and deliberately starts only when session availability changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (session?.uploadEnabled) void drainUploadQueue(); }, [session]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
