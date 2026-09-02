@@ -5,6 +5,7 @@ use std::{
     io::{self, Write},
     path::{Path, PathBuf},
 };
+use ts_rs::TS;
 
 pub const DEFAULT_PORT: u16 = 8765;
 pub const DEFAULT_MAX_UPLOAD: u64 = 20 * 1024 * 1024 * 1024;
@@ -12,14 +13,14 @@ pub const DEFAULT_MAX_INBOX_BYTES: u64 = 100 * 1024 * 1024 * 1024;
 pub const DEFAULT_MAX_INBOX_FILES: u32 = 10_000;
 pub const CURRENT_SETTINGS_VERSION: u32 = 2;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct ShareSettings {
     pub enabled: bool,
     pub path: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
     pub version: u32,
@@ -27,7 +28,9 @@ pub struct AppSettings {
     pub upload_share: ShareSettings,
     pub preferred_adapter_id: Option<String>,
     pub port: u16,
+    #[ts(type = "number | null")]
     pub max_upload_bytes: Option<u64>,
+    #[ts(type = "number")]
     pub max_inbox_bytes: u64,
     pub max_inbox_files: u32,
     pub idle_timeout_minutes: Option<u32>,

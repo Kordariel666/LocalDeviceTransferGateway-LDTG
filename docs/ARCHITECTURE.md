@@ -12,6 +12,15 @@ Der Rust-Code ist in drei Schichten gegliedert:
 
 Die mobile React-App wird separat gebaut und mit `rust-embed` in die Rust-Binärdatei aufgenommen. Dadurch benötigt DMDC weder Internet noch einen separaten Webserver.
 
+Serialisierbare DTOs in `src-tauri/src/domain` bilden die einzige Quelle für die
+von Rust, Desktop und Mobile gemeinsam verwendeten Verträge. `ts-rs` erzeugt
+daraus `packages/shared/src/index.ts`; Dienst- und Transferzustände,
+Transferrichtung sowie Download-Eintragsarten werden auf Rust-Seite als Enums und
+auf TypeScript-Seite als benannte String-Unions dargestellt. Der Generator gibt
+64-Bit-JSON-Zahlen bewusst als TypeScript-`number` aus, weil die HTTP- und
+Tauri-Grenze JSON und kein BigInt transportiert. Ein read-only Drift-Vergleich ist
+Teil des lokalen und des CI-Qualitätsgates.
+
 ## Zustandsmodell
 
 Konfiguration ist nur im Zustand `stopped` änderbar. Start, Stop, Quit, Status-Reaping, Speichern und Firewallkonfiguration teilen einen Lifecycle-Transition-Mutex; ein zweiter Übergang kann daher weder einen noch nicht veröffentlichten Start überholen noch den Zustand einer neueren Dienstinstanz überschreiben. Jeder Übergang nach `running` erzeugt eine neue Dienst-ID und einen neuen Zugangscode. Sitzungen, Uploadzuordnungen und Übertragungsverlauf leben nur in dieser Instanz.

@@ -296,12 +296,36 @@ einschließlich beschädigter, zukünftiger und semantisch ungültiger Konfigura
 
 ### R2.1 Verträge aus einer Quelle generieren
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - Rust-DTOs als maßgebliche Quelle definieren und TypeScript-Verträge daraus generieren oder ein gemeinsames Schema verwenden.
 - Generierung für `AppSettings`, `AppSnapshot`, `ServiceStatus`, Sessions, Transfers und HTTP-Antworten einführen.
 - Stringfelder mit endlicher Wertemenge in echte Enums/Unions überführen.
 - Einen CI-Check ergänzen, der nicht aktualisierte generierte Verträge erkennt.
+
+Umgesetzt:
+
+- Die serialisierbaren Rust-DTOs in `domain` sind die maßgebliche Quelle für
+  Desktop-, Mobile- und HTTP-Verträge. `ts-rs` leitet daraus deterministisch das
+  öffentliche `@dmdc/shared`-Modul ab; der frühere manuelle TypeScript-Bestand
+  wurde vollständig ersetzt.
+- Der Export umfasst Einstellungen, App-Snapshot, Netzwerk- und Firewallstatus,
+  Sitzungen, Transfers, Freigabevalidierung sowie sämtliche strukturierten
+  HTTP-Antworten einschließlich Fehler- und Uploadabschlusskörpern. Die für JSON
+  sicher als JavaScript-Zahlen übertragenen 64-Bit-Felder sind im Vertrag
+  ausdrücklich als `number` markiert.
+- Dienstzustand, Transferrichtung, Transferzustand und Art eines Downloadeintrags
+  sind nun echte Rust-Enums. Serde erzeugt daraus dieselben stabilen Kleinbuchstabenwerte
+  wie zuvor; TypeScript erhält benannte String-Unions statt duplizierter Literale.
+- `pnpm contracts:generate` aktualisiert die Datei bewusst, während
+  `pnpm contracts:check` ausschließlich vergleicht. Der Drift-Check läuft als
+  erster Bestandteil von `pnpm check` und damit identisch lokal und im
+  Windows-CI-Gate.
+- Rust-Kompilation, 103 Rust-Tests und die TypeScript-Prüfung beider Frontends
+  bestätigen die unveränderte Serialisierung und vollständige Konsumierbarkeit
+  des generierten Vertrags.
 
 ### R2.2 Strukturierte Tauri-Fehler
 

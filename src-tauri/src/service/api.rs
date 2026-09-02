@@ -1,5 +1,5 @@
 use super::state::{
-    AuthDecision, CompletedUpload, DirectoryEntry, DirectoryListing, DirectoryPage, DownloadLease,
+    AuthDecision, CompletedUpload, DirectoryListing, DirectoryPage, DownloadLease,
     SessionCreateError, SessionRecord, TransferServiceState, UploadChunkLease, UploadIoPermit,
     UploadRecord, ACCESS_CODE_DIGITS, CHUNK_SIZE, DISK_RESERVE, MAX_UPLOADS_PER_ADDRESS,
 };
@@ -9,6 +9,10 @@ use crate::domain::{
     shares::{
         create_upload_partial, delete_open_upload, is_hidden_or_managed, publish_open_upload,
         safe_existing, safe_file_name_for_root,
+    },
+    types::{
+        CompleteResponse, DirectoryEntry, DirectoryEntryKind, DirectoryResponse, ErrorBody,
+        SessionResponse, TransferDirection, TransferState, UploadResponse,
     },
 };
 use axum::{
@@ -26,7 +30,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rust_embed::RustEmbed;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::{
     cmp::Ordering,
     fs,
@@ -46,13 +50,6 @@ use uuid::Uuid;
 #[derive(RustEmbed)]
 #[folder = "../apps/mobile/dist/"]
 struct MobileAssets;
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ErrorBody {
-    code: String,
-    message: String,
-}
 
 #[derive(Debug)]
 struct ApiFailure {
@@ -702,16 +699,6 @@ async fn auth(
     Ok(response)
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct SessionResponse {
-    service_id: String,
-    csrf_token: String,
-    download_enabled: bool,
-    upload_enabled: bool,
-    max_upload_bytes: Option<u64>,
-}
-
 async fn session(
     State(state): State<Arc<TransferServiceState>>,
     ConnectInfo(client): ConnectInfo<SocketAddr>,
@@ -749,16 +736,6 @@ struct ListQuery {
     cursor: Option<String>,
     page: Option<u64>,
     q: Option<String>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct DirectoryResponse {
-    path: String,
-    query: String,
-    entries: Vec<DirectoryEntry>,
-    next_cursor: Option<String>,
-    next_page: Option<u64>,
 }
 
 fn relative_url_path(root: &Path, path: &Path) -> String {
@@ -891,11 +868,10 @@ fn read_directory_page(
             name,
             path: relative_path,
             kind: if metadata.is_dir() {
-                "directory"
+                DirectoryEntryKind::Directory
             } else {
-                "file"
-            }
-            .into(),
+                DirectoryEntryKind::File
+            },
             size: if metadata.is_file() {
                 metadata.len()
             } else {
@@ -908,8 +884,8 @@ fn read_directory_page(
         }
     }
     entries.sort_by(|left, right| {
-        (left.kind != "directory")
-            .cmp(&(right.kind != "directory"))
+        (left.kind != DirectoryEntryKind::Directory)
+            .cmp(&(right.kind != DirectoryEntryKind::Directory))
             .then_with(|| natural_compare(&left.name, &right.name))
             .then_with(|| left.name.cmp(&right.name))
     });
@@ -1212,7 +1188,9 @@ impl Drop for DownloadGuard {
             let bytes = self.bytes;
             if let Some(id) = id {
                 tokio::spawn(async move {
-                    state.finish_download(&id, bytes, "cancelled").await;
+                    state
+                        .finish_download(&id, bytes, TransferState::Cancelled)
+                        .await;
                     drop(lease);
                 });
             }
@@ -1355,7 +1333,9 @@ async fn download(
             .expect("download lease exists")
             .id
             .clone();
-        state.finish_download(&id, 0, "cancelled").await;
+        state
+            .finish_download(&id, 0, TransferState::Cancelled)
+            .await;
         guard.mark_complete();
         return Err(error);
     }
@@ -1366,7 +1346,7 @@ async fn download(
             .expect("download lease exists")
             .id
             .clone();
-        state.finish_download(&id, 0, "failed").await;
+        state.finish_download(&id, 0, TransferState::Failed).await;
         guard.mark_complete();
         return Err(ApiFailure::new(
             StatusCode::BAD_REQUEST,
@@ -1396,7 +1376,7 @@ async fn download(
                 Ok(count) => count,
                 Err(error) => {
                     let id = guard.lease.as_ref().expect("download lease exists").id.clone();
-                    stream_state.finish_download(&id, sent, "failed").await;
+                    stream_state.finish_download(&id, sent, TransferState::Failed).await;
                     guard.mark_complete();
                     yield Err::<Bytes, std::io::Error>(error);
                     return;
@@ -1408,7 +1388,15 @@ async fn download(
             stream_state.update_transfer(&id, sent, None).await;
             yield Ok::<Bytes, std::io::Error>(Bytes::copy_from_slice(&buffer[..count]));
         }
-        let final_state = if cancelled { "cancelled" } else if expired { "expired" } else if sent == total { "complete" } else { "failed" };
+        let final_state = if cancelled {
+            TransferState::Cancelled
+        } else if expired {
+            TransferState::Expired
+        } else if sent == total {
+            TransferState::Complete
+        } else {
+            TransferState::Failed
+        };
         let id = guard.lease.as_ref().expect("download lease exists").id.clone();
         stream_state.finish_download(&id, sent, final_state).await;
         guard.mark_complete();
@@ -1480,17 +1468,6 @@ struct CreateUploadRequest {
     last_modified: u64,
     #[serde(default)]
     client_token: String,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct UploadResponse {
-    upload_id: String,
-    offset: u64,
-    total_bytes: u64,
-    chunk_size: usize,
-    service_id: String,
-    last_modified: u64,
 }
 
 async fn create_upload(
@@ -1706,7 +1683,12 @@ async fn create_upload(
             .insert(id.clone(), Arc::new(Mutex::new(record)));
         object_reservation.commit();
         task_state
-            .record_transfer_with_id(&transfer_id, "upload", &transfer_name, payload.size)
+            .record_transfer_with_id(
+                &transfer_id,
+                TransferDirection::Upload,
+                &transfer_name,
+                payload.size,
+            )
             .await;
         Ok(UploadResponse {
             upload_id: id,
@@ -1985,11 +1967,6 @@ async fn upload_chunk(
     Ok(response)
 }
 
-#[derive(Clone, Serialize)]
-struct CompleteResponse {
-    name: String,
-}
-
 async fn finalize_upload_owned(
     state: Arc<TransferServiceState>,
     id: String,
@@ -2183,7 +2160,7 @@ async fn finalize_upload_owned(
             ))
             .await;
         state
-            .update_transfer(&transfer_id, total, Some("complete"))
+            .update_transfer(&transfer_id, total, Some(TransferState::Complete))
             .await;
         Ok(CompleteResponse { name: final_name })
     }
@@ -2305,7 +2282,7 @@ async fn cancel_upload(
     state.schedule_upload_delete(file, path, chunk_slots);
     state.release_upload(offset);
     state
-        .update_transfer(&transfer_id, offset, Some("cancelled"))
+        .update_transfer(&transfer_id, offset, Some(TransferState::Cancelled))
         .await;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -2918,7 +2895,9 @@ mod tests {
             .unwrap()
             .join(format!("{id}.part"));
         let partial_file = create_upload_partial(&partial_path).unwrap();
-        let transfer_id = state.record_transfer("upload", "detached.bin", 1).await;
+        let transfer_id = state
+            .record_transfer(TransferDirection::Upload, "detached.bin", 1)
+            .await;
         state.reserve_upload_object().unwrap();
         let record = Arc::new(Mutex::new(UploadRecord {
             id: id.clone(),
@@ -3027,7 +3006,9 @@ mod tests {
             .read(true)
             .open(&partial_path)
             .unwrap();
-        let transfer_id = state.record_transfer("upload", "readonly.bin", 1).await;
+        let transfer_id = state
+            .record_transfer(TransferDirection::Upload, "readonly.bin", 1)
+            .await;
         state.reserve_upload_object().unwrap();
         let record = Arc::new(Mutex::new(UploadRecord {
             id: id.clone(),
@@ -3083,7 +3064,7 @@ mod tests {
             .cloned()
             .unwrap();
         assert_eq!(transfer.transferred_bytes, 0);
-        assert_eq!(transfer.state, "active");
+        assert_eq!(transfer.state, TransferState::Active);
         assert_eq!(fs::metadata(partial_path).unwrap().len(), 0);
     }
 
@@ -3285,7 +3266,9 @@ mod tests {
             .join(format!("{id}.part"));
         let mut partial_file = create_upload_partial(&partial_path).unwrap();
         partial_file.write_all(b"x").unwrap();
-        let transfer_id = state.record_transfer("upload", "late.txt", 1).await;
+        let transfer_id = state
+            .record_transfer(TransferDirection::Upload, "late.txt", 1)
+            .await;
         let record = Arc::new(Mutex::new(UploadRecord {
             id: id.clone(),
             owner_session: "session".into(),

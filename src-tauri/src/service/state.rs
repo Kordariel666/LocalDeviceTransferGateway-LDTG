@@ -2,7 +2,10 @@ use crate::domain::{
     network::NetworkInterfaceInfo,
     settings::AppSettings,
     shares::{delete_open_upload, is_reparse_point, RootAnchor, ShareRoots},
-    types::{ServiceStatus, SessionInfo, TransferInfo},
+    types::{
+        DirectoryEntry, ServiceState, ServiceStatus, SessionInfo, TransferDirection, TransferInfo,
+        TransferState,
+    },
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use chrono::Utc;
@@ -155,16 +158,6 @@ pub struct UploadChunkLease {
 pub struct UploadIoPermit {
     _global: OwnedSemaphorePermit,
     _address: OwnedSemaphorePermit,
-}
-
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DirectoryEntry {
-    pub name: String,
-    pub path: String,
-    pub kind: String,
-    pub size: u64,
-    pub modified_at: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -676,7 +669,7 @@ impl TransferServiceState {
             .lock()
             .await
             .iter()
-            .filter(|item| item.state == "active")
+            .filter(|item| item.state == TransferState::Active)
             .count()
     }
 
@@ -1275,7 +1268,7 @@ impl TransferServiceState {
             drop(record);
             self.schedule_upload_delete(file, path, chunk_slots);
             self.release_upload(offset);
-            self.update_transfer(&transfer_id, offset, Some("cancelled"))
+            self.update_transfer(&transfer_id, offset, Some(TransferState::Cancelled))
                 .await;
         }
     }
@@ -1328,7 +1321,7 @@ impl TransferServiceState {
                 cancel,
             },
         );
-        self.record_transfer_with_id(&id, "download", name, total)
+        self.record_transfer_with_id(&id, TransferDirection::Download, name, total)
             .await;
         Ok(DownloadLease {
             id,
@@ -1338,7 +1331,7 @@ impl TransferServiceState {
         })
     }
 
-    pub async fn finish_download(&self, id: &str, bytes: u64, state: &str) {
+    pub async fn finish_download(&self, id: &str, bytes: u64, state: TransferState) {
         self.downloads.lock().await.remove(id);
         self.update_transfer(id, bytes, Some(state)).await;
     }
@@ -1371,33 +1364,47 @@ impl TransferServiceState {
             drop(record);
             self.schedule_upload_delete(file, path, chunk_slots);
             self.release_upload(offset);
-            self.update_transfer(&transfer_id, offset, Some("expired"))
+            self.update_transfer(&transfer_id, offset, Some(TransferState::Expired))
                 .await;
         }
     }
 
     #[cfg(test)]
-    pub async fn record_transfer(&self, direction: &str, name: &str, total: u64) -> String {
+    pub async fn record_transfer(
+        &self,
+        direction: TransferDirection,
+        name: &str,
+        total: u64,
+    ) -> String {
         let id = Uuid::new_v4().to_string();
         self.record_transfer_with_id(&id, direction, name, total)
             .await;
         id
     }
 
-    pub async fn record_transfer_with_id(&self, id: &str, direction: &str, name: &str, total: u64) {
+    pub async fn record_transfer_with_id(
+        &self,
+        id: &str,
+        direction: TransferDirection,
+        name: &str,
+        total: u64,
+    ) {
         let item = TransferInfo {
             id: id.into(),
-            direction: direction.into(),
+            direction,
             name: name.into(),
             transferred_bytes: 0,
             total_bytes: total,
-            state: "active".into(),
+            state: TransferState::Active,
             updated_at: Utc::now().to_rfc3339(),
         };
         let mut transfers = self.transfers.lock().await;
         transfers.push(item);
         while transfers.len() > 100 {
-            let Some(index) = transfers.iter().position(|item| item.state != "active") else {
+            let Some(index) = transfers
+                .iter()
+                .position(|item| item.state != TransferState::Active)
+            else {
                 break;
             };
             transfers.remove(index);
@@ -1406,7 +1413,7 @@ impl TransferServiceState {
         self.emit("transfer-updated", &serde_json::json!({ "id": id }));
     }
 
-    pub async fn update_transfer(&self, id: &str, bytes: u64, state: Option<&str>) {
+    pub async fn update_transfer(&self, id: &str, bytes: u64, state: Option<TransferState>) {
         if let Some(item) = self
             .transfers
             .lock()
@@ -1416,7 +1423,7 @@ impl TransferServiceState {
         {
             item.transferred_bytes = bytes;
             if let Some(state) = state {
-                item.state = state.into();
+                item.state = state;
             }
             item.updated_at = Utc::now().to_rfc3339();
         }
@@ -1480,10 +1487,10 @@ impl TransferServiceState {
             .unwrap_or_default();
         let active_transfers = transfers
             .iter()
-            .filter(|item| item.state == "active")
+            .filter(|item| item.state == TransferState::Active)
             .count();
         ServiceStatus {
-            state: "running".into(),
+            state: ServiceState::Running,
             service_id: Some(self.service_id.clone()),
             url: Some(self.url()),
             access_code: Some(
@@ -1512,7 +1519,8 @@ impl TransferServiceState {
             .map(|(id, _)| id)
             .collect();
         for id in drained {
-            self.update_transfer(&id, 0, Some("cancelled")).await;
+            self.update_transfer(&id, 0, Some(TransferState::Cancelled))
+                .await;
         }
         if let Some(partial_dir) = self.partial_dir.clone() {
             let _ = tokio::task::spawn_blocking(move || cleanup_owned_partials(&partial_dir)).await;
@@ -2472,7 +2480,9 @@ mod tests {
             .join(format!("{id}.part"));
         let mut partial_file = create_upload_partial(&partial_path).unwrap();
         partial_file.write_all(b"teil").unwrap();
-        let transfer_id = state.record_transfer("upload", "datei.txt", 100).await;
+        let transfer_id = state
+            .record_transfer(TransferDirection::Upload, "datei.txt", 100)
+            .await;
         state.uploads.lock().await.insert(
             id.clone(),
             Arc::new(Mutex::new(UploadRecord {
@@ -2514,7 +2524,7 @@ mod tests {
                 .find(|item| item.id == transfer_id)
                 .unwrap()
                 .state,
-            "expired"
+            TransferState::Expired
         );
     }
 
@@ -2530,7 +2540,9 @@ mod tests {
             .join(format!("{id}.part"));
         let mut partial_file = create_upload_partial(&partial_path).unwrap();
         partial_file.write_all(b"x").unwrap();
-        let transfer_id = state.record_transfer("upload", "langsam.txt", 100).await;
+        let transfer_id = state
+            .record_transfer(TransferDirection::Upload, "langsam.txt", 100)
+            .await;
         state.uploads.lock().await.insert(
             id.clone(),
             Arc::new(Mutex::new(UploadRecord {

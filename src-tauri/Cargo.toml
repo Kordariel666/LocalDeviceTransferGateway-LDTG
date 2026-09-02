@@ -44,6 +44,7 @@ tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+ts-rs = "11.1"
 tower = { version = "0.5", features = ["util"] }
 unicode-normalization = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }

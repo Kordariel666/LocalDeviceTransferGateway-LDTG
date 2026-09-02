@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionInfo {
     pub id: String,
@@ -10,22 +11,63 @@ pub struct SessionInfo {
     pub last_activity: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum TransferDirection {
+    Upload,
+    Download,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum TransferState {
+    Active,
+    Complete,
+    Cancelled,
+    Failed,
+    Expired,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct TransferInfo {
     pub id: String,
-    pub direction: String,
+    pub direction: TransferDirection,
     pub name: String,
+    #[ts(type = "number")]
     pub transferred_bytes: u64,
+    #[ts(type = "number")]
     pub total_bytes: u64,
-    pub state: String,
+    pub state: TransferState,
     pub updated_at: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum ServiceState {
+    Stopped,
+    Starting,
+    Running,
+    Stopping,
+    Error,
+}
+
+impl ServiceState {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Stopped => "stopped",
+            Self::Starting => "starting",
+            Self::Running => "running",
+            Self::Stopping => "stopping",
+            Self::Error => "error",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceStatus {
-    pub state: String,
+    pub state: ServiceState,
     pub service_id: Option<String>,
     pub url: Option<String>,
     pub access_code: Option<String>,
@@ -39,7 +81,11 @@ pub struct ServiceStatus {
 impl ServiceStatus {
     pub fn stopped(error: Option<String>) -> Self {
         Self {
-            state: if error.is_some() { "error" } else { "stopped" }.into(),
+            state: if error.is_some() {
+                ServiceState::Error
+            } else {
+                ServiceState::Stopped
+            },
             service_id: None,
             url: None,
             access_code: None,
@@ -52,7 +98,7 @@ impl ServiceStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct FirewallStatus {
     pub configured: bool,
@@ -72,7 +118,7 @@ impl Default for FirewallStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSnapshot {
     pub app_version: String,
@@ -83,10 +129,81 @@ pub struct AppSnapshot {
     pub firewall: FirewallStatus,
 }
 
-#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct ShareValidation {
     pub download_error: Option<String>,
     pub upload_error: Option<String>,
     pub overlap_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionResponse {
+    pub service_id: String,
+    pub csrf_token: String,
+    pub download_enabled: bool,
+    pub upload_enabled: bool,
+    #[ts(type = "number | null")]
+    pub max_upload_bytes: Option<u64>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+#[ts(rename = "DownloadEntryKind")]
+pub enum DirectoryEntryKind {
+    Directory,
+    File,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename = "DownloadEntry")]
+pub struct DirectoryEntry {
+    pub name: String,
+    pub path: String,
+    pub kind: DirectoryEntryKind,
+    #[ts(type = "number")]
+    pub size: u64,
+    pub modified_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectoryResponse {
+    pub path: String,
+    pub query: String,
+    pub entries: Vec<DirectoryEntry>,
+    pub next_cursor: Option<String>,
+    #[ts(type = "number | null")]
+    pub next_page: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename = "UploadCreated")]
+pub struct UploadResponse {
+    pub upload_id: String,
+    #[ts(type = "number")]
+    pub offset: u64,
+    #[ts(type = "number")]
+    pub total_bytes: u64,
+    pub chunk_size: usize,
+    pub service_id: String,
+    #[ts(type = "number")]
+    pub last_modified: u64,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CompleteResponse {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename = "ApiError")]
+pub struct ErrorBody {
+    pub code: String,
+    pub message: String,
 }

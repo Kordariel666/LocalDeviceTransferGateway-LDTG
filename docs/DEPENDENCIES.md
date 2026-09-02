@@ -18,3 +18,9 @@ DMDC aktualisiert Abhängigkeiten kontrolliert und ohne automatisches Zusammenf�
 Die CI-Actions erhalten nur Leserechte auf Repository-Inhalte. Fremde Actions
 werden auf einen vollständigen Commit-Hash festgelegt; GitHub-eigene Actions
 verwenden einen gepflegten Hauptversions-Tag und werden von Dependabot beobachtet.
+
+`ts-rs` bleibt auf der 11.x-Linie, solange DMDC Rust 1.85 als Mindestversion
+unterstützt. Diese Linie benötigt mindestens Rust 1.78; `ts-rs` 12.x würde die
+Projektanforderung auf Rust 1.88 anheben. Die Abhängigkeit läuft ausschließlich
+zur Ableitung der TypeScript-Verträge aus Rust-Datentypen und beeinflusst deren
+JSON-Laufzeitformat nicht.

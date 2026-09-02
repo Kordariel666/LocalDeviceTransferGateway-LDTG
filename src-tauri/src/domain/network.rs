@@ -4,8 +4,9 @@ use std::{
     collections::HashMap,
     net::{IpAddr, Ipv4Addr, UdpSocket},
 };
+use ts_rs::TS;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct NetworkInterfaceInfo {
     pub id: String,
@@ -18,6 +19,7 @@ pub struct NetworkInterfaceInfo {
     pub profile_resolved: bool,
     pub preferred: bool,
     #[serde(skip, default = "unspecified_ipv4")]
+    #[ts(skip)]
     pub netmask: Ipv4Addr,
 }
 

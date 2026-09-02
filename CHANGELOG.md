@@ -28,6 +28,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Die Desktopkonfiguration zeigt einen expliziten Dirty-State und feldbezogene
   Port-, Größen-, Datei- und Freigabefehler. Freigabewurzeln werden bereits im
   Entwurf mit der kanonischen Backend-Pfadpolitik geprüft.
+- Gemeinsame Desktop-, Mobile- und HTTP-Verträge werden aus den Rust-DTOs
+  generiert. Endliche Zustands-, Richtungs- und Eintragsarten sind typisierte
+  Enums beziehungsweise String-Unions; das Qualitätsgate weist Vertragsdrift ab.
 
 ### Added
 

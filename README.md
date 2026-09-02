@@ -36,12 +36,18 @@ pnpm check
 pnpm dev
 ```
 
-`pnpm check` führt Typprüfung, ESLint mit React-Hooks-Regeln, Frontendtests samt
+`pnpm check` prüft zuerst, dass die aus Rust erzeugten TypeScript-Verträge aktuell
+sind, und führt danach Typprüfung, ESLint mit React-Hooks-Regeln, Frontendtests samt
 Coverage-Bericht, Rust-Tests, Formatierung, Clippy und beide Webbuilds aus. Die
 Einzelbefehle wie `pnpm test`, `pnpm test:coverage`, `pnpm test:rust` und
 `pnpm build:web` bleiben für gezielte lokale Prüfungen verfügbar. Dasselbe
 Qualitätsgate läuft auf GitHub Actions unter Windows; HTML-Coverage-Berichte werden
 dort 14 Tage als Buildartefakt aufbewahrt.
+
+Rust-DTOs unter `src-tauri/src/domain` sind die maßgebliche Quelle der gemeinsam
+genutzten Datenverträge. Nach einer DTO-Änderung aktualisiert
+`pnpm contracts:generate` das Paket `@dmdc/shared`; `pnpm contracts:check` meldet
+vergessene Exporte, ohne Dateien zu verändern.
 
 Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und öffentliche Veröffentlichung sind nicht Bestandteil von v1.
 
@@ -69,7 +75,7 @@ Auf Rechnern mit einer strikten Windows-Anwendungssteuerungsrichtlinie müssen l
 ```text
 apps/desktop       Tauri-Desktopoberfläche (React/Vite)
 apps/mobile        eingebettete responsive Handyoberfläche (React/Vite)
-packages/shared    gemeinsame TypeScript-Verträge
+packages/shared    aus Rust generierte TypeScript-Verträge
 src-tauri/domain   Einstellungen, Netzwerk- und Dateisystemgrenzen
 src-tauri/service  Axum-Server, Sitzungen und Übertragungsprotokoll
 src-tauri/platform plattformspezifische Firewallintegration

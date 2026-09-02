@@ -2,7 +2,9 @@
 
 ## Automatisiert
 
-- `pnpm check`: vollständige lokale Prüfkette aus Typprüfung, ESLint, Frontendtests mit Coverage, Rust-Tests, Formatierung, Clippy und beiden Produktions-Webbuilds; derselbe Befehl läuft in der Windows-CI.
+- `pnpm check`: vollständige lokale Prüfkette aus generiertem Vertragsvergleich, Typprüfung, ESLint, Frontendtests mit Coverage, Rust-Tests, Formatierung, Clippy und beiden Produktions-Webbuilds; derselbe Befehl läuft in der Windows-CI.
+- `pnpm contracts:generate`: TypeScript-Verträge aus den serialisierbaren Rust-DTOs aktualisieren.
+- `pnpm contracts:check`: read-only nachweisen, dass der eingecheckte Export exakt dem Rust-Modell entspricht; veraltete Verträge führen zu einem Fehlercode.
 - `pnpm typecheck`: beide React-Anwendungen und gemeinsame Verträge.
 - `pnpm test`: Frontendtests ohne reale Benutzerordner.
 - `pnpm test:coverage`: Frontendtests mit V8-Coverageberichten je Anwendung.
