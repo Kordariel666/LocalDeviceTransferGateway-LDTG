@@ -1,5 +1,7 @@
 # Remediation- und Verifikationsbericht vom 30. August 2026
 
+> **Historischer Zwischenstand:** Dieser Bericht dokumentiert die erste Behebungsrunde. Spätere Re-Audits und Härtungen haben einzelne hier beschriebene Mechanismen verändert. Maßgeblich für den aktuellen Stand ist `qa/security-fix-report-2026-09-02.md` zusammen mit der aktuellen API-, Architektur-, Sicherheits- und Testdokumentation.
+
 **Ergebnis:** `fixed` für SEC-01 bis SEC-08 und ERR-01 bis ERR-05. Die drei dokumentierten Vertragsabweichungen wurden korrigiert. Kein bestätigter Befund blieb technisch offen.
 
 **Ausgangsbasis:** `CODE_AND_SECURITY_AUDIT_2026-08-30.md`, `THREAT_MODEL_2026-08-30.md` und `SECURITY.md`. Das Audit und das zugehörige Threat Model bleiben als historische Beschreibung des verwundbaren Ausgangszustands erhalten. Der umgesetzte, abhängigkeitssensitive Plan steht in `FIX_PLAN_2026-08-30.md`.

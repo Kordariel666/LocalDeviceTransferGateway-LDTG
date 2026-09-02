@@ -8,6 +8,15 @@ die Versionsnummern folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
+### Changed
+
+- API-, Architektur- und Testdokumentation an die tatsächlich implementierten
+  Uploadbudgets, Chunkgrößen, Absturzbehandlung und Codesperre angeglichen.
+- Frühere Audit- und Behebungsstufen eindeutig als historische Zwischenstände
+  gekennzeichnet.
+- QA-Bilderzeugung von persönlichen absoluten Pfaden gelöst und aktuelle Mobile-
+  sowie Desktop-Stoppaufnahmen erneuert.
+
 ## [0.1.3] - 2026-09-02
 
 ### Added
@@ -16,4 +25,3 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Desktop-Anwendung zur Konfiguration lokaler Download- und Uploadfreigaben.
 - Mobile Weboberfläche für authentifizierte Dateiübertragungen im lokalen Netzwerk.
 - Sicherheits-, Architektur-, API- und Testdokumentation.
-
