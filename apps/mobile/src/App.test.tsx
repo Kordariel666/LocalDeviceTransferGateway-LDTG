@@ -32,6 +32,51 @@ describe("mobile Oberfläche", () => {
     expect(String(fetchMock.mock.calls[1]?.[1]?.body)).toContain("12345678");
   });
 
+  it("öffnet bei doppeltem Absenden höchstens eine Anmeldesitzung", async () => {
+    let finishAuth!: (response: Response) => void;
+    const authResponse = new Promise<Response>((resolve) => { finishAuth = resolve; });
+    let sessionCalls = 0;
+    let authCalls = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      if (input === "/api/v1/session") {
+        sessionCalls += 1;
+        if (sessionCalls === 1) return json({ code: "AUTH_REQUIRED", message: "Bitte anmelden" }, 401);
+        return json({ serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null });
+      }
+      if (input === "/api/v1/auth" && init?.method === "POST") {
+        authCalls += 1;
+        return authResponse;
+      }
+      throw new Error(`Unerwartete Anfrage: ${String(input)}`);
+    });
+
+    render(<App />);
+    const input = await screen.findByLabelText("Achtstelliger Zugangscode");
+    await userEvent.type(input, "12345678");
+    const form = input.closest("form")!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(authCalls).toBe(1);
+    expect((screen.getByRole("button", { name: "Verbinden" }) as HTMLButtonElement).disabled).toBe(true);
+    finishAuth(new Response(null, { status: 204 }));
+    expect(await screen.findByText("Dateien zum PC")).toBeTruthy();
+  });
+
+  it("trennt die lokale Sitzung auch bei nicht erreichbarem Dienst", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      if (input === "/api/v1/session") return json({
+        serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null,
+      });
+      if (input === "/api/v1/logout" && init?.method === "POST") throw new TypeError("Dienst nicht erreichbar");
+      throw new Error(`Unerwartete Anfrage: ${String(input)}`);
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Trennen" }));
+    expect(await screen.findByLabelText("Achtstelliger Zugangscode")).toBeTruthy();
+    expect(screen.getByText(/Lokal getrennt.*Dienst nicht erreichbar/)).toBeTruthy();
+  });
+
   it("zeigt bei reinem Upload-Eingang keine PC-Dateiliste und keine Verwaltungsaktionen", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(json({
       serviceId: "dienst",
@@ -366,6 +411,97 @@ describe("mobile Oberfläche", () => {
     expect(await screen.findByText("Pausiert", { selector: ".upload-state" })).toBeTruthy();
     await new Promise((resolve) => setTimeout(resolve, 900));
     expect(sends).toBe(1);
+  });
+
+  it.each(["Pausieren", "Abbrechen"])("startet die nächste Datei nach %s im Retry-Backoff sofort", async (action) => {
+    let sends = 0;
+    class FirstFailureXhr {
+      upload = { onprogress: null as ((event: ProgressEvent) => void) | null };
+      status = 0;
+      responseText = "";
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onabort: (() => void) | null = null;
+      open() {}
+      setRequestHeader() {}
+      getResponseHeader() { return null; }
+      send() {
+        sends += 1;
+        if (sends === 1) queueMicrotask(() => this.onerror?.());
+      }
+      abort() { this.onabort?.(); }
+    }
+    vi.stubGlobal("XMLHttpRequest", FirstFailureXhr);
+    const createdNames: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      if (input === "/api/v1/session") return json({
+        serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null,
+      });
+      if (input === "/api/v1/uploads" && init?.method === "POST") {
+        const name = (JSON.parse(String(init.body)) as { name: string }).name;
+        createdNames.push(name);
+        return json({ uploadId: `upload-${createdNames.length}`, offset: 0, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 });
+      }
+      if (String(input).startsWith("/api/v1/uploads/") && init?.method === "DELETE") {
+        return new Response(null, { status: 204 });
+      }
+      throw new Error(`Unerwartete Anfrage: ${String(input)}`);
+    });
+
+    render(<App />);
+    const picker = await screen.findByLabelText(/Dateien auswählen/);
+    await userEvent.upload(picker, [
+      new File(["AAAA"], "erste.bin", { lastModified: 1 }),
+      new File(["BBBB"], "zweite.bin", { lastModified: 2 }),
+    ]);
+    await waitFor(() => expect(sends).toBe(1));
+    const first = screen.getByText("erste.bin").closest("article")!;
+    const button = [...first.querySelectorAll("button")].find((candidate) => candidate.textContent === action)!;
+    fireEvent.click(button);
+    await waitFor(() => expect(createdNames).toEqual(["erste.bin", "zweite.bin"]), { timeout: 250 });
+  });
+
+  it("zeigt strukturierte PATCH-Fehler mit stabilem Code und startet Retry neu", async () => {
+    let sends = 0;
+    class StructuredErrorXhr {
+      upload = { onprogress: null as ((event: ProgressEvent) => void) | null };
+      status = 422;
+      responseText = JSON.stringify({ code: "CHUNK_REJECTED", message: "Block passt nicht zur Datei" });
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onabort: (() => void) | null = null;
+      open() {}
+      setRequestHeader() {}
+      getResponseHeader() { return null; }
+      send() {
+        sends += 1;
+        if (sends === 1) queueMicrotask(() => this.onload?.());
+      }
+      abort() { this.onabort?.(); }
+    }
+    vi.stubGlobal("XMLHttpRequest", StructuredErrorXhr);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      if (input === "/api/v1/session") return json({
+        serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null,
+      });
+      if (input === "/api/v1/uploads" && init?.method === "POST") {
+        return json({ uploadId: "upload", offset: 0, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 });
+      }
+      if (input === "/api/v1/uploads/upload") {
+        return json({ uploadId: "upload", offset: 0, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 });
+      }
+      throw new Error(`Unerwartete Anfrage: ${String(input)}`);
+    });
+
+    render(<App />);
+    const picker = await screen.findByLabelText(/Dateien auswählen/);
+    await userEvent.upload(picker, new File(["AAAA"], "fehler.bin", { lastModified: 1 }));
+    const failed = (await screen.findByText("Fehlgeschlagen", { selector: ".upload-state" })).closest("article")!;
+    expect(failed.dataset.errorCode).toBe("CHUNK_REJECTED");
+    expect(failed.textContent).toContain("Block passt nicht zur Datei");
+    fireEvent.click(screen.getByRole("button", { name: "Erneut versuchen" }));
+    await waitFor(() => expect(failed.querySelector(".upload-state")?.textContent).toBe("Läuft"));
+    expect(sends).toBe(2);
   });
 
   it("nimmt weitere Dateien während eines laufenden Uploads sichtbar in die Warteschlange auf", async () => {

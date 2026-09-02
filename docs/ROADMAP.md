@@ -21,7 +21,7 @@ Diese Eigenschaften gelten für alle Phasen als unveränderliche Abnahmekriterie
 ## 2. Aktueller verifizierter Ausgangsstand
 
 - 90 Rust-Tests bestehen.
-- 9 Desktop- und 14 Mobile-Tests bestehen.
+- 9 Desktop- und 28 Mobile-Tests bestehen.
 - TypeScript-Typprüfung, `cargo fmt --check` und Clippy mit `-D warnings` bestehen.
 - Beide Produktions-Webbuilds bestehen.
 - Der verifizierte Ausgangsstand ist im Git-Commit `d4e4751` und Tag `v0.1.3`
@@ -126,6 +126,8 @@ Umgesetzt:
 
 ### R1.1 Mobile Uploadwarteschlange deterministisch machen
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - Einen expliziten Uploadzustandsautomaten beziehungsweise reducer-basierten Queue-Kern einführen.
@@ -143,6 +145,24 @@ Regressionstests:
 - Strukturierte Anzeige eines PATCH-Fehlers.
 - Doppelklick auf Login erzeugt höchstens eine neue Sitzung.
 - Logout bei bereits gestopptem Dienst räumt den lokalen Zustand auf.
+
+Umgesetzt:
+
+- Ein reiner Reducer verwaltet Reihenfolge, Zustände, Fortschritt, Server-ID und
+  ausstehende Uploads als einzige fachliche Queue-Zustandsquelle.
+- Pause, Abbruch und Sitzungsverlust unterbrechen Chunk-Requests, Statusabfragen,
+  Create-Wartezeit und alle Retry-Stufen. Eine bereits gesendete Create-Anfrage
+  darf serverseitig zu Ende laufen, wird clientseitig aber als geteiltes Promise
+  nachverfolgt, damit weder die Queue blockiert noch eine zweite Upload-ID entsteht.
+- PATCH-Fehler übernehmen strukturierte `ApiError`-Codes; dauerhafte 4xx-Fehler
+  wechseln ohne sinnlose Wiederholungen in `failed`, während transiente Fehler
+  weiterhin begrenzt wiederholt werden.
+- Login ist während der laufenden Anmeldung gegen Mehrfachabsenden gesperrt.
+  Logout räumt den lokalen Zustand in einem `finally`-Pfad auf und zeigt einen
+  nicht bestätigten Server-Logout als technischen Hinweis an.
+- 14 neue Mobile-Regressionstests prüfen Reducer-Invarianten, alle drei
+  abbrechbaren Backoff-Stufen, unmittelbaren Queue-Fortschritt, strukturierte
+  PATCH-Fehler, sichtbaren Retry, Doppel-Login und Offline-Logout.
 
 ### R1.2 Blockierende Uploadarbeit aus Async-Workern entfernen
 

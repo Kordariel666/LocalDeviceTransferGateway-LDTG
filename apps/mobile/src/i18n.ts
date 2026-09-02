@@ -9,6 +9,7 @@ export const text = {
   codeLabel: "Achtstelliger Zugangscode",
   connect: "Verbinden",
   disconnect: "Trennen",
+  logoutLocal: (detail: string) => `Lokal getrennt. Die Serverabmeldung konnte nicht bestätigt werden: ${detail}`,
   localDirect: "Lokale Direktübertragung",
   transferNavigation: "Download und Upload",
   currentPath: "Aktueller Ordnerpfad",

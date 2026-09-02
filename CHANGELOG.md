@@ -16,6 +16,8 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   gekennzeichnet.
 - QA-Bilderzeugung von persönlichen absoluten Pfaden gelöst und aktuelle Mobile-
   sowie Desktop-Aufnahmen für gestoppten und laufenden Dienst erneuert.
+- Die mobile Uploadwarteschlange besitzt nun einen expliziten Reducer als einzige
+  fachliche Zustandsquelle und unterscheidet dauerhafte von transienten Fehlern.
 
 ### Added
 
@@ -25,6 +27,13 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Cargo und GitHub Actions mit dokumentierter Reviewstrategie.
 
 ### Fixed
+
+- Pause, Abbruch und Sitzungsverlust unterbrechen mobile Upload-Retrys sofort und
+  geben die nächste Datei frei; laufende Create-Anfragen bleiben ohne Duplikate
+  nachverfolgbar.
+- Strukturierte PATCH-Fehlercodes bleiben im mobilen Uploadstatus erhalten.
+- Doppeltes Login erzeugt nicht mehr mehrere parallele Auth-Anfragen; Logout räumt
+  den lokalen Zustand auch bei einem bereits gestoppten Dienst auf.
 
 - Die vollständige Prüfkette baut eingebettete Mobile-Webassets nun vor Rust-
   Tests und Clippy; `pnpm test:rust` bereitet sie auch einzeln selbst vor und

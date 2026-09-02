@@ -1,16 +1,25 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { ApiError, DirectoryResponse, SessionResponse, UploadCreated } from "@dmdc/shared";
 import { text } from "./i18n";
+import {
+  abortableDelay,
+  initialUploadQueue,
+  nextQueuedUploadId,
+  uploadQueueItems,
+  uploadQueueReducer,
+  type UploadItem,
+  type UploadQueueAction,
+} from "./uploadQueue";
 
 type View = "download" | "upload";
-type UploadState = "queued" | "uploading" | "paused" | "finalizing" | "complete" | "failed" | "cancelled";
-type UploadItem = { id: string; file: File; state: UploadState; progress: number; message: string; uploadId?: string };
 
 const brandIconUrl = new URL("../../../assets/icon.svg", import.meta.url).href;
 
 class HttpError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message); }
 }
+
+class UploadInterrupted extends Error {}
 
 async function api<T>(url: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(url, { credentials: "same-origin", ...init });
@@ -45,40 +54,41 @@ export function App() {
   const [directory, setDirectory] = useState<DirectoryResponse | null>(null);
   const [directoryError, setDirectoryError] = useState("");
   const [search, setSearch] = useState("");
-  const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [loggingIn, setLoggingIn] = useState(false);
+  const loginPending = useRef(false);
+  const [uploadQueue, reduceUploadQueue] = useReducer(uploadQueueReducer, initialUploadQueue);
+  const uploadQueueRef = useRef(initialUploadQueue);
   const sessionRef = useRef<SessionResponse | null>(null);
-  const uploadRecords = useRef(new Map<string, UploadItem>());
-  const pendingUploads = useRef<string[]>([]);
   const processingQueue = useRef(false);
   const activeRequests = useRef(new Map<string, XMLHttpRequest>());
   const activeControllers = useRef(new Map<string, AbortController>());
-  const cancelled = useRef(new Set<string>());
-  const paused = useRef(new Set<string>());
+  const retryDelays = useRef(new Map<string, AbortController>());
+  const workInterrupts = useRef(new Map<string, AbortController>());
+  const pendingCreates = useRef(new Map<string, Promise<UploadCreated>>());
   const directoryRequest = useRef(0);
   const directoryAbort = useRef<AbortController | null>(null);
+
+  const updateQueue = useCallback((action: UploadQueueAction) => {
+    uploadQueueRef.current = uploadQueueReducer(uploadQueueRef.current, action);
+    reduceUploadQueue(action);
+  }, []);
+
+  const uploads = useMemo(() => uploadQueueItems(uploadQueue), [uploadQueue]);
 
   const handleSessionLost = useCallback(() => {
     sessionRef.current = null;
     setSession(null);
     directoryAbort.current?.abort();
     for (const controller of activeControllers.current.values()) controller.abort();
+    for (const controller of retryDelays.current.values()) controller.abort();
+    for (const controller of workInterrupts.current.values()) controller.abort();
     for (const request of activeRequests.current.values()) request.abort();
     activeControllers.current.clear();
+    retryDelays.current.clear();
+    workInterrupts.current.clear();
     activeRequests.current.clear();
-    const retry: string[] = [];
-    for (const [id, item] of uploadRecords.current) {
-      if (item.state === "complete" || item.state === "cancelled") continue;
-      const next: UploadItem = paused.current.has(item.id)
-        ? { ...item, uploadId: undefined, state: "paused", progress: 0, message: text.paused }
-        : { ...item, uploadId: undefined, state: "queued", progress: 0, message: text.waiting };
-      uploadRecords.current.set(id, next);
-      if (!paused.current.has(id) && !cancelled.current.has(id)) retry.push(id);
-    }
-    setUploads((current) => current.map((item) => uploadRecords.current.get(item.id) ?? item));
-    pendingUploads.current = [
-      ...new Set([...retry, ...pendingUploads.current.filter((id) => !cancelled.current.has(id))]),
-    ];
-  }, []);
+    updateQueue({ type: "session-lost", queuedMessage: text.waiting, pausedMessage: text.paused });
+  }, [updateQueue]);
 
   const loadSession = useCallback(async () => {
     try {
@@ -140,29 +150,40 @@ export function App() {
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loginPending.current) return;
+    loginPending.current = true;
+    setLoggingIn(true);
     setLoginError("");
     const data = new FormData(event.currentTarget);
     try {
       await api("/api/v1/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: data.get("code") }) });
       await loadSession();
-    } catch (error) { setLoginError(error instanceof Error ? error.message : "Anmeldung fehlgeschlagen"); }
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "Anmeldung fehlgeschlagen");
+    } finally {
+      loginPending.current = false;
+      setLoggingIn(false);
+    }
   }
 
   async function logout() {
-    if (!session) return;
-    await api("/api/v1/logout", { method: "POST", headers: { "X-DMDC-CSRF": session.csrfToken } });
-    handleSessionLost();
-  }
-
-  function updateUpload(id: string, patch: Partial<UploadItem>) {
-    const current = uploadRecords.current.get(id);
-    if (current) uploadRecords.current.set(id, { ...current, ...patch });
-    setUploads((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
+    const currentSession = sessionRef.current;
+    if (!currentSession) return;
+    try {
+      await api("/api/v1/logout", {
+        method: "POST",
+        headers: { "X-DMDC-CSRF": currentSession.csrfToken },
+      });
+    } catch (error) {
+      setLoginError(text.logoutLocal(error instanceof Error ? error.message : "Netzwerkfehler"));
+    } finally {
+      handleSessionLost();
+    }
   }
 
   function ensureUploadActive(id: string) {
-    if (cancelled.current.has(id)) throw new Error(text.cancelled);
-    if (paused.current.has(id)) throw new Error(text.paused);
+    const state = uploadQueueRef.current.items[id]?.state;
+    if (state !== "uploading" && state !== "finalizing") throw new UploadInterrupted();
   }
 
   async function uploadApi<T>(item: UploadItem, url: string, init: RequestInit = {}): Promise<T> {
@@ -181,8 +202,42 @@ export function App() {
   }
 
   function abortUploadWork(id: string) {
+    workInterrupts.current.get(id)?.abort();
     activeControllers.current.get(id)?.abort();
+    retryDelays.current.get(id)?.abort();
     activeRequests.current.get(id)?.abort();
+  }
+
+  async function waitForRetry(id: string, milliseconds: number) {
+    ensureUploadActive(id);
+    const controller = new AbortController();
+    retryDelays.current.set(id, controller);
+    try {
+      await abortableDelay(milliseconds, controller.signal);
+      ensureUploadActive(id);
+    } finally {
+      if (retryDelays.current.get(id) === controller) retryDelays.current.delete(id);
+    }
+  }
+
+  function parseXhrError(xhr: XMLHttpRequest): HttpError {
+    let body: ApiError = {
+      code: `HTTP_${xhr.status}`,
+      message: xhr.responseText || "Uploadblock abgelehnt",
+    };
+    try {
+      const parsed = JSON.parse(xhr.responseText) as Partial<ApiError>;
+      if (typeof parsed.code === "string" && typeof parsed.message === "string") {
+        body = { code: parsed.code, message: parsed.message };
+      }
+    } catch { /* Nicht strukturierte Antwort behält den HTTP-Fallback. */ }
+    return new HttpError(xhr.status, body.code, body.message);
+  }
+
+  function isRetryable(error: unknown): boolean {
+    if (!(error instanceof HttpError)) return true;
+    return error.status === 408 || error.status === 409 || error.status === 425
+      || error.status === 429 || error.status >= 500;
   }
 
   function sendChunk(item: UploadItem, uploadId: string, offset: number, chunk: Blob): Promise<number> {
@@ -201,12 +256,17 @@ export function App() {
       xhr.setRequestHeader("X-DMDC-CSRF", currentSession.csrfToken);
       xhr.upload.onprogress = (event) => {
         const transferred = offset + event.loaded;
-        updateUpload(item.id, { progress: Math.min(99, transferred / item.file.size * 100), message: text.transferred(formatBytes(transferred), formatBytes(item.file.size), formatBytes(Math.max(0, item.file.size - transferred))) });
+        updateQueue({
+          type: "progress",
+          id: item.id,
+          progress: Math.min(99, transferred / item.file.size * 100),
+          message: text.transferred(formatBytes(transferred), formatBytes(item.file.size), formatBytes(Math.max(0, item.file.size - transferred))),
+        });
       };
       xhr.onload = () => {
         activeRequests.current.delete(item.id);
         if (xhr.status === 200) resolve(Number(xhr.getResponseHeader("Upload-Offset") ?? offset + chunk.size));
-        else reject(new HttpError(xhr.status, `HTTP_${xhr.status}`, xhr.responseText || "Uploadblock abgelehnt"));
+        else reject(parseXhrError(xhr));
       };
       xhr.onerror = () => { activeRequests.current.delete(item.id); reject(new Error("Netzwerkverbindung unterbrochen")); };
       xhr.onabort = () => { activeRequests.current.delete(item.id); reject(new Error("Übertragung abgebrochen")); };
@@ -220,15 +280,36 @@ export function App() {
         return await uploadApi<UploadCreated>(item, `/api/v1/uploads/${encodeURIComponent(item.uploadId)}`);
       } catch (error) {
         if (!(error instanceof HttpError) || error.status !== 404) throw error;
-        updateUpload(item.id, { uploadId: undefined, progress: 0 });
+        updateQueue({ type: "set-upload-id", id: item.id, uploadId: undefined, resetProgress: true });
       }
     }
-    // The create response is deliberately not aborted: the server may already have
-    // committed the upload ID, which the client must retain before honoring Pause.
-    return api<UploadCreated>("/api/v1/uploads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-DMDC-CSRF": sessionRef.current?.csrfToken ?? "" },
-      body: JSON.stringify({ name: item.file.name, size: item.file.size, lastModified: item.file.lastModified, clientToken: item.id }),
+    let creation = pendingCreates.current.get(item.id);
+    if (!creation) {
+      creation = api<UploadCreated>("/api/v1/uploads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-DMDC-CSRF": sessionRef.current?.csrfToken ?? "" },
+        body: JSON.stringify({ name: item.file.name, size: item.file.size, lastModified: item.file.lastModified, clientToken: item.id }),
+      }).then((created) => {
+        if (sessionRef.current?.serviceId === created.serviceId) {
+          updateQueue({ type: "set-upload-id", id: item.id, uploadId: created.uploadId });
+        }
+        if (uploadQueueRef.current.items[item.id]?.state === "cancelled") {
+          void removeServerUpload(created.uploadId);
+        }
+        return created;
+      }).finally(() => {
+        pendingCreates.current.delete(item.id);
+      });
+      pendingCreates.current.set(item.id, creation);
+    }
+    const interrupt = workInterrupts.current.get(item.id);
+    if (!interrupt) return creation;
+    return new Promise<UploadCreated>((resolve, reject) => {
+      const interrupted = () => reject(new UploadInterrupted());
+      interrupt.signal.addEventListener("abort", interrupted, { once: true });
+      creation.then(resolve, reject).finally(() => {
+        interrupt.signal.removeEventListener("abort", interrupted);
+      });
     });
   }
 
@@ -244,17 +325,14 @@ export function App() {
   }
 
   async function processUpload(item: UploadItem) {
-    const current = uploadRecords.current.get(item.id) ?? item;
-    if (!sessionRef.current || cancelled.current.has(item.id) || current.state === "complete") return;
-    item = current;
-    ensureUploadActive(item.id);
-    updateUpload(item.id, { state: "uploading", message: text.preparing });
+    if (!sessionRef.current) return;
+    const interrupt = new AbortController();
+    workInterrupts.current.set(item.id, interrupt);
     try {
       const created = await getOrCreateUpload(item);
-      item = { ...item, uploadId: created.uploadId };
-      updateUpload(item.id, { uploadId: created.uploadId });
-      if (cancelled.current.has(item.id)) {
-        await removeServerUpload(created.uploadId);
+      updateQueue({ type: "set-upload-id", id: item.id, uploadId: created.uploadId });
+      if (uploadQueueRef.current.items[item.id]?.state === "queued" && sessionRef.current) {
+        updateQueue({ type: "claim", id: item.id, message: text.preparing });
       }
       ensureUploadActive(item.id);
       let offset = created.offset;
@@ -272,10 +350,9 @@ export function App() {
           }
           catch (error) {
             if (error instanceof HttpError && error.status === 401) throw error;
+            if (!isRetryable(error)) throw error;
             lastError = error;
-            ensureUploadActive(item.id);
-            await new Promise((resolve) => window.setTimeout(resolve, 800 * 2 ** attempt));
-            ensureUploadActive(item.id);
+            await waitForRetry(item.id, 800 * 2 ** attempt);
           }
         }
         if (lastError) {
@@ -286,7 +363,7 @@ export function App() {
         }
       }
       ensureUploadActive(item.id);
-      updateUpload(item.id, { state: "finalizing", message: text.finalizing });
+      updateQueue({ type: "finalize", id: item.id, message: text.finalizing });
       let result: { name: string } | undefined;
       let completionError: unknown;
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -300,21 +377,23 @@ export function App() {
           break;
         } catch (error) {
           if (error instanceof HttpError && error.status === 401) throw error;
+          if (!isRetryable(error)) throw error;
           completionError = error;
-          await new Promise((resolve) => window.setTimeout(resolve, 500 * 2 ** attempt));
+          await waitForRetry(item.id, 500 * 2 ** attempt);
         }
       }
       if (!result) throw completionError ?? new Error("Abschlussbestätigung fehlt");
-      updateUpload(item.id, { state: "complete", progress: 100, message: text.savedAs(result.name) });
+      updateQueue({ type: "complete", id: item.id, message: text.savedAs(result.name) });
     } catch (error) {
       if (error instanceof HttpError && error.status === 401) handleSessionLost();
-      const wasCancelled = cancelled.current.has(item.id);
-      const wasPaused = paused.current.has(item.id);
-      const scheduled = pendingUploads.current.includes(item.id);
-      updateUpload(item.id, {
-        state: wasCancelled ? "cancelled" : wasPaused ? "paused" : scheduled ? "queued" : "failed",
-        message: wasPaused ? text.paused : scheduled ? text.waiting : error instanceof Error ? error.message : "Übertragung fehlgeschlagen",
+      updateQueue({
+        type: "fail",
+        id: item.id,
+        message: error instanceof Error ? error.message : "Übertragung fehlgeschlagen",
+        errorCode: error instanceof HttpError ? error.code : undefined,
       });
+    } finally {
+      if (workInterrupts.current.get(item.id) === interrupt) workInterrupts.current.delete(item.id);
     }
   }
 
@@ -322,58 +401,54 @@ export function App() {
     if (processingQueue.current) return;
     processingQueue.current = true;
     try {
-      while (pendingUploads.current.length) {
-        if (!sessionRef.current) break;
-        const id = pendingUploads.current.shift()!;
-        const item = uploadRecords.current.get(id);
-        if (!item || cancelled.current.has(id) || paused.current.has(id)) continue;
+      while (sessionRef.current) {
+        const id = nextQueuedUploadId(uploadQueueRef.current);
+        if (!id) break;
+        updateQueue({ type: "claim", id, message: text.preparing });
+        const item = uploadQueueRef.current.items[id];
+        if (!item || item.state !== "uploading") continue;
         await processUpload(item);
       }
     } finally {
       processingQueue.current = false;
+      if (sessionRef.current && nextQueuedUploadId(uploadQueueRef.current)) {
+        queueMicrotask(() => void drainUploadQueue());
+      }
     }
-  }
-
-  function scheduleUpload(id: string) {
-    if (!pendingUploads.current.includes(id)) pendingUploads.current.push(id);
-    void drainUploadQueue();
   }
 
   function queueFiles(files: File[]) {
     if (!files.length) return;
     const items = files.map((file) => ({ id: localQueueId(), file, state: "queued" as const, progress: 0, message: text.waiting }));
-    for (const item of items) uploadRecords.current.set(item.id, item);
-    setUploads((current) => [...current, ...items]);
-    pendingUploads.current.push(...items.map((item) => item.id));
+    updateQueue({ type: "enqueue", items });
     void drainUploadQueue();
   }
 
   async function cancelUpload(item: UploadItem) {
-    const current = uploadRecords.current.get(item.id) ?? item;
+    const current = uploadQueueRef.current.items[item.id] ?? item;
     if (current.state === "finalizing" || current.state === "complete") return;
-    cancelled.current.add(item.id);
-    paused.current.delete(item.id);
-    pendingUploads.current = pendingUploads.current.filter((id) => id !== item.id);
+    updateQueue({ type: "cancel", id: item.id, message: text.cancelled });
     abortUploadWork(item.id);
     if (current.uploadId && sessionRef.current) {
       await removeServerUpload(current.uploadId);
     }
-    updateUpload(item.id, { state: "cancelled", message: text.cancelled });
   }
 
   function pauseUpload(item: UploadItem) {
-    const current = uploadRecords.current.get(item.id) ?? item;
+    const current = uploadQueueRef.current.items[item.id] ?? item;
     if (current.state !== "queued" && current.state !== "uploading") return;
-    paused.current.add(item.id);
+    updateQueue({ type: "pause", id: item.id, message: text.paused });
     abortUploadWork(item.id);
-    updateUpload(item.id, { state: "paused", message: text.paused });
   }
 
   function resumeUpload(item: UploadItem) {
-    if (cancelled.current.has(item.id)) return;
-    paused.current.delete(item.id);
-    updateUpload(item.id, { state: "queued", message: text.waiting });
-    scheduleUpload(item.id);
+    updateQueue({ type: "resume", id: item.id, message: text.waiting });
+    void drainUploadQueue();
+  }
+
+  function retryUpload(item: UploadItem) {
+    updateQueue({ type: "retry", id: item.id, message: text.waiting });
+    void drainUploadQueue();
   }
 
   const breadcrumbs = useMemo(() => {
@@ -392,7 +467,7 @@ export function App() {
         {loginError && <div className="error-box">{loginError}</div>}
         <form onSubmit={login}>
           <label>{text.codeLabel}<input name="code" inputMode="numeric" pattern="[0-9]{8}" maxLength={8} autoComplete="one-time-code" enterKeyHint="go" autoFocus required /></label>
-          <button type="submit" className="primary-button">{text.connect}</button>
+          <button type="submit" className="primary-button" disabled={loggingIn}>{text.connect}</button>
         </form>
         <aside>{text.localWarning}</aside>
       </section>
@@ -439,7 +514,7 @@ export function App() {
             <label className="file-picker"><input type="file" multiple onChange={(event) => { void queueFiles([...(event.target.files ?? [])]); event.target.value = ""; }} /><strong>{text.chooseFiles}</strong><span>{text.allowedTypes(session.maxUploadBytes ? formatBytes(session.maxUploadBytes) : text.byFreeSpace)}</span></label>
             <div className="upload-list" aria-live="polite">
               {uploads.map((item) => (
-                <article className={`upload-item ${item.state}`} key={item.id}>
+                <article className={`upload-item ${item.state}`} data-error-code={item.errorCode} key={item.id}>
                   <header className="upload-heading">
                     <div><strong><bdi className="untrusted-name">{item.file.name}</bdi></strong><span>{formatBytes(item.file.size)} · {item.message}</span></div>
                     <b className="upload-state">{text.uploadState(item.state)}</b>
@@ -447,7 +522,7 @@ export function App() {
                   <div className="upload-progress"><progress aria-label={`${item.file.name}: ${Math.round(item.progress)} Prozent`} max={100} value={item.progress} /><span>{Math.round(item.progress)} %</span></div>
                   {(item.state === "queued" || item.state === "uploading") && <div className="upload-actions"><button onClick={() => pauseUpload(item)}>{text.pause}</button><button onClick={() => cancelUpload(item)}>{text.cancel}</button></div>}
                   {item.state === "paused" && <div className="upload-actions"><button onClick={() => resumeUpload(item)}>{text.resume}</button><button onClick={() => cancelUpload(item)}>{text.cancel}</button></div>}
-                  {item.state === "failed" && <button className="retry-button" onClick={() => scheduleUpload(item.id)}>{text.retry}</button>}
+                  {item.state === "failed" && <button className="retry-button" onClick={() => retryUpload(item)}>{text.retry}</button>}
                 </article>
               ))}
               {!uploads.length && <p className="empty">{text.noFiles}</p>}
