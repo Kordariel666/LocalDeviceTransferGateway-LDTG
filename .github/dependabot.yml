@@ -9,9 +9,16 @@ updates:
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
     groups:
+      vitest-toolchain:
+        patterns: ["vitest", "@vitest/*"]
+        update-types: [major, minor, patch]
       npm-minor-and-patch:
         patterns: ["*"]
+        exclude-patterns: ["vitest", "@vitest/*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: typescript
+        versions: [">=7.0.0"]
 
   - package-ecosystem: cargo
     directory: /src-tauri
