@@ -6,7 +6,7 @@ use crate::domain::{
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use chrono::Utc;
-use rand::{rngs::OsRng, Rng, RngCore};
+use rand::{rand_core::UnwrapErr, rngs::SysRng, Rng, RngExt};
 use std::{
     collections::HashMap,
     fs::{self, OpenOptions},
@@ -315,12 +315,12 @@ pub struct TransferServiceState {
 
 fn random_token(bytes: usize) -> String {
     let mut value = vec![0_u8; bytes];
-    OsRng.fill_bytes(&mut value);
+    UnwrapErr(SysRng).fill_bytes(&mut value);
     URL_SAFE_NO_PAD.encode(value)
 }
 
 fn new_code() -> String {
-    format!("{:08}", OsRng.gen_range(0..100_000_000_u32))
+    format!("{:08}", UnwrapErr(SysRng).random_range(0..100_000_000_u32))
 }
 
 fn validate_owned_partial_dir(partial_dir: &Path) -> Result<(), String> {
@@ -1208,7 +1208,7 @@ impl TransferServiceState {
     async fn cancel_downloads(&self, owner: Option<&str>) {
         let downloads = self.downloads.lock().await;
         for download in downloads.values() {
-            if owner.map_or(true, |owner| owner == download.owner_session) {
+            if owner.is_none_or(|owner| owner == download.owner_session) {
                 let _ = download.cancel.send(true);
             }
         }
