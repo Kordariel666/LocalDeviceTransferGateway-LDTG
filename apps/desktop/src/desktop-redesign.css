@@ -150,6 +150,7 @@ select:focus-visible {
 .service-state.error strong { color: #e77b76; }
 .service-state span { min-width: 0; color: var(--muted); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .service-state span::before { content: "·"; padding-right: 11px; color: #675f56; }
+.service-state .dirty-state { color: var(--amber-strong); font-weight: 650; }
 .service-counters { gap: 24px; color: #d6cec4; font-size: .84rem; white-space: nowrap; }
 .service-counters span + span { padding-left: 24px; border-left: 1px solid var(--line); }
 
@@ -293,12 +294,16 @@ select:focus-visible {
 .share-page-grid { margin-top: 18px; }
 .locked-notice + .share-page-grid { margin-top: 0; }
 .share-editor { padding: 20px; }
+.share-editor.invalid { border-color: #77322e; }
 .section-title-row > div { min-width: 0; }
 .section-title-row > div > p:last-child { min-height: 42px; margin: 7px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
 .section-title-row.simple { align-items: center; }
 .path-row { display: flex; gap: 10px; margin-top: 20px; }
 .path-value { min-width: 0; flex: 1; padding: 11px 12px; border: 1px solid var(--line); border-radius: 5px; background: #0c0c0b; color: #c8bfb4; font-family: "Cascadia Mono", "Consolas", monospace; font-size: .74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .field-note { margin: 10px 0 0; color: #b79c73; font-size: .73rem; line-height: 1.45; }
+.field-error { color: #ef968e !important; font-size: .73rem; line-height: 1.45; }
+.share-editor > .field-error { margin: 10px 0 0; }
+.validation-pending { margin: 12px 0 -6px; color: var(--muted); font-size: .76rem; }
 .switch { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .73rem; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; }
 .switch > span { position: relative; width: 38px; height: 22px; border: 1px solid #49433b; border-radius: 12px; background: #2b2824; }
@@ -318,6 +323,8 @@ select:focus-visible {
 .settings-grid select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #4a3c29; border-radius: 5px; background: #0d0d0c; color: var(--text); }
 .settings-grid input:disabled,
 .settings-grid select:disabled { color: #a29a91; border-color: #34302a; background: #131210; opacity: 1; }
+.settings-grid input[aria-invalid="true"],
+.settings-grid select[aria-invalid="true"] { border-color: #a8443c; }
 .settings-grid small { min-height: 32px; color: var(--muted); font-size: .71rem; font-weight: 400; line-height: 1.45; }
 .firewall-section { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 16px; padding: 18px 20px; }
 .firewall-section p:not(.eyebrow) { margin: 6px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.45; }

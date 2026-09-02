@@ -1,4 +1,5 @@
 use super::settings::AppSettings;
+use super::types::ShareValidation;
 use same_file::Handle as FileHandle;
 use std::{
     fs, io,
@@ -142,6 +143,47 @@ pub fn prepare_roots(download: Option<&str>, upload: Option<&str>) -> Result<Sha
         );
     }
     Ok(ShareRoots { download, upload })
+}
+
+fn validate_configured_root(
+    enabled: bool,
+    path: &str,
+    writable: bool,
+    missing_error: &str,
+) -> Result<Option<PathBuf>, String> {
+    if !enabled {
+        return Ok(None);
+    }
+    if path.trim().is_empty() {
+        return Err(missing_error.into());
+    }
+    validate_root(Path::new(path), writable).map(Some)
+}
+
+pub fn validate_share_settings(settings: &AppSettings) -> ShareValidation {
+    let download = validate_configured_root(
+        settings.download_share.enabled,
+        &settings.download_share.path,
+        false,
+        "Für Downloads fehlt ein Ordner.",
+    );
+    let upload = validate_configured_root(
+        settings.upload_share.enabled,
+        &settings.upload_share.path,
+        true,
+        "Für Uploads fehlt ein Eingangsordner.",
+    );
+    let overlap_error = match (&download, &upload) {
+        (Ok(Some(download)), Ok(Some(upload))) if roots_overlap(download, upload) => Some(
+            "Downloadfreigabe und Upload-Eingang müssen vollständig getrennte Ordner sein.".into(),
+        ),
+        _ => None,
+    };
+    ShareValidation {
+        download_error: download.err(),
+        upload_error: upload.err(),
+        overlap_error,
+    }
 }
 
 fn roots_overlap(left: &Path, right: &Path) -> bool {
@@ -929,6 +971,56 @@ mod tests {
             Some(inbox.to_str().unwrap())
         )
         .is_ok());
+    }
+
+    #[test]
+    fn reports_share_errors_for_the_responsible_fields() {
+        let temp = tempfile::tempdir().unwrap();
+        let missing = temp.path().join("missing");
+        let settings = AppSettings {
+            download_share: super::super::settings::ShareSettings {
+                enabled: true,
+                path: String::new(),
+            },
+            upload_share: super::super::settings::ShareSettings {
+                enabled: true,
+                path: missing.display().to_string(),
+            },
+            ..Default::default()
+        };
+
+        let validation = validate_share_settings(&settings);
+
+        assert!(validation.download_error.unwrap().contains("Downloads"));
+        assert!(validation.upload_error.unwrap().contains("existiert nicht"));
+        assert!(validation.overlap_error.is_none());
+    }
+
+    #[test]
+    fn reports_canonical_share_overlap_before_start() {
+        let temp = tempfile::tempdir().unwrap();
+        let nested = temp.path().join("nested");
+        fs::create_dir(&nested).unwrap();
+        let settings = AppSettings {
+            download_share: super::super::settings::ShareSettings {
+                enabled: true,
+                path: temp.path().join(".").display().to_string(),
+            },
+            upload_share: super::super::settings::ShareSettings {
+                enabled: true,
+                path: nested.display().to_string(),
+            },
+            ..Default::default()
+        };
+
+        let validation = validate_share_settings(&settings);
+
+        assert!(validation.download_error.is_none());
+        assert!(validation.upload_error.is_none());
+        assert!(validation
+            .overlap_error
+            .unwrap()
+            .contains("getrennte Ordner"));
     }
 
     #[test]

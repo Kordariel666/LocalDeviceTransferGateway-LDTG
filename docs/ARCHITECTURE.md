@@ -28,6 +28,19 @@ eine nummerierte `settings.recovery-N.json`. Speichern ist atomar, normalisiert
 Buildversion gehört ausschließlich zum App-Snapshot und Diagnosebericht und wird
 nicht in Benutzereinstellungen persistiert.
 
+Der Desktop hält gespeicherten Snapshot und bearbeiteten Entwurf getrennt. Ein
+struktureller Vergleich erzeugt den sichtbaren Dirty-State; Hintergrundstatus und
+Seitennavigation ersetzen den Entwurf nicht. Eine aus R1.3 stammende
+Recovery-Warnung erlaubt separat die bewusste Übernahme sicherer Standardwerte,
+ohne dies fälschlich als Benutzeränderung zu markieren. Lokale Feldprüfung deckt Zahlen,
+Größenabhängigkeiten und fehlende Ordner ab. Aktivierte Freigaben werden zusätzlich
+über einen Tauri-Befehl außerhalb des Async-Runtimes mit derselben kanonischen
+Pfadpolitik wie beim Start geprüft. Erst ein aktuelles positives Ergebnis erlaubt
+Speichern, Start oder Firewalländerung. Der Dirty-State wird an den nativen
+Appzustand gespiegelt, damit Fensterschließen und Tray-Beenden nicht am React-State
+vorbei ungespeicherte Änderungen verwerfen. Die Bestätigung dafür bleibt von der
+separaten Bestätigung zum Abbruch aktiver Übertragungen unabhängig.
+
 Ein Dienststopp widerruft alle Sitzungen, signalisiert laufenden Downloads und Uploadjobs den Abbruch und wartet kontrolliert auf den HTTP-Server. Die über offene Handles eindeutig zugeordneten unvollständigen Uploaddateien werden anschließend dienstbesessen und exklusiv entfernt; ein bereits laufender Blocking-Job verzögert die Steuerung oder den Shutdown dabei nicht. Die öffentliche Markierung des `.dmdc`-Arbeitsordners beweist nicht die Eigentümerschaft einzelner Dateien. Nach einem Prozessabsturz bleiben deshalb nicht mehr zweifelsfrei zuordenbare `.part`-Dateien zur manuellen Prüfung erhalten; vorhandene Inhalte werden nie rekursiv gelöscht.
 
 Zur Ressourcenbegrenzung sind gleichzeitig höchstens 12 Downloads insgesamt, 4 pro Client-IP und 3 pro Sitzung zulässig; jeder Download besitzt zusätzlich eine absolute Laufzeitgrenze von 6 Stunden. Es gelten höchstens 64 unvollständige Uploads insgesamt und 4 pro Client-IP. Das globale Inbox-Objektbudget reserviert beim Anlegen einen Platz; das globale Bytebudget wächst dagegen ausschließlich um erfolgreich geschriebene Blöcke und reserviert nicht die angekündigte Restgröße. Beide Budgets schließen bereits abgeschlossene Inbox-Dateien ein und werden beim Anlegen eines Uploads mit dem Dateisystem abgeglichen. Zusätzlich bleibt eine Datenträgerreserve von 1 GiB unangetastet. Ein Upload läuft nach 30 Minuten ohne erfolgreich gespeicherten Block oder spätestens nach 24 Stunden absolut ab. Vor dem Body-Puffern gilt genau ein aktiver Datenblock pro Upload-ID und ein globales Limit von 8 aktiven Uploadblöcken. Es gelten außerdem feste globale und IP-bezogene Grenzen für TCP-Verbindungen und gleichzeitig bearbeitete HTTP-Anfragen; inaktive Verbindungs-I/O, vollständige Requests und bereits das Lesen eines HTTP-Headers besitzen eigene Zeitlimits. Auch bei fortlaufendem I/O endet jede Verbindung spätestens nach 6 Stunden. Blockierende Ordnerarbeit besitzt einen Pool von 4 Jobs, höchstens 2 pro Client-IP und 1 pro Sitzung. Download-Pfad- und HEAD-Metadatenprüfungen besitzen ebenfalls 4 globale und 2 IP-bezogene Slots. Uploadanlage, Inbox-Scan, Speicherprüfung, Chunk-Persistierung und Abschluss besitzen einen eigenen Pool von 4 Jobs mit höchstens 2 pro Client-IP; interne Partial-Löschungen teilen dessen globale Kapazität. Permits gehören dem tatsächlichen Blocking-Job beziehungsweise dem ihn abschließenden dienstbesessenen Task und bleiben deshalb auch nach HTTP-Timeout oder Clientabbruch bis zum konsistenten Jobende gehalten.

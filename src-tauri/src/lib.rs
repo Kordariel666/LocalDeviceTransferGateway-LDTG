@@ -6,7 +6,7 @@ use crate::domain::{
     network,
     settings::{self, AppSettings},
     shares,
-    types::{AppSnapshot, FirewallStatus, ServiceStatus},
+    types::{AppSnapshot, FirewallStatus, ServiceStatus, ShareValidation},
 };
 use crate::service::ServiceHandle;
 use std::{
@@ -60,6 +60,7 @@ pub struct AppState {
     runtime: Mutex<RuntimeData>,
     lifecycle_transition: Mutex<()>,
     running: AtomicBool,
+    unsaved_changes: AtomicBool,
     firewall: StdMutex<FirewallCache>,
     networks: StdMutex<NetworkCache>,
     firewall_check: Mutex<()>,
@@ -81,6 +82,7 @@ impl AppState {
             }),
             lifecycle_transition: Mutex::new(()),
             running: AtomicBool::new(false),
+            unsaved_changes: AtomicBool::new(false),
             firewall: StdMutex::new(FirewallCache {
                 checked_at: None,
                 port,
@@ -270,7 +272,20 @@ async fn save_settings(
     let settings = settings::save(&state.settings_path, &settings)?;
     runtime.settings = settings.clone();
     runtime.configuration_warning = None;
+    state.unsaved_changes.store(false, Ordering::Release);
     Ok(settings)
+}
+
+#[tauri::command]
+fn set_unsaved_changes(state: State<'_, AppState>, dirty: bool) {
+    state.unsaved_changes.store(dirty, Ordering::Release);
+}
+
+#[tauri::command]
+async fn validate_share_settings(settings: AppSettings) -> Result<ShareValidation, String> {
+    tauri::async_runtime::spawn_blocking(move || shares::validate_share_settings(&settings))
+        .await
+        .map_err(|error| format!("Freigabenprüfung konnte nicht gestartet werden: {error}"))
 }
 
 #[tauri::command]
@@ -528,7 +543,15 @@ async fn export_diagnostics(
 }
 
 #[tauri::command]
-async fn quit_app(app: AppHandle, state: State<'_, AppState>, force: bool) -> Result<(), String> {
+async fn quit_app(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    force: bool,
+    discard_unsaved: bool,
+) -> Result<(), String> {
+    if state.unsaved_changes.load(Ordering::Acquire) && !discard_unsaved {
+        return Err("UNSAVED_CHANGES".into());
+    }
     stop_runtime(&state, force).await?;
     app.exit(0);
     Ok(())
@@ -562,7 +585,9 @@ fn install_tray(app: &tauri::App) -> tauri::Result<()> {
             }
             "quit" => {
                 let state = app.state::<AppState>();
-                if state.running.load(Ordering::Relaxed) {
+                if state.running.load(Ordering::Relaxed)
+                    || state.unsaved_changes.load(Ordering::Acquire)
+                {
                     if let Some(window) = app.get_webview_window("main") {
                         let _ = window.show();
                         let _ = window.set_focus();
@@ -638,6 +663,9 @@ pub fn run() {
                 if state.running.load(Ordering::Relaxed) {
                     api.prevent_close();
                     let _ = window.hide();
+                } else if state.unsaved_changes.load(Ordering::Acquire) {
+                    api.prevent_close();
+                    let _ = window.emit("quit-requested", ());
                 }
             }
         })
@@ -645,6 +673,8 @@ pub fn run() {
             get_app_snapshot,
             get_service_status,
             save_settings,
+            set_unsaved_changes,
+            validate_share_settings,
             start_service,
             stop_service,
             rotate_access_code,

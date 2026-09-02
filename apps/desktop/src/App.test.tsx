@@ -46,7 +46,11 @@ beforeEach(() => {
   mocks.invoke.mockImplementation(async (command: string, args?: { settings?: unknown }) => {
     if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
     if (command === "get_service_status") return structuredClone(currentSnapshot.service);
-    if (command === "save_settings") return args?.settings;
+    if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
+    if (command === "save_settings") {
+      currentSnapshot.settings = structuredClone(args?.settings) as AppSnapshot["settings"];
+      return structuredClone(currentSnapshot.settings);
+    }
     return undefined;
   });
   mocks.listen.mockReset();
@@ -80,6 +84,9 @@ describe("Desktop-Dashboard", () => {
     currentSnapshot.configurationWarning = "Die gespeicherten Einstellungen sind beschädigt; die vorhandene settings.json wurde unverändert behalten.";
     render(<App />);
     expect((await screen.findByRole("alert")).textContent).toContain("settings.json wurde unverändert behalten");
+    fireEvent.click(screen.getByRole("button", { name: "Netzwerk & Sicherheit" }));
+    expect((screen.getByRole("button", { name: "Einstellungen speichern" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByText("Sichere Standardwerte können als neue Konfiguration gespeichert werden.")).toBeTruthy();
   });
 
   it("zeigt einen fehlgeschlagenen ersten Snapshot mit funktionierendem Retry", async () => {
@@ -88,6 +95,73 @@ describe("Desktop-Dashboard", () => {
     expect(await screen.findByText("Snapshot vorübergehend nicht verfügbar")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Erneut versuchen" }));
     expect(await screen.findByRole("button", { name: "Dienst starten" })).toBeTruthy();
+  });
+
+  it("kennzeichnet Änderungen und aktiviert Speichern nur solange der Entwurf abweicht", async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Netzwerk & Sicherheit" }));
+    const saveButton = screen.getByRole("button", { name: "Einstellungen speichern" }) as HTMLButtonElement;
+    expect(saveButton.disabled).toBe(true);
+
+    fireEvent.change(screen.getByRole("spinbutton", { name: /TCP-Port/ }), { target: { value: "9123" } });
+
+    expect((await screen.findAllByText("Ungespeicherte Änderungen")).length).toBeGreaterThan(0);
+    expect(saveButton.disabled).toBe(false);
+    fireEvent.change(screen.getByRole("spinbutton", { name: /TCP-Port/ }), { target: { value: "8765" } });
+    await waitFor(() => expect(saveButton.disabled).toBe(true));
+    expect(screen.queryByText("Ungespeicherte Änderungen")).toBeNull();
+
+    fireEvent.change(screen.getByRole("spinbutton", { name: /TCP-Port/ }), { target: { value: "9123" } });
+    await waitFor(() => expect(saveButton.disabled).toBe(false));
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+
+    fireEvent.click(saveButton);
+    await waitFor(() => expect(saveButton.disabled).toBe(true));
+    expect(screen.getByText("Alle Änderungen sind gespeichert.")).toBeTruthy();
+  });
+
+  it("zeigt Port- und Größenfehler direkt am verantwortlichen Feld", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.settings.maxInboxFiles = 0;
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Netzwerk & Sicherheit" }));
+
+    const port = screen.getByRole("spinbutton", { name: /TCP-Port/ });
+    fireEvent.change(port, { target: { value: "80" } });
+    expect(port.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("Der Port muss eine ganze Zahl zwischen 1024 und 65535 sein.")).toBeTruthy();
+
+    fireEvent.change(screen.getByRole("combobox", { name: /Uploadlimit pro Datei/ }), { target: { value: "100" } });
+    fireEvent.change(screen.getByRole("combobox", { name: /Gesamtspeicher im Upload-Eingang/ }), { target: { value: "25" } });
+    expect(screen.getByText("Das Limit pro Datei darf das Gesamtlimit des Upload-Eingangs nicht überschreiten.")).toBeTruthy();
+    expect(screen.getByText("Das Gesamtlimit muss mindestens so groß wie das Limit pro Datei sein.")).toBeTruthy();
+    expect(screen.getByText("Das Dateilimit muss eine positive ganze Zahl sein.")).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: /Dateien im Upload-Eingang/ }).getAttribute("aria-invalid")).toBe("true");
+    expect((screen.getByRole("button", { name: "Einstellungen speichern" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("zeigt kanonische Freigabeüberschneidungen aus der Backendprüfung", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.settings.downloadShare = { enabled: true, path: "C:\\Daten" };
+    currentSnapshot.settings.uploadShare = { enabled: true, path: "C:\\Daten\\Eingang" };
+    mocks.invoke.mockImplementation(async (command: string) => {
+      if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
+      if (command === "get_service_status") return structuredClone(currentSnapshot.service);
+      if (command === "validate_share_settings") return {
+        downloadError: null,
+        uploadError: null,
+        overlapError: "Downloadfreigabe und Upload-Eingang müssen vollständig getrennte Ordner sein.",
+      };
+      return undefined;
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Freigaben" }));
+
+    expect(await screen.findByText("Downloadfreigabe und Upload-Eingang müssen vollständig getrennte Ordner sein.")).toBeTruthy();
+    expect(mocks.invoke).toHaveBeenCalledWith("validate_share_settings", { settings: currentSnapshot.settings });
   });
 
   it("zeigt die vom Backend gelieferte Buildversion statt des Konfigurationsschemas", async () => {
@@ -137,6 +211,7 @@ describe("Desktop-Dashboard", () => {
       await Promise.resolve();
     });
     expect(screen.getByText("C:\\Handy-Freigabe")).toBeTruthy();
+    expect(screen.getAllByText("Ungespeicherte Änderungen").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Netzwerk & Sicherheit" }));
     const port = screen.getByRole("spinbutton", { name: /TCP-Port/ }) as HTMLInputElement;
@@ -192,10 +267,12 @@ describe("Desktop-Dashboard", () => {
       port: 8765,
       detail: "Firewallregel eingerichtet.",
     };
+    currentSnapshot.settings.downloadShare = { enabled: true, path: "C:\\Freigabe" };
     mocks.ask.mockResolvedValue(true);
     mocks.invoke.mockImplementation(async (command: string, args?: Record<string, unknown>) => {
       if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
       if (command === "get_service_status") return structuredClone(currentSnapshot.service);
+      if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
       if (command === "save_settings") return args?.settings;
       if (command === "start_service" && !args?.networkApproval) {
         throw "NETWORK_UNTRUSTED|approval-token|WLAN";
@@ -213,6 +290,33 @@ describe("Desktop-Dashboard", () => {
         broadShareApproval: null,
       });
     });
+  });
+
+  it("warnt über den nativen Quit-Pfad vor dem Verwerfen ungespeicherter Änderungen", async () => {
+    mocks.ask.mockResolvedValue(true);
+    mocks.invoke.mockImplementation(async (command: string, args?: Record<string, unknown>) => {
+      if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
+      if (command === "get_service_status") return structuredClone(currentSnapshot.service);
+      if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
+      if (command === "quit_app" && !args?.discardUnsaved) throw "UNSAVED_CHANGES";
+      return undefined;
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Netzwerk & Sicherheit" }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /TCP-Port/ }), { target: { value: "9123" } });
+    await waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith("set_unsaved_changes", { dirty: true }));
+
+    await act(async () => {
+      mocks.listeners.get("quit-requested")?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mocks.ask).toHaveBeenCalledWith(expect.stringContaining("ungespeicherte Änderungen"), expect.objectContaining({
+      okLabel: "Verwerfen und beenden",
+    }));
+    expect(mocks.invoke).toHaveBeenCalledWith("quit_app", { force: false, discardUnsaved: true });
   });
 
   it("behält Navigation und einsehbare Einstellungen auch beim laufenden Dienst", async () => {

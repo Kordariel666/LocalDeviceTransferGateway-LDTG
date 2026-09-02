@@ -10,6 +10,7 @@ import type {
   NetworkInterfaceInfo,
   ServiceStatus,
   ShareSettings,
+  ShareValidation,
   TransferInfo,
 } from "@dmdc/shared";
 import { text } from "./i18n";
@@ -29,6 +30,22 @@ const emptyService: ServiceStatus = {
   sessions: [],
   transfers: [],
   error: null,
+};
+
+const emptyShareValidation: ShareValidation = {
+  downloadError: null,
+  uploadError: null,
+  overlapError: null,
+};
+
+type DraftValidationErrors = {
+  port?: string;
+  maxUploadBytes?: string;
+  maxInboxBytes?: string;
+  maxInboxFiles?: string;
+  downloadShare?: string;
+  uploadShare?: string;
+  shareOverlap?: string;
 };
 
 const navigation: { id: View; label: string }[] = [
@@ -56,6 +73,73 @@ function errorMessage(error: unknown): string {
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "message" in error) return String(error.message);
   return text.unknownError;
+}
+
+function settingsEqual(left: AppSettings | null, right: AppSettings | null): boolean {
+  if (!left || !right) return left === right;
+  return left.version === right.version
+    && left.downloadShare.enabled === right.downloadShare.enabled
+    && left.downloadShare.path === right.downloadShare.path
+    && left.uploadShare.enabled === right.uploadShare.enabled
+    && left.uploadShare.path === right.uploadShare.path
+    && left.preferredAdapterId === right.preferredAdapterId
+    && left.port === right.port
+    && left.maxUploadBytes === right.maxUploadBytes
+    && left.maxInboxBytes === right.maxInboxBytes
+    && left.maxInboxFiles === right.maxInboxFiles
+    && left.idleTimeoutMinutes === right.idleTimeoutMinutes
+    && left.trustedNetworks.length === right.trustedNetworks.length
+    && left.trustedNetworks.every((network, index) => network === right.trustedNetworks[index]);
+}
+
+function validateDraft(settings: AppSettings): DraftValidationErrors {
+  const errors: DraftValidationErrors = {};
+  if (!Number.isSafeInteger(settings.port) || settings.port < 1024 || settings.port > 65535) {
+    errors.port = text.portValidation;
+  }
+  if (settings.maxUploadBytes !== null
+    && (!Number.isSafeInteger(settings.maxUploadBytes) || settings.maxUploadBytes <= 0)) {
+    errors.maxUploadBytes = text.positiveUploadLimit;
+  }
+  if (!Number.isSafeInteger(settings.maxInboxBytes) || settings.maxInboxBytes <= 0) {
+    errors.maxInboxBytes = text.positiveInboxLimit;
+  }
+  if (!Number.isSafeInteger(settings.maxInboxFiles)
+    || settings.maxInboxFiles <= 0
+    || settings.maxInboxFiles > 4_294_967_295) {
+    errors.maxInboxFiles = text.fileLimitValidation;
+  }
+  if (settings.maxUploadBytes !== null
+    && settings.maxUploadBytes > settings.maxInboxBytes) {
+    errors.maxUploadBytes = text.uploadExceedsInbox;
+    errors.maxInboxBytes = text.inboxBelowUpload;
+  }
+  if (settings.downloadShare.enabled && !settings.downloadShare.path.trim()) {
+    errors.downloadShare = text.downloadFolderRequired;
+  }
+  if (settings.uploadShare.enabled && !settings.uploadShare.path.trim()) {
+    errors.uploadShare = text.uploadFolderRequired;
+  }
+  if (settings.downloadShare.enabled
+    && settings.uploadShare.enabled
+    && settings.downloadShare.path
+    && settings.downloadShare.path.localeCompare(settings.uploadShare.path, undefined, { sensitivity: "accent" }) === 0) {
+    errors.shareOverlap = text.sameFolderWarning;
+  }
+  return errors;
+}
+
+function hasErrors(errors: DraftValidationErrors | ShareValidation): boolean {
+  return Object.values(errors).some(Boolean);
+}
+
+function shareSignature(settings: AppSettings): string {
+  return JSON.stringify([
+    settings.downloadShare.enabled,
+    settings.downloadShare.path,
+    settings.uploadShare.enabled,
+    settings.uploadShare.path,
+  ]);
 }
 
 function serviceHostname(url: string | null): string | null {
@@ -145,17 +229,18 @@ type ShareEditorProps = {
   description: string;
   value: ShareSettings;
   locked: boolean;
+  error?: string | null;
   onChange: (value: ShareSettings) => void;
 };
 
-function ShareEditor({ title, description, value, locked, onChange }: ShareEditorProps) {
+function ShareEditor({ title, description, value, locked, error, onChange }: ShareEditorProps) {
   async function choose() {
     const selected = await open({ directory: true, multiple: false, title });
     if (typeof selected === "string") onChange({ enabled: true, path: selected });
   }
 
   return (
-    <section className="share-editor">
+    <section className={`share-editor${error ? " invalid" : ""}`}>
       <div className="section-title-row">
         <div>
           <p className="eyebrow">{text.share}</p>
@@ -178,6 +263,7 @@ function ShareEditor({ title, description, value, locked, onChange }: ShareEdito
         <div className="path-value" title={value.path || text.noFolder}>{value.path || text.noFolder}</div>
         <button className="button secondary" type="button" disabled={locked} onClick={choose}>{text.chooseFolder}</button>
       </div>
+      {error && <p className="field-error" role="alert">{error}</p>}
       {locked && <p className="field-note">{text.shareLocked}</p>}
     </section>
   );
@@ -189,8 +275,15 @@ export function App() {
   const [view, setView] = useState<View>("overview");
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [notice, setNotice] = useState<{ kind: "info" | "error"; text: string } | null>(null);
+  const [shareCheck, setShareCheck] = useState<{
+    signature: string;
+    result: ShareValidation;
+    pending: boolean;
+  }>({ signature: "", result: emptyShareValidation, pending: false });
   const snapshotRequest = useRef(0);
   const serviceRequest = useRef(0);
+  const shareValidationRequest = useRef(0);
+  const allowUnload = useRef(false);
   const snapshotRetryAttempt = useRef(0);
   const snapshotAvailable = useRef(false);
 
@@ -239,6 +332,91 @@ export function App() {
   const service = snapshot?.service ?? emptyService;
   const running = service.state === "running";
   const busy = busyAction !== null;
+  const dirty = useMemo(
+    () => snapshot !== null && draft !== null && !settingsEqual(snapshot.settings, draft),
+    [draft, snapshot],
+  );
+  const recoveryPending = snapshot?.configurationWarning !== null && snapshot?.configurationWarning !== undefined;
+  const saveAvailable = dirty || recoveryPending;
+  const draftErrors = useMemo(() => draft ? validateDraft(draft) : {}, [draft]);
+  const currentShareSignature = useMemo(() => draft ? shareSignature(draft) : "", [draft]);
+  const activeShareValidation = shareCheck.signature === currentShareSignature
+    ? shareCheck.result
+    : emptyShareValidation;
+  const sharesNeedBackendValidation = Boolean(draft && (
+    (draft.downloadShare.enabled && draft.downloadShare.path.trim())
+    || (draft.uploadShare.enabled && draft.uploadShare.path.trim())
+  ));
+  const shareValidationPending = sharesNeedBackendValidation
+    && (shareCheck.signature !== currentShareSignature || shareCheck.pending);
+  const persistBlocked = hasErrors(draftErrors)
+    || hasErrors(activeShareValidation)
+    || shareValidationPending;
+
+  useEffect(() => {
+    if (!snapshotAvailable.current) return;
+    void invoke("set_unsaved_changes", { dirty }).catch((error) => {
+      setNotice({ kind: "error", text: errorMessage(error) });
+    });
+  }, [dirty]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const preventUnload = (event: BeforeUnloadEvent) => {
+      if (allowUnload.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", preventUnload);
+    return () => window.removeEventListener("beforeunload", preventUnload);
+  }, [dirty]);
+
+  useEffect(() => {
+    if (!draft || running || !sharesNeedBackendValidation
+      || draftErrors.downloadShare || draftErrors.uploadShare || draftErrors.shareOverlap) {
+      shareValidationRequest.current += 1;
+      setShareCheck({
+        signature: currentShareSignature,
+        result: emptyShareValidation,
+        pending: false,
+      });
+      return;
+    }
+    const request = ++shareValidationRequest.current;
+    setShareCheck({
+      signature: currentShareSignature,
+      result: emptyShareValidation,
+      pending: true,
+    });
+    const timer = window.setTimeout(() => {
+      void invoke<ShareValidation>("validate_share_settings", { settings: draft })
+        .then((result) => {
+          if (request !== shareValidationRequest.current) return;
+          setShareCheck({
+            signature: currentShareSignature,
+            result: result ?? emptyShareValidation,
+            pending: false,
+          });
+        })
+        .catch((error) => {
+          if (request !== shareValidationRequest.current) return;
+          setShareCheck({
+            signature: currentShareSignature,
+            result: { ...emptyShareValidation, overlapError: errorMessage(error) },
+            pending: false,
+          });
+        });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [
+    currentShareSignature,
+    draft,
+    draftErrors.downloadShare,
+    draftErrors.shareOverlap,
+    draftErrors.uploadShare,
+    running,
+    sharesNeedBackendValidation,
+  ]);
 
   useEffect(() => {
     if (!running) return;
@@ -293,14 +471,39 @@ export function App() {
   const activeTransfers = useMemo(() => service.transfers.filter((transfer) => transfer.state === "active"), [service.transfers]);
   const transferHistory = useMemo(() => service.transfers.filter((transfer) => transfer.state !== "active").slice().reverse(), [service.transfers]);
 
+  async function validateSharesNow(settings: AppSettings): Promise<ShareValidation> {
+    const signature = shareSignature(settings);
+    const request = ++shareValidationRequest.current;
+    setShareCheck({ signature, result: emptyShareValidation, pending: true });
+    const result = await invoke<ShareValidation>("validate_share_settings", { settings })
+      ?? emptyShareValidation;
+    if (request === shareValidationRequest.current) {
+      setShareCheck({ signature, result, pending: false });
+    }
+    return result;
+  }
+
   async function saveSettings(next = draft, refreshAfterSave = true): Promise<AppSettings | null> {
     if (!next) return null;
     if (running) {
       setNotice({ kind: "info", text: text.settingsLocked });
       return null;
     }
+    const localErrors = validateDraft(next);
+    if (hasErrors(localErrors)) {
+      setView(localErrors.downloadShare || localErrors.uploadShare || localErrors.shareOverlap ? "shares" : "security");
+      setNotice({ kind: "error", text: text.correctInvalidFields });
+      return null;
+    }
+    const shareValidation = await validateSharesNow(next);
+    if (hasErrors(shareValidation)) {
+      setView("shares");
+      setNotice({ kind: "error", text: text.correctInvalidShares });
+      return null;
+    }
     const saved = await invoke<AppSettings>("save_settings", { settings: next });
-    setDraft(saved);
+    setSnapshot((current) => current ? { ...current, settings: saved, configurationWarning: null } : current);
+    setDraft((current) => settingsEqual(current, next) ? saved : current);
     if (refreshAfterSave) await refreshSnapshot();
     return saved;
   }
@@ -324,10 +527,16 @@ export function App() {
 
   async function start() {
     if (!draft) return;
+    if (!draft.downloadShare.enabled && !draft.uploadShare.enabled) {
+      setView("shares");
+      setNotice({ kind: "error", text: text.oneShareRequired });
+      return;
+    }
     setBusyAction("start");
     setNotice(null);
     try {
-      await saveSettings(draft, false);
+      const saved = await saveSettings(draft, false);
+      if (!saved) return;
       const prepared = await invoke<AppSnapshot>("get_app_snapshot");
       setSnapshot(prepared);
       setDraft(prepared.settings);
@@ -411,20 +620,34 @@ export function App() {
     }
   }
 
-  async function quit(force = false) {
+  async function quit(force = false, discardUnsaved = false) {
+    if (discardUnsaved) allowUnload.current = true;
     try {
-      await invoke("quit_app", { force });
+      await invoke("quit_app", { force, discardUnsaved });
     } catch (error) {
       const message = errorMessage(error);
-      if (message.startsWith("ACTIVE_TRANSFERS")) {
+      if (message.startsWith("UNSAVED_CHANGES")) {
+        const accepted = await ask(text.unsavedQuitWarning, {
+          title: text.unsavedChanges,
+          kind: "warning",
+          okLabel: text.discardAndQuit,
+          cancelLabel: text.keepEditing,
+        });
+        if (accepted) await quit(force, true);
+        else allowUnload.current = false;
+      } else if (message.startsWith("ACTIVE_TRANSFERS")) {
         const accepted = await ask(text.activeQuitWarning, {
           title: text.quit,
           kind: "warning",
           okLabel: text.quitNow,
           cancelLabel: text.keepRunning,
         });
-        if (accepted) await quit(true);
-      } else setNotice({ kind: "error", text: message });
+        if (accepted) await quit(true, discardUnsaved);
+        else allowUnload.current = false;
+      } else {
+        allowUnload.current = false;
+        setNotice({ kind: "error", text: message });
+      }
     }
   }
 
@@ -498,10 +721,10 @@ export function App() {
 
   const currentSnapshot: AppSnapshot = snapshot;
   const currentDraft: AppSettings = draft;
-  const sameFolder = currentDraft.downloadShare.enabled
-    && currentDraft.uploadShare.enabled
-    && currentDraft.downloadShare.path
-    && currentDraft.downloadShare.path.localeCompare(currentDraft.uploadShare.path, undefined, { sensitivity: "accent" }) === 0;
+  const downloadShareError = draftErrors.downloadShare ?? activeShareValidation.downloadError;
+  const uploadShareError = draftErrors.uploadShare ?? activeShareValidation.uploadError;
+  const shareOverlapError = draftErrors.shareOverlap ?? activeShareValidation.overlapError;
+  const noEnabledShares = !currentDraft.downloadShare.enabled && !currentDraft.uploadShare.enabled;
   const enabledShares = Number(currentDraft.downloadShare.enabled) + Number(currentDraft.uploadShare.enabled);
   const statusLabel = running ? text.serviceOnline : service.state === "error" ? text.serviceError : text.serviceOffline;
 
@@ -600,14 +823,16 @@ export function App() {
       <>
         <PageHeading eyebrow={text.configuration} title={text.shares} description={text.sharesDescription} />
         {running && <div className="locked-notice"><strong>{text.viewOnlyWhileRunning}</strong><span>{text.sharesRuntimeExplanation}</span></div>}
-        {sameFolder && <div className="notice info" role="status">{text.sameFolderWarning}</div>}
+        {!running && noEnabledShares && <div className="notice error" role="alert">{text.oneShareRequired}</div>}
+        {!running && shareOverlapError && <div className="notice error" role="alert">{shareOverlapError}</div>}
+        {!running && shareValidationPending && <div className="validation-pending" role="status">{text.validatingShares}</div>}
         <div className="share-page-grid">
-          <ShareEditor title={text.downloadTitle} description={text.downloadDescription} value={currentDraft.downloadShare} locked={running} onChange={(downloadShare) => updateDraft({ downloadShare })} />
-          <ShareEditor title={text.uploadTitle} description={text.uploadDescription} value={currentDraft.uploadShare} locked={running} onChange={(uploadShare) => updateDraft({ uploadShare })} />
+          <ShareEditor title={text.downloadTitle} description={text.downloadDescription} value={currentDraft.downloadShare} locked={running || busy} error={downloadShareError} onChange={(downloadShare) => updateDraft({ downloadShare })} />
+          <ShareEditor title={text.uploadTitle} description={text.uploadDescription} value={currentDraft.uploadShare} locked={running || busy} error={uploadShareError} onChange={(uploadShare) => updateDraft({ uploadShare })} />
         </div>
         <footer className="page-actions">
-          <span>{running ? text.stopToEdit : text.changesApplyOnStart}</span>
-          <button className="button primary" type="button" disabled={busy || running} onClick={() => void saveCurrentSettings()}>{text.saveShares}</button>
+          <span>{running ? text.stopToEdit : dirty ? text.unsavedChanges : recoveryPending ? text.safeDefaultsPending : text.allChangesSaved}</span>
+          <button className="button primary" type="button" disabled={busy || running || !saveAvailable || persistBlocked} onClick={() => void saveCurrentSettings()}>{text.saveShares}</button>
         </footer>
       </>
     );
@@ -647,7 +872,7 @@ export function App() {
           <div className="settings-grid">
             <label>
               <span>{text.networkInterface}</span>
-              <select disabled={running} value={currentDraft.preferredAdapterId ?? ""} onChange={(event) => updateDraft({ preferredAdapterId: event.target.value || null })}>
+              <select disabled={running || busy} value={currentDraft.preferredAdapterId ?? ""} onChange={(event) => updateDraft({ preferredAdapterId: event.target.value || null })}>
                 <option value="">{text.automatic}</option>
                 {currentSnapshot.networks.map((network) => <option value={network.id} key={network.id}>{network.profileName} · {network.name} · {network.address}</option>)}
               </select>
@@ -655,33 +880,33 @@ export function App() {
             </label>
             <label>
               <span>{text.tcpPort}</span>
-              <input disabled={running} type="number" min={1024} max={65535} value={currentDraft.port} onChange={(event) => updateDraft({ port: Number(event.target.value) })} />
-              <small>{running ? text.restartFieldLocked : text.defaultPort}</small>
+              <input disabled={running || busy} type="number" min={1024} max={65535} value={currentDraft.port} aria-invalid={Boolean(draftErrors.port)} aria-describedby="port-help" onChange={(event) => updateDraft({ port: Number(event.target.value) })} />
+              <small id="port-help" className={draftErrors.port ? "field-error" : undefined} role={draftErrors.port ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.port ?? text.defaultPort}</small>
             </label>
             <label>
               <span>{text.uploadLimit}</span>
-              <select disabled={running} value={currentDraft.maxUploadBytes === null ? "unlimited" : String(currentDraft.maxUploadBytes / 1024 ** 3)} onChange={(event) => updateDraft({ maxUploadBytes: event.target.value === "unlimited" ? null : Number(event.target.value) * 1024 ** 3 })}>
+              <select disabled={running || busy} value={currentDraft.maxUploadBytes === null ? "unlimited" : String(currentDraft.maxUploadBytes / 1024 ** 3)} aria-invalid={Boolean(draftErrors.maxUploadBytes)} aria-describedby="upload-limit-help" onChange={(event) => updateDraft({ maxUploadBytes: event.target.value === "unlimited" ? null : Number(event.target.value) * 1024 ** 3 })}>
                 <option value="5">5 GiB</option><option value="20">20 GiB</option><option value="50">50 GiB</option><option value="100">100 GiB</option><option value="unlimited">{text.unlimited}</option>
               </select>
-              <small>{running ? text.restartFieldLocked : text.diskReserve}</small>
+              <small id="upload-limit-help" className={draftErrors.maxUploadBytes ? "field-error" : undefined} role={draftErrors.maxUploadBytes ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.maxUploadBytes ?? text.diskReserve}</small>
             </label>
             <label>
               <span>{text.inboxStorageLimit}</span>
-              <select disabled={running} value={String(currentDraft.maxInboxBytes / 1024 ** 3)} onChange={(event) => updateDraft({ maxInboxBytes: Number(event.target.value) * 1024 ** 3 })}>
+              <select disabled={running || busy} value={String(currentDraft.maxInboxBytes / 1024 ** 3)} aria-invalid={Boolean(draftErrors.maxInboxBytes)} aria-describedby="inbox-limit-help" onChange={(event) => updateDraft({ maxInboxBytes: Number(event.target.value) * 1024 ** 3 })}>
                 <option value="25">25 GiB</option><option value="50">50 GiB</option><option value="100">100 GiB</option><option value="250">250 GiB</option>
               </select>
-              <small>{running ? text.restartFieldLocked : text.inboxStorageHint}</small>
+              <small id="inbox-limit-help" className={draftErrors.maxInboxBytes ? "field-error" : undefined} role={draftErrors.maxInboxBytes ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.maxInboxBytes ?? text.inboxStorageHint}</small>
             </label>
             <label>
               <span>{text.inboxFileLimit}</span>
-              <select disabled={running} value={String(currentDraft.maxInboxFiles)} onChange={(event) => updateDraft({ maxInboxFiles: Number(event.target.value) })}>
+              <select disabled={running || busy} value={String(currentDraft.maxInboxFiles)} aria-invalid={Boolean(draftErrors.maxInboxFiles)} aria-describedby="inbox-files-help" onChange={(event) => updateDraft({ maxInboxFiles: Number(event.target.value) })}>
                 <option value="1000">1.000</option><option value="5000">5.000</option><option value="10000">10.000</option><option value="50000">50.000</option>
               </select>
-              <small>{running ? text.restartFieldLocked : text.inboxFileHint}</small>
+              <small id="inbox-files-help" className={draftErrors.maxInboxFiles ? "field-error" : undefined} role={draftErrors.maxInboxFiles ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.maxInboxFiles ?? text.inboxFileHint}</small>
             </label>
             <label>
               <span>{text.automaticStop}</span>
-              <select disabled={running} value={currentDraft.idleTimeoutMinutes ?? 0} onChange={(event) => updateDraft({ idleTimeoutMinutes: Number(event.target.value) || null })}>
+              <select disabled={running || busy} value={currentDraft.idleTimeoutMinutes ?? 0} onChange={(event) => updateDraft({ idleTimeoutMinutes: Number(event.target.value) || null })}>
                 <option value={0}>{text.off}</option><option value={30}>{text.after30}</option><option value={60}>{text.after60}</option><option value={240}>{text.after240}</option><option value={720}>{text.after720}</option>
               </select>
               <small>{running ? text.restartFieldLocked : text.activeNeverStops}</small>
@@ -693,11 +918,11 @@ export function App() {
             <p className="eyebrow">{text.windows}</p><h2>{text.windowsFirewall}</h2><p>{currentSnapshot.firewall.detail}</p>
             {running && <span className="field-note">{text.firewallLocked}</span>}
           </div>
-          <button className="button secondary" type="button" disabled={busy || running} onClick={() => void configureFirewall()}>{currentSnapshot.firewall.configured ? text.updateRule : text.setupFirewall}</button>
+          <button className="button secondary" type="button" disabled={busy || running || persistBlocked} onClick={() => void configureFirewall()}>{currentSnapshot.firewall.configured ? text.updateRule : text.setupFirewall}</button>
         </section>
         <footer className="page-actions">
-          <span>{running ? text.stopToEdit : text.changesApplyOnStart}</span>
-          <button className="button primary" type="button" disabled={busy || running} onClick={() => void saveCurrentSettings()}>{text.saveSettings}</button>
+          <span>{running ? text.stopToEdit : dirty ? text.unsavedChanges : recoveryPending ? text.safeDefaultsPending : text.allChangesSaved}</span>
+          <button className="button primary" type="button" disabled={busy || running || !saveAvailable || persistBlocked} onClick={() => void saveCurrentSettings()}>{text.saveSettings}</button>
         </footer>
       </>
     );
@@ -742,6 +967,7 @@ export function App() {
         <header className="service-bar">
           <div className={`service-state ${running ? "running" : service.state === "error" ? "error" : "stopped"}`}>
             <i aria-hidden="true" /><strong>{statusLabel}</strong><span>{selectedNetwork?.name ?? text.noNetworkShort}</span><span>{selectedNetwork?.address ?? "—"}</span>
+            {dirty && <span className="dirty-state" role="status">{text.unsavedChanges}</span>}
           </div>
           <div className="service-counters" aria-label={text.runtimeSummary}><span>{text.deviceCount(service.sessions.length)}</span><span>{text.transferCount(service.activeTransfers)}</span></div>
           {running ? (

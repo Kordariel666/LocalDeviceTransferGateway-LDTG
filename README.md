@@ -54,6 +54,12 @@ sicheren Standardwerten mit sichtbarer Warnung. Vor einem bewussten Ersetzen leg
 DMDC eine nummerierte Recovery-Kopie an. Die App-Buildversion wird nicht als
 Benutzereinstellung gespeichert.
 
+Die Desktopoberfläche markiert ungespeicherte Änderungen, ordnet
+Validierungsfehler direkt den betroffenen Feldern zu und prüft Freigabeordner
+kanonisch im Backend, bevor Konfiguration oder Dienststart fortfahren. Entwürfe
+bleiben beim Seitenwechsel erhalten; Fensterschließen und Tray-Beenden verlangen
+vor dem Verwerfen eine ausdrückliche Bestätigung.
+
 `pnpm test:rust` bettet ausschließlich in den Windows-Test-Runner das Common-Controls-v6-Manifest ein, das Tauri beim normalen App-Build ohnehin erhält. Dadurch laufen die Rust-Unit- und Integrationstests ohne den Windows-Ladefehler `TaskDialogIndirect`; Produktions- und Installer-Manifeste werden nicht verändert.
 
 Auf Rechnern mit einer strikten Windows-Anwendungssteuerungsrichtlinie müssen lokal von Cargo erzeugte Build-Helfer für Entwicklungsbuilds zugelassen sein. Diese Einschränkung betrifft nur die Entwicklung, nicht die Architektur von DMDC.

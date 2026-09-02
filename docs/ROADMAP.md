@@ -246,6 +246,8 @@ Umgesetzt:
 
 ### R1.4 Desktop-Validierung und ungespeicherte Änderungen
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - Einen expliziten Dirty-State anzeigen und Speichern nur bei tatsächlichen Änderungen aktivieren.
@@ -253,11 +255,42 @@ Aufgaben:
 - Gleiche, verschachtelte und kanonisch überlappende Freigaben über einen Backend-Validierungsbefehl bereits vor dem Start melden.
 - Beim Verlassen einer Seite keine Entwürfe verlieren; vor Beenden mit ungespeicherten Änderungen sinnvoll warnen.
 
+Umgesetzt:
+
+- Der Desktop vergleicht den bearbeiteten Entwurf strukturell mit dem letzten
+  gespeicherten Snapshot. Ein global sichtbarer Dirty-Hinweis erscheint nur bei
+  einer Abweichung; die Speichern-Schaltflächen sind ausschließlich dann und bei
+  fehlerfreiem Entwurf aktiv. Die bewusste Übernahme sicherer Standardwerte nach
+  einer Recovery-Warnung bleibt als ausdrücklich gekennzeichnete Ausnahme möglich.
+- Port, Uploadgröße, Inbox-Gesamtgröße, Inbox-Dateizahl und aktivierte Freigaben
+  besitzen direkt zugeordnete Fehlermeldungen, `aria-invalid` und beschreibende
+  Hilfetexte. Abhängige Größenlimits markieren beide verantwortlichen Felder.
+- Der neue Tauri-Befehl `validate_share_settings` prüft aktivierte Ordner in
+  einem Blocking-Task mit denselben kanonischen Pfad- und Sicherheitsregeln wie
+  der Dienststart. Feldfehler und gleiche, verschachtelte oder anderweitig
+  kanonisch überlappende Wurzeln erscheinen bereits im Entwurf; ein ausstehendes
+  oder negatives Prüfergebnis blockiert Speichern, Start und Firewalländerung.
+- Der Entwurf bleibt beim Wechsel zwischen allen Desktopseiten erhalten.
+  Browser-Unload, natives Fensterschließen und Beenden aus dem Tray kennen den
+  Dirty-State. Ein tatsächliches Beenden erfordert eine ausdrückliche Bestätigung
+  zum Verwerfen; die getrennte Warnung vor laufenden Übertragungen bleibt erhalten.
+- Zwei Rust-Regressionstests prüfen feldbezogene und kanonische
+  Freigabevalidierung. Vier neue Desktoptests verankern Dirty-State,
+  feldbezogene Validierung, Backend-Überlappung und den nativen Quit-Pfad; der
+  bestehende Entwurfstest deckt weiterhin Seitenwechsel und Hintergrundereignisse ab.
+
 Phasen-Gate 1:
+
+Status: erfüllt am 2. September 2026.
 
 - Sämtliche bisherigen Tests plus neue Regressionstests bestehen.
 - Unter künstlich langsamem Datenträger bleiben UI, Accept-Loop und Stop reaktionsfähig.
 - Konfigurationsupgrade und -recovery sind reproduzierbar.
+
+Nachweis: Das vollständige Qualitätsgate besteht mit 103 Rust-, 14 Desktop- und
+28 Mobile-Tests. Die R1.2-Regressionen halten Accept, Stop und Bereinigung bei
+blockierter Dateiarbeit reaktionsfähig; R1.3 prüft Upgrade und Recovery
+einschließlich beschädigter, zukünftiger und semantisch ungültiger Konfigurationen.
 
 ## 7. Phase 2 – Wartbare Architektur
 

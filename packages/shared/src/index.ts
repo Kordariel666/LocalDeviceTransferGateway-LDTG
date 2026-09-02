@@ -74,6 +74,12 @@ export type AppSnapshot = {
   firewall: FirewallStatus;
 };
 
+export type ShareValidation = {
+  downloadError: string | null;
+  uploadError: string | null;
+  overlapError: string | null;
+};
+
 export type SessionResponse = {
   serviceId: string;
   csrfToken: string;

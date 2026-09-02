@@ -82,3 +82,11 @@ pub struct AppSnapshot {
     pub networks: Vec<super::network::NetworkInterfaceInfo>,
     pub firewall: FirewallStatus,
 }
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ShareValidation {
+    pub download_error: Option<String>,
+    pub upload_error: Option<String>,
+    pub overlap_error: Option<String>,
+}

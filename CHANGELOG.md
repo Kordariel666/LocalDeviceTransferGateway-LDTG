@@ -25,6 +25,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Einstellungen verwenden jetzt ein eigenständiges Schema 2 mit schrittweisen,
   idempotenten Migrationen; die App-Buildversion ist davon getrennt und wird
   nicht mehr in `settings.json` gespeichert.
+- Die Desktopkonfiguration zeigt einen expliziten Dirty-State und feldbezogene
+  Port-, Größen-, Datei- und Freigabefehler. Freigabewurzeln werden bereits im
+  Entwurf mit der kanonischen Backend-Pfadpolitik geprüft.
 
 ### Added
 
@@ -47,6 +50,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Zukünftige Konfigurationsschemata sowie strukturell oder semantisch ungültige
   Einstellungen werden mit sicheren Standardwerten und sichtbarer Warnung
   abgefangen; die Originaldatei bleibt für ein Recovery erhalten.
+- Ungespeicherte Desktopentwürfe bleiben bei Navigation und Statusereignissen
+  erhalten. Fensterschließen und Tray-Beenden können sie nur nach einer
+  ausdrücklichen Verwerfen-Bestätigung verlieren.
 
 - Die vollständige Prüfkette baut eingebettete Mobile-Webassets nun vor Rust-
   Tests und Clippy; `pnpm test:rust` bereitet sie auch einzeln selbst vor und
