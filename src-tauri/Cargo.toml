@@ -27,7 +27,7 @@ chrono = { version = "0.4", features = ["serde"] }
 fs2 = "0.4"
 hyper = { version = "1", features = ["http1", "server"] }
 hyper-util = { version = "0.1", features = ["http1", "server", "service", "tokio"] }
-if-addrs = "0.13"
+if-addrs = "0.15"
 mime_guess = "2"
 percent-encoding = "2"
 rand = "0.8"
