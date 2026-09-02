@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { AppSnapshot } from "@dmdc/shared";
+import type { AppSnapshot, TransferDirection, TransferInfo, TransferState } from "@dmdc/shared";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -36,6 +36,29 @@ const snapshot: AppSnapshot = {
 
 let currentSnapshot = snapshot;
 
+function transfer(
+  id: string,
+  name: string,
+  direction: TransferDirection,
+  state: TransferState,
+): TransferInfo {
+  const active = state === "active";
+  return {
+    id,
+    direction,
+    name,
+    startedAt: "2026-09-03T10:00:00Z",
+    lastProgressAt: "2026-09-03T10:00:04Z",
+    finishedAt: active ? null : "2026-09-03T10:00:05Z",
+    transferredBytes: state === "complete" ? 10 : 5,
+    totalBytes: 10,
+    bytesPerSecond: active ? 5 : null,
+    speedSampleCount: active ? 1 : 2,
+    state,
+    updatedAt: active ? "2026-09-03T10:00:04Z" : "2026-09-03T10:00:05Z",
+  };
+}
+
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: mocks.ask, open: mocks.open, save: mocks.save }));
@@ -54,6 +77,11 @@ beforeEach(() => {
   mocks.invoke.mockImplementation(async (command: string, args?: { settings?: unknown }) => {
     if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
     if (command === "get_service_status") return structuredClone(currentSnapshot.service);
+    if (command === "clear_transfer_history") {
+      currentSnapshot.service.transfers = currentSnapshot.service.transfers.filter((item) => item.state === "active");
+      currentSnapshot.service.activeTransfers = currentSnapshot.service.transfers.length;
+      return structuredClone(currentSnapshot.service);
+    }
     if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
     if (command === "save_settings") {
       currentSnapshot.settings = structuredClone(args?.settings) as AppSnapshot["settings"];
@@ -283,6 +311,7 @@ describe("Desktop-Dashboard", () => {
             name: "direkt.txt",
             startedAt: "2026-09-02T10:00:00Z",
             lastProgressAt: "2026-09-02T10:00:01Z",
+            finishedAt: null,
             transferredBytes: 1024,
             totalBytes: 4096,
             bytesPerSecond: 1024,
@@ -507,6 +536,7 @@ describe("Desktop-Dashboard", () => {
         name: "Urlaub-2026.zip",
         startedAt: new Date(now - 5_000).toISOString(),
         lastProgressAt: new Date(now - 1_000).toISOString(),
+        finishedAt: null,
         transferredBytes: 1024 ** 2,
         totalBytes: 4 * 1024 ** 2,
         bytesPerSecond: 1024 ** 2,
@@ -527,6 +557,50 @@ describe("Desktop-Dashboard", () => {
     expect(screen.queryByRole("button", { name: /Pausieren|Abbrechen/ })).toBeNull();
   });
 
+  it("zeigt Start, Ende, Dauer und Ergebnis, filtert den Verlauf und leert nur fertige Einträge", async () => {
+    const active = transfer("active", "Aktiv.bin", "upload", "active");
+    const complete = transfer("complete", "Fertig.bin", "upload", "complete");
+    const failed = transfer("failed", "Fehler.bin", "download", "failed");
+    const cancelled = transfer("cancelled", "Abbruch.bin", "upload", "cancelled");
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.service = {
+      ...currentSnapshot.service,
+      state: "running",
+      serviceId: "service",
+      activeTransfers: 1,
+      transfers: [active, complete, failed, cancelled],
+    };
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Übertragungen/ }));
+
+    expect(screen.getAllByText("Dauer 5 s")).toHaveLength(3);
+    expect(screen.getAllByText(/^Gestartet:/)).toHaveLength(4);
+    expect(screen.getAllByText(/^Beendet:/)).toHaveLength(3);
+    expect(screen.getAllByText("Abgeschlossen").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Fehlgeschlagen").length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Richtung filtern" }), {
+      target: { value: "upload" },
+    });
+    expect(screen.getByText("Fertig.bin")).toBeTruthy();
+    expect(screen.getByText("Abbruch.bin")).toBeTruthy();
+    expect(screen.queryByText("Fehler.bin")).toBeNull();
+    expect(screen.getByText("2 von 3 Einträgen")).toBeTruthy();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Status filtern" }), {
+      target: { value: "complete" },
+    });
+    expect(screen.getByText("Fertig.bin")).toBeTruthy();
+    expect(screen.queryByText("Abbruch.bin")).toBeNull();
+    expect(screen.getByText("1 von 3 Einträgen")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Verlauf leeren" }));
+    expect(await screen.findByText("Noch kein Verlauf")).toBeTruthy();
+    expect(screen.getByText("Aktiv.bin")).toBeTruthy();
+    expect(mocks.invoke).toHaveBeenCalledWith("clear_transfer_history");
+  });
+
   it("stoppt nur nach sichtbarer einmaliger Aktivierung und niemals allein durch ein Batchende", async () => {
     const activeTransfer = {
       id: "transfer",
@@ -534,6 +608,7 @@ describe("Desktop-Dashboard", () => {
       name: "Batch-Datei.bin",
       startedAt: "2026-09-03T10:00:00Z",
       lastProgressAt: "2026-09-03T10:00:01Z",
+      finishedAt: null,
       transferredBytes: 5,
       totalBytes: 10,
       bytesPerSecond: 5,

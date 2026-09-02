@@ -53,7 +53,7 @@ function TransferTiming({ transfer, compact }: { transfer: TransferInfo; compact
   const timing = estimateTransferTiming({
     startedAt: transfer.startedAt,
     lastProgressAt: transfer.lastProgressAt,
-    finishedAt: active ? null : transfer.updatedAt,
+    finishedAt: transfer.finishedAt,
     active,
     transferredBytes: transfer.transferredBytes,
     totalBytes: transfer.totalBytes,
@@ -90,7 +90,9 @@ export function TransferRow({ transfer, compact = false }: { transfer: TransferI
       </div>
       {(active || !compact) && <TransferProgress transfer={transfer} />}
       {(active || !compact) && <TransferTiming transfer={transfer} compact={compact} />}
-      {!active && !compact && <time dateTime={transfer.updatedAt}>{text.updatedAt(formatDateTime(transfer.updatedAt))}</time>}
+      {!active && !compact && transfer.finishedAt && (
+        <time dateTime={transfer.finishedAt}>{text.finishedAt(formatDateTime(transfer.finishedAt))}</time>
+      )}
     </article>
   );
 }

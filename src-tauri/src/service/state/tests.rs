@@ -128,6 +128,48 @@ async fn transfer_progress_notifications_are_byte_throttled_but_terminal_updates
 }
 
 #[tokio::test]
+async fn clearing_transfer_history_preserves_active_transfers() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path()).unwrap();
+    let active = state
+        .record_transfer(TransferDirection::Upload, "aktiv.bin", 100)
+        .await;
+    let complete = state
+        .record_transfer(TransferDirection::Download, "fertig.bin", 200)
+        .await;
+    state
+        .update_transfer(&complete, 200, Some(TransferState::Complete))
+        .await;
+
+    let finished = state
+        .transfers
+        .lock()
+        .await
+        .iter()
+        .find(|item| item.id == complete)
+        .cloned()
+        .unwrap();
+    let first_finished_at = finished.finished_at.clone();
+    assert!(first_finished_at.is_some());
+    assert_eq!(first_finished_at, Some(finished.updated_at));
+    state
+        .update_transfer(&complete, 200, Some(TransferState::Complete))
+        .await;
+    assert_eq!(
+        state.transfers.lock().await[1].finished_at,
+        first_finished_at,
+        "repeated terminal updates must preserve the original end time"
+    );
+
+    assert_eq!(state.clear_transfer_history().await, 1);
+    let status = state.status().await;
+    assert_eq!(status.active_transfers, 1);
+    assert_eq!(status.transfers.len(), 1);
+    assert_eq!(status.transfers[0].id, active);
+    assert_eq!(status.transfers[0].finished_at, None);
+}
+
+#[tokio::test]
 async fn transfer_progress_models_monotonic_smoothed_speed_and_timestamps() {
     let first_exact = smooth_transfer_speed(None, 1024, Duration::from_secs(1)).unwrap();
     let second_exact =

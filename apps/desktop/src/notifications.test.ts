@@ -22,6 +22,7 @@ function event(id: string, state: TransferState, serviceId = "service"): Transfe
     name: `${id}.bin`,
     startedAt: "2026-09-03T10:00:00Z",
     lastProgressAt: null,
+    finishedAt: state === "active" ? null : "2026-09-03T10:00:01Z",
     transferredBytes: state === "complete" ? 10 : 0,
     totalBytes: 10,
     bytesPerSecond: null,

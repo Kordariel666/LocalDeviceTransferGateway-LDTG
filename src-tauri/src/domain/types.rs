@@ -56,6 +56,7 @@ pub struct TransferInfo {
     pub name: String,
     pub started_at: String,
     pub last_progress_at: Option<String>,
+    pub finished_at: Option<String>,
     #[ts(type = "number")]
     pub transferred_bytes: u64,
     #[ts(type = "number")]

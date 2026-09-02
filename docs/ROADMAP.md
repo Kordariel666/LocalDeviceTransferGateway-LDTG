@@ -544,15 +544,48 @@ Umgesetzt:
 
 ### R3.4 Verlauf sinnvoll ausbauen
 
+Status: abgeschlossen am 3. September 2026.
+
 - Verlauf um Start, Ende, Dauer und Ergebnis ergänzen.
 - Filter nach Richtung und Status sowie „Verlauf leeren“ anbieten.
 - Entscheidungspunkt: nur aktueller Dienstlauf oder optionale lokale Persistenz.
 - Bei Persistenz standardmäßig kurze Aufbewahrung, explizites Löschen und keine vollständigen Pfade speichern.
 
+Umgesetzt:
+
+- `TransferInfo` führt neben Start und letzter Aktivität nun einen expliziten
+  optionalen Endzeitpunkt. Er wird beim ersten terminalen Zustandswechsel
+  gesetzt und bildet zusammen mit dem bestehenden Ergebnisstatus die Grundlage
+  für Start, Ende und Dauer im Verlauf.
+- Die Desktopansicht filtert den Verlauf unabhängig nach Richtung sowie nach
+  abgeschlossen, fehlgeschlagen, abgebrochen oder abgelaufen. Treffer- und
+  Gesamtzahl bleiben sichtbar; eine leere Filtermenge wird von einem wirklich
+  leeren Verlauf unterschieden.
+- „Verlauf leeren“ entfernt die terminalen Einträge im autoritativen
+  Backendzustand. Aktive Übertragungen und ihre Fortschrittsverwaltung bleiben
+  dabei erhalten, sodass ein späterer Status-Refresh keine gelöschten Einträge
+  zurückholt und keinen laufenden Transfer verliert.
+- Entscheidung gegen Persistenz für Version 0.2: Der auf 100 Einträge begrenzte
+  Verlauf bleibt ausschließlich im Arbeitsspeicher des aktuellen Dienstlaufs.
+  Dadurch entstehen keine zusätzliche Aufbewahrungsfrist, keine neue lokale
+  Verlaufsdatei und insbesondere keine dauerhafte Sammlung von Dateinamen oder
+  vollständigen Pfaden. Die UI weist auf diese Reichweite ausdrücklich hin.
+- Rust- und Oberflächentests prüfen den stabilen Endzeitpunkt, das Löschen bei
+  erhaltenen aktiven Transfers, beide Filterachsen sowie Start, Ende, Dauer und
+  Ergebnis. Das vollständige Qualitätsgate ist mit 109 Rust-, 28 Desktop- und
+  39 Mobile-Tests grün.
+
 Phasen-Gate 3:
+
+Status: erfüllt am 3. September 2026.
 
 - Ein Nutzer kann einen mehrteiligen Batch vollständig steuern und seinen Zustand ohne Diagnosewissen verstehen.
 - Pause/Abbruch/Retry bleiben mit Netzwerk- und Sitzungsverlust konsistent.
+
+Nachweis: R3.1 deckt Queue-Steuerung und Sitzungsverlust ab, R3.2 liefert
+gemeinsame und ehrliche Fortschrittsmetriken, R3.3 ergänzt sichere
+Batchbenachrichtigungen und den expliziten einmaligen Stopp, und R3.4 macht
+Ergebnisse innerhalb des aktuellen Dienstlaufs vollständig nachvollziehbar.
 
 ## 9. Phase 4 – Netzwerkvertrauen und Geräteverwaltung
 

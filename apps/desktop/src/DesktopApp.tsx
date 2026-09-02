@@ -570,6 +570,20 @@ export function App() {
     }
   }
 
+  async function clearTransferHistory() {
+    setBusyAction("command");
+    setNotice(null);
+    try {
+      const nextService = await invoke<ServiceStatus>("clear_transfer_history");
+      setSnapshot((current) => current ? { ...current, service: nextService } : current);
+      setNotice({ kind: "info", text: text.historyCleared });
+    } catch (error) {
+      setNotice({ kind: "error", text: errorMessage(error) });
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   async function simpleCommand(command: string, args: Record<string, unknown> = {}) {
     setBusyAction("command");
     setNotice(null);
@@ -688,6 +702,7 @@ export function App() {
               transferHistory={transferHistory}
               stopAfterBatch={stopAfterBatch}
               onStopAfterBatchChange={updateStopAfterBatch}
+              onClearHistory={clearTransferHistory}
             />
           )}
           {view === "security" && (

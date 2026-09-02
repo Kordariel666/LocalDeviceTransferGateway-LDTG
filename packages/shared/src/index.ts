@@ -14,7 +14,7 @@ export type TransferDirection = "upload" | "download";
 
 export type TransferState = "active" | "complete" | "cancelled" | "failed" | "expired";
 
-export type TransferInfo = { id: string, direction: TransferDirection, name: string, startedAt: string, lastProgressAt: string | null, transferredBytes: number, totalBytes: number, bytesPerSecond: number | null, speedSampleCount: number, state: TransferState, updatedAt: string, };
+export type TransferInfo = { id: string, direction: TransferDirection, name: string, startedAt: string, lastProgressAt: string | null, finishedAt: string | null, transferredBytes: number, totalBytes: number, bytesPerSecond: number | null, speedSampleCount: number, state: TransferState, updatedAt: string, };
 
 export type TransferChangedEvent = { serviceId: string, transfer: TransferInfo, };
 

@@ -1,10 +1,13 @@
+import { useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type {
   AppSettings,
   AppSnapshot,
   NetworkInterfaceInfo,
   ServiceStatus,
+  TransferDirection,
   TransferInfo,
+  TransferState,
 } from "@dmdc/shared";
 import {
   EmptyState,
@@ -190,6 +193,7 @@ export function TransfersPage({
   transferHistory,
   stopAfterBatch,
   onStopAfterBatchChange,
+  onClearHistory,
 }: {
   running: boolean;
   busy: boolean;
@@ -197,8 +201,18 @@ export function TransfersPage({
   transferHistory: TransferInfo[];
   stopAfterBatch: boolean;
   onStopAfterBatchChange: (enabled: boolean) => void;
+  onClearHistory: () => Promise<void>;
 }) {
+  const [directionFilter, setDirectionFilter] = useState<"all" | TransferDirection>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | Exclude<TransferState, "active">>("all");
   const canEnableStopAfterBatch = running && activeTransfers.length > 0;
+  const filteredHistory = useMemo(() => transferHistory.filter((transfer) => (
+    (directionFilter === "all" || transfer.direction === directionFilter)
+    && (statusFilter === "all" || transfer.state === statusFilter)
+  )), [directionFilter, statusFilter, transferHistory]);
+  const historyCount = filteredHistory.length === transferHistory.length
+    ? text.entryCount(transferHistory.length)
+    : text.filteredEntryCount(filteredHistory.length, transferHistory.length);
   return (
     <>
       <PageHeading eyebrow={text.activity} title={text.transfers} description={text.transfersDescription} />
@@ -229,11 +243,42 @@ export function TransfersPage({
         )}
       </section>
       <section className="transfer-section history">
-        <div className="section-title-row simple"><h2>{text.transferHistory}</h2><span>{text.entryCount(transferHistory.length)}</span></div>
+        <div className="section-title-row simple history-heading">
+          <div>
+            <h2>{text.transferHistory}</h2>
+            <p>{text.historyScope}</p>
+          </div>
+          <div className="history-summary">
+            <span>{historyCount}</span>
+            <button className="button secondary small" type="button" disabled={busy || transferHistory.length === 0} onClick={() => void onClearHistory()}>{text.clearHistory}</button>
+          </div>
+        </div>
+        <div className="history-filters" aria-label={text.transferHistory}>
+          <label>
+            <span>{text.historyDirectionFilter}</span>
+            <select aria-label={text.historyDirectionFilter} value={directionFilter} onChange={(event) => setDirectionFilter(event.target.value as "all" | TransferDirection)}>
+              <option value="all">{text.allDirections}</option>
+              <option value="upload">{text.fromPhone}</option>
+              <option value="download">{text.toPhone}</option>
+            </select>
+          </label>
+          <label>
+            <span>{text.historyStatusFilter}</span>
+            <select aria-label={text.historyStatusFilter} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | Exclude<TransferState, "active">)}>
+              <option value="all">{text.allStatuses}</option>
+              <option value="complete">{text.transferState("complete")}</option>
+              <option value="failed">{text.transferState("failed")}</option>
+              <option value="cancelled">{text.transferState("cancelled")}</option>
+              <option value="expired">{text.transferState("expired")}</option>
+            </select>
+          </label>
+        </div>
         {!transferHistory.length ? (
           <EmptyState title={text.noHistory} description={text.noHistoryDescription} />
+        ) : !filteredHistory.length ? (
+          <EmptyState title={text.noMatchingHistory} description={text.noMatchingHistoryDescription} />
         ) : (
-          <div className="transfer-list roomy">{transferHistory.map((transfer) => <TransferRow transfer={transfer} key={transfer.id} />)}</div>
+          <div className="transfer-list roomy">{filteredHistory.map((transfer) => <TransferRow transfer={transfer} key={transfer.id} />)}</div>
         )}
       </section>
     </>

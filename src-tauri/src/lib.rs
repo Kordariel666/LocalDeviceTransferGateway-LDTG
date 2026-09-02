@@ -254,6 +254,18 @@ async fn get_service_status(state: State<'_, AppState>) -> Result<ServiceStatus,
 }
 
 #[tauri::command]
+async fn clear_transfer_history(state: State<'_, AppState>) -> Result<ServiceStatus, CommandError> {
+    let service = service_state(&state).await.ok_or_else(|| {
+        CommandError::new(
+            CommandErrorCode::ServiceNotRunning,
+            "Der Dienst läuft nicht.",
+        )
+    })?;
+    service.clear_transfer_history().await;
+    Ok(service.status().await)
+}
+
+#[tauri::command]
 async fn get_app_snapshot(
     app: AppHandle,
     state: State<'_, AppState>,
@@ -851,6 +863,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_app_snapshot,
             get_service_status,
+            clear_transfer_history,
             save_settings,
             set_unsaved_changes,
             validate_share_settings,

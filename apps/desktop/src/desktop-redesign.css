@@ -340,6 +340,14 @@ select:focus-visible {
 
 .transfer-section { margin-top: 18px; }
 .transfer-section > .section-title-row { min-height: 58px; padding: 0 20px; border-bottom: 1px solid var(--line); }
+.transfer-section > .history-heading { min-height: 86px; }
+.history-heading > div:first-child { padding: 14px 0; }
+.history-heading > div:first-child p { max-width: 620px; min-height: 0; margin-top: 5px; font-size: .74rem; }
+.history-summary { display: flex; align-items: center; gap: 14px; flex: none; }
+.history-summary > span { color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.history-filters { display: flex; align-items: end; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: #11100e; }
+.history-filters label { display: grid; gap: 5px; color: var(--muted); font-size: .7rem; }
+.history-filters select { min-width: 180px; min-height: 38px; padding: 7px 10px; border: 1px solid #4a3c29; border-radius: 5px; background: #0d0d0c; color: var(--text); }
 .transfer-section .empty-state { min-height: 170px; }
 .transfer-section.history { margin-top: 16px; }
 .transfer-list.roomy .transfer-row { padding-top: 19px; padding-bottom: 19px; }
@@ -384,6 +392,12 @@ select:focus-visible {
   .overview-summary-grid,
   .share-page-grid,
   .settings-grid { grid-template-columns: 1fr; }
+  .transfer-section > .history-heading { align-items: stretch; flex-direction: column; gap: 4px; padding-top: 4px; padding-bottom: 14px; }
+  .history-heading > div:first-child { padding-bottom: 4px; }
+  .history-summary { justify-content: space-between; }
+  .history-filters { flex-wrap: wrap; }
+  .history-filters label { min-width: 180px; flex: 1; }
+  .history-filters select { width: 100%; }
   .primary-panel { min-height: 260px; }
   .empty-state { min-height: 155px; }
   .diagnostics-panel { grid-template-columns: 1fr; }

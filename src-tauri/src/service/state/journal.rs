@@ -47,6 +47,7 @@ impl TransferServiceState {
             name: name.into(),
             started_at: now.clone(),
             last_progress_at: None,
+            finished_at: None,
             transferred_bytes: 0,
             total_bytes: total,
             bytes_per_second: None,
@@ -140,6 +141,9 @@ impl TransferServiceState {
         if let Some(state) = state {
             item.state = state;
         }
+        if terminal && item.finished_at.is_none() {
+            item.finished_at = Some(updated_at.clone());
+        }
         item.updated_at = updated_at;
         let updated = item.clone();
         if terminal {
@@ -157,6 +161,13 @@ impl TransferServiceState {
                 },
             );
         }
+    }
+
+    pub async fn clear_transfer_history(&self) -> usize {
+        let mut transfers = self.transfers.lock().await;
+        let previous_len = transfers.len();
+        transfers.retain(|item| item.state == TransferState::Active);
+        previous_len - transfers.len()
     }
 
     pub(super) fn emit<T: serde::Serialize + Clone>(&self, event: &str, payload: &T) {
