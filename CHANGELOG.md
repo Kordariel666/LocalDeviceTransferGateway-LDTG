@@ -18,6 +18,10 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   sowie Desktop-Aufnahmen für gestoppten und laufenden Dienst erneuert.
 - Die mobile Uploadwarteschlange besitzt nun einen expliziten Reducer als einzige
   fachliche Zustandsquelle und unterscheidet dauerhafte von transienten Fehlern.
+- Blockierende Uploadanlage, Inbox-Prüfung, Chunk-Persistierung, Abschluss und
+  Partial-Bereinigung laufen in einem eigenen fairen I/O-Pool außerhalb der
+  Async-Worker; die periodische Rootprüfung blockiert den Accept-Loop ebenfalls
+  nicht mehr.
 
 ### Added
 
@@ -32,6 +36,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   geben die nächste Datei frei; laufende Create-Anfragen bleiben ohne Duplikate
   nachverfolgbar.
 - Strukturierte PATCH-Fehlercodes bleiben im mobilen Uploadstatus erhalten.
+- Uploadoffset, Inbox-Bytebudget und Transferfortschritt werden erst nach
+  erfolgreichem `sync_data` gemeinsam bestätigt. Abgebrochene HTTP-Waiter lassen
+  den dienstbesessenen Chunkjob samt Blocking-Permits konsistent zu Ende laufen.
 - Doppeltes Login erzeugt nicht mehr mehrere parallele Auth-Anfragen; Logout räumt
   den lokalen Zustand auch bei einem bereits gestoppten Dienst auf.
 

@@ -1,7 +1,7 @@
 use super::state::{
     AuthDecision, CompletedUpload, DirectoryEntry, DirectoryListing, DirectoryPage, DownloadLease,
-    SessionCreateError, SessionRecord, TransferServiceState, UploadChunkLease, UploadRecord,
-    ACCESS_CODE_DIGITS, CHUNK_SIZE, DISK_RESERVE, MAX_UPLOADS_PER_ADDRESS,
+    SessionCreateError, SessionRecord, TransferServiceState, UploadChunkLease, UploadIoPermit,
+    UploadRecord, ACCESS_CODE_DIGITS, CHUNK_SIZE, DISK_RESERVE, MAX_UPLOADS_PER_ADDRESS,
 };
 use super::ConnectionSecurity;
 use crate::domain::{
@@ -30,10 +30,12 @@ use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,
     fs,
-    io::{Seek, Write},
     net::{IpAddr, SocketAddr},
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{
+        atomic::{AtomicBool, Ordering as AtomicOrdering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 use subtle::ConstantTimeEq;
@@ -87,6 +89,204 @@ type ApiResult<T> = Result<T, ApiFailure>;
 #[derive(Clone)]
 struct UploadChunkPermit {
     _lease: Arc<UploadChunkLease>,
+}
+
+struct UploadByteReservation {
+    state: Arc<TransferServiceState>,
+    bytes: u64,
+    committed: bool,
+}
+
+struct UploadObjectReservation {
+    state: Arc<TransferServiceState>,
+    committed: bool,
+}
+
+impl UploadObjectReservation {
+    fn new(state: Arc<TransferServiceState>) -> ApiResult<Self> {
+        state.reserve_upload_object().map_err(|_| {
+            ApiFailure::new(
+                StatusCode::INSUFFICIENT_STORAGE,
+                "INBOX_FILE_LIMIT",
+                "Der Upload-Eingang hat die konfigurierte Dateianzahl erreicht.",
+            )
+        })?;
+        Ok(Self {
+            state,
+            committed: false,
+        })
+    }
+
+    fn commit(&mut self) {
+        self.committed = true;
+    }
+}
+
+impl Drop for UploadObjectReservation {
+    fn drop(&mut self) {
+        if !self.committed {
+            self.state.release_upload(0);
+        }
+    }
+}
+
+impl UploadByteReservation {
+    fn new(state: Arc<TransferServiceState>, bytes: u64) -> ApiResult<Self> {
+        state.reserve_upload_bytes(bytes).map_err(|_| {
+            ApiFailure::new(
+                StatusCode::INSUFFICIENT_STORAGE,
+                "INBOX_BYTE_LIMIT",
+                "Der Upload-Eingang hat das konfigurierte Speicherlimit erreicht.",
+            )
+        })?;
+        Ok(Self {
+            state,
+            bytes,
+            committed: false,
+        })
+    }
+
+    fn commit(&mut self) {
+        self.committed = true;
+    }
+}
+
+impl Drop for UploadByteReservation {
+    fn drop(&mut self) {
+        if !self.committed {
+            self.state.release_upload_bytes(self.bytes);
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum UploadChunkIoError {
+    Cancelled,
+    Failed,
+}
+
+fn upload_io_busy() -> ApiFailure {
+    ApiFailure::new(
+        StatusCode::TOO_MANY_REQUESTS,
+        "UPLOAD_IO_BUSY",
+        "DMDC verarbeitet bereits die maximale Zahl blockierender Uploadvorgänge.",
+    )
+}
+
+#[cfg(windows)]
+fn write_all_at(file: &fs::File, mut data: &[u8], mut offset: u64) -> std::io::Result<()> {
+    use std::os::windows::fs::FileExt;
+
+    while !data.is_empty() {
+        let written = file.seek_write(data, offset)?;
+        if written == 0 {
+            return Err(std::io::ErrorKind::WriteZero.into());
+        }
+        data = &data[written..];
+        offset = offset.saturating_add(written as u64);
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn write_all_at(file: &fs::File, mut data: &[u8], mut offset: u64) -> std::io::Result<()> {
+    use std::os::unix::fs::FileExt;
+
+    while !data.is_empty() {
+        let written = file.write_at(data, offset)?;
+        if written == 0 {
+            return Err(std::io::ErrorKind::WriteZero.into());
+        }
+        data = &data[written..];
+        offset = offset.saturating_add(written as u64);
+    }
+    Ok(())
+}
+
+#[cfg(not(any(unix, windows)))]
+fn write_all_at(file: &fs::File, data: &[u8], offset: u64) -> std::io::Result<()> {
+    use std::io::{Seek, Write};
+
+    let mut file = file.try_clone()?;
+    file.seek(std::io::SeekFrom::Start(offset))?;
+    file.write_all(data)
+}
+
+#[cfg(test)]
+fn wait_for_upload_io_test_gate(state: &TransferServiceState) {
+    let gate = state
+        .upload_io_test_gate
+        .lock()
+        .expect("upload I/O test gate lock poisoned")
+        .clone();
+    if let Some(gate) = gate {
+        let _ = gate.started.send(());
+        let (released, wake) = &*gate.release;
+        let mut released = released.lock().expect("upload I/O test gate poisoned");
+        while !*released {
+            released = wake.wait(released).expect("upload I/O test gate poisoned");
+        }
+    }
+}
+
+fn write_upload_chunk_blocking(
+    state: &TransferServiceState,
+    file: &fs::File,
+    partial_path: &Path,
+    offset: u64,
+    body: &[u8],
+    cancel_signal: &AtomicBool,
+) -> Result<(), UploadChunkIoError> {
+    #[cfg(test)]
+    wait_for_upload_io_test_gate(state);
+
+    let result = (|| -> std::io::Result<()> {
+        if cancel_signal.load(AtomicOrdering::Acquire) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                "upload cancelled",
+            ));
+        }
+        if !state.roots_are_current() {
+            return Err(std::io::Error::other("upload root changed"));
+        }
+        let anchor = state
+            .partial_dir_anchor
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("partial root unavailable"))?;
+        anchor
+            .validate_open_file(file, partial_path)
+            .map_err(std::io::Error::other)?;
+        let upload_root = state
+            .roots
+            .upload
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("upload root unavailable"))?;
+        if fs2::available_space(upload_root)? < DISK_RESERVE.saturating_add(body.len() as u64) {
+            return Err(std::io::Error::other("disk reserve reached"));
+        }
+        write_all_at(file, body, offset)?;
+        file.sync_data()?;
+        if cancel_signal.load(AtomicOrdering::Acquire) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                "upload cancelled",
+            ));
+        }
+        Ok(())
+    })();
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(error) => {
+            let _ = file.set_len(offset);
+            if error.kind() == std::io::ErrorKind::Interrupted {
+                Err(UploadChunkIoError::Cancelled)
+            } else {
+                Err(UploadChunkIoError::Failed)
+            }
+        }
+    }
 }
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(2 * 60);
@@ -1307,7 +1507,7 @@ async fn create_upload(
         )
     })?;
     let session = authorized(&state, &headers, client.ip(), true).await?;
-    let root = state.roots.upload.as_ref().ok_or_else(|| {
+    let root = state.roots.upload.as_ref().cloned().ok_or_else(|| {
         ApiFailure::new(
             StatusCode::NOT_FOUND,
             "UPLOAD_DISABLED",
@@ -1325,7 +1525,7 @@ async fn create_upload(
             "Die Datei überschreitet das konfigurierte Uploadlimit.",
         ));
     }
-    let name = safe_file_name_for_root(root, &payload.name)
+    let name = safe_file_name_for_root(&root, &payload.name)
         .map_err(|message| ApiFailure::new(StatusCode::BAD_REQUEST, "NAME_INVALID", message))?;
     let client_token = if payload.client_token.is_empty() {
         Uuid::new_v4().to_string()
@@ -1356,160 +1556,177 @@ async fn create_upload(
             last_modified: completed.last_modified,
         }));
     }
-    let _reservation = state.upload_fs_lock.lock().await;
-    ensure_session_active(&state, &session).await?;
-    if !state.roots_are_current() {
-        return Err(ApiFailure::new(
-            StatusCode::CONFLICT,
-            "UPLOAD_ROOT_CHANGED",
-            "Der Upload-Eingang wurde während des Betriebs verändert.",
-        ));
-    }
-    state.refresh_inbox_usage().map_err(|_| {
-        ApiFailure::new(
-            StatusCode::INSUFFICIENT_STORAGE,
-            "INBOX_USAGE_UNKNOWN",
-            "Die Belegung des Upload-Eingangs konnte nicht sicher bestimmt werden.",
-        )
-    })?;
-    let active_uploads: Vec<_> = state.uploads.lock().await.values().cloned().collect();
-    if active_uploads.len() >= 64 {
-        return Err(ApiFailure::new(
-            StatusCode::TOO_MANY_REQUESTS,
-            "TOO_MANY_UPLOADS",
-            "Es sind bereits zu viele unvollständige Uploads vorhanden.",
-        ));
-    }
-    let mut address_uploads = 0_usize;
-    for upload in &active_uploads {
-        let upload = upload.lock().await;
-        if !upload.cancelled
-            && upload.owner_session == session.id
-            && upload.client_token == client_token
-            && upload.name == name
-            && upload.declared_size == payload.size
-            && upload.last_modified == payload.last_modified
-        {
-            return Ok(Json(UploadResponse {
-                upload_id: upload.id.clone(),
-                offset: upload.offset,
-                total_bytes: upload.declared_size,
-                chunk_size: CHUNK_SIZE,
-                service_id: state.service_id.clone(),
-                last_modified: upload.last_modified,
-            }));
-        }
-        if !upload.cancelled && upload.owner_address == session.address {
-            address_uploads += 1;
-        }
-    }
-    if address_uploads >= MAX_UPLOADS_PER_ADDRESS {
-        return Err(ApiFailure::new(
-            StatusCode::TOO_MANY_REQUESTS,
-            "UPLOAD_CLIENT_LIMIT",
-            "Von dieser Geräteadresse sind bereits zu viele unvollständige Uploads vorhanden.",
-        ));
-    }
-    let space_permit = state
-        .begin_filesystem_lookup(client.ip())
+    let reservation_lock = state.upload_fs_lock.clone().lock_owned().await;
+    let io_permit = state
+        .begin_upload_io(client.ip())
         .await
-        .ok_or_else(|| {
-            ApiFailure::new(
-                StatusCode::TOO_MANY_REQUESTS,
-                "FILESYSTEM_LIMIT",
-                "Es werden bereits zu viele Dateisysteminformationen geprüft.",
-            )
-        })?;
-    let space_root = root.clone();
-    let available = tokio::task::spawn_blocking(move || {
-        let _permit = space_permit;
-        fs2::available_space(space_root)
-    })
-    .await
-    .map_err(|_| {
-        ApiFailure::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "FILESYSTEM_TASK_FAILED",
-            "Die Speicherprüfung konnte nicht sicher ausgeführt werden.",
-        )
-    })?
-    .map_err(|_| {
-        ApiFailure::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "SPACE_UNKNOWN",
-            "Freier Speicher konnte nicht geprüft werden.",
-        )
-    })?;
-    if available < DISK_RESERVE {
-        return Err(ApiFailure::new(
-            StatusCode::INSUFFICIENT_STORAGE,
-            "DISK_FULL",
-            "Die Sicherheitsreserve des Datenträgers ist erreicht.",
-        ));
-    }
-    ensure_session_active(&state, &session).await?;
-    let id = Uuid::new_v4().to_string();
-    let partial_dir = state.partial_dir.as_ref().ok_or_else(|| {
-        ApiFailure::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "PARTIAL_DIR_FAILED",
-            "Temporärer Uploadordner ist nicht verfügbar.",
-        )
-    })?;
-    let partial_path = partial_dir.join(format!("{id}.part"));
-    let transfer_id = Uuid::new_v4().to_string();
-    let mut uploads = state.uploads.lock().await;
-    state.reserve_upload_object().map_err(|_| {
-        ApiFailure::new(
-            StatusCode::INSUFFICIENT_STORAGE,
-            "INBOX_FILE_LIMIT",
-            "Der Upload-Eingang hat die konfigurierte Dateianzahl erreicht.",
-        )
-    })?;
-    let partial_file = match create_upload_partial(&partial_path) {
-        Ok(file) => file,
-        Err(_) => {
-            state.release_upload(0);
+        .ok_or_else(upload_io_busy)?;
+    let task_state = state.clone();
+    let create = tokio::spawn(async move {
+        let _reservation_lock = reservation_lock;
+        ensure_session_active(&task_state, &session).await?;
+        let active_uploads: Vec<_> = task_state.uploads.lock().await.values().cloned().collect();
+        if active_uploads.len() >= 64 {
             return Err(ApiFailure::new(
-                StatusCode::CONFLICT,
-                "UPLOAD_COLLISION",
-                "Upload konnte nicht angelegt werden.",
+                StatusCode::TOO_MANY_REQUESTS,
+                "TOO_MANY_UPLOADS",
+                "Es sind bereits zu viele unvollständige Uploads vorhanden.",
             ));
         }
-    };
-    let transfer_name = name.clone();
-    let record = UploadRecord {
-        id: id.clone(),
-        owner_session: session.id,
-        owner_address: session.address,
-        name,
-        declared_size: payload.size,
-        offset: 0,
-        last_modified: payload.last_modified,
-        client_token,
-        created_at: Instant::now(),
-        last_activity: Instant::now(),
-        cancelled: false,
-        finalizing: false,
-        cancel_signal: Arc::new(std::sync::atomic::AtomicBool::new(false)),
-        chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
-        partial_path,
-        partial_file,
-        transfer_id: transfer_id.clone(),
-    };
-    uploads.insert(id.clone(), Arc::new(Mutex::new(record)));
-    drop(uploads);
-    state
-        .record_transfer_with_id(&transfer_id, "upload", &transfer_name, payload.size)
-        .await;
-    Ok(Json(UploadResponse {
-        upload_id: id,
-        offset: 0,
-        total_bytes: payload.size,
-        chunk_size: CHUNK_SIZE,
-        service_id: state.service_id.clone(),
-        last_modified: payload.last_modified,
-    }))
+        let mut address_uploads = 0_usize;
+        for upload in &active_uploads {
+            let upload = upload.lock().await;
+            if !upload.cancelled
+                && upload.owner_session == session.id
+                && upload.client_token == client_token
+                && upload.name == name
+                && upload.declared_size == payload.size
+                && upload.last_modified == payload.last_modified
+            {
+                return Ok(UploadResponse {
+                    upload_id: upload.id.clone(),
+                    offset: upload.offset,
+                    total_bytes: upload.declared_size,
+                    chunk_size: CHUNK_SIZE,
+                    service_id: task_state.service_id.clone(),
+                    last_modified: upload.last_modified,
+                });
+            }
+            if !upload.cancelled && upload.owner_address == session.address {
+                address_uploads += 1;
+            }
+        }
+        if address_uploads >= MAX_UPLOADS_PER_ADDRESS {
+            return Err(ApiFailure::new(
+                StatusCode::TOO_MANY_REQUESTS,
+                "UPLOAD_CLIENT_LIMIT",
+                "Von dieser Geräteadresse sind bereits zu viele unvollständige Uploads vorhanden.",
+            ));
+        }
+
+        let id = Uuid::new_v4().to_string();
+        let partial_dir = task_state.partial_dir.as_ref().cloned().ok_or_else(|| {
+            ApiFailure::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "PARTIAL_DIR_FAILED",
+                "Temporärer Uploadordner ist nicht verfügbar.",
+            )
+        })?;
+        let partial_path = partial_dir.join(format!("{id}.part"));
+        let blocking_state = task_state.clone();
+        let blocking_root = root.clone();
+        let blocking_path = partial_path.clone();
+        let (prepared, _io_permit) = tokio::task::spawn_blocking(move || {
+            let result = (|| -> ApiResult<(Arc<fs::File>, UploadObjectReservation)> {
+                if !blocking_state.roots_are_current() {
+                    return Err(ApiFailure::new(
+                        StatusCode::CONFLICT,
+                        "UPLOAD_ROOT_CHANGED",
+                        "Der Upload-Eingang wurde während des Betriebs verändert.",
+                    ));
+                }
+                blocking_state.refresh_inbox_usage().map_err(|_| {
+                    ApiFailure::new(
+                        StatusCode::INSUFFICIENT_STORAGE,
+                        "INBOX_USAGE_UNKNOWN",
+                        "Die Belegung des Upload-Eingangs konnte nicht sicher bestimmt werden.",
+                    )
+                })?;
+                let available = fs2::available_space(&blocking_root).map_err(|_| {
+                    ApiFailure::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "SPACE_UNKNOWN",
+                        "Freier Speicher konnte nicht geprüft werden.",
+                    )
+                })?;
+                if available < DISK_RESERVE {
+                    return Err(ApiFailure::new(
+                        StatusCode::INSUFFICIENT_STORAGE,
+                        "DISK_FULL",
+                        "Die Sicherheitsreserve des Datenträgers ist erreicht.",
+                    ));
+                }
+                let reservation = UploadObjectReservation::new(blocking_state.clone())?;
+                let file = create_upload_partial(&blocking_path).map_err(|_| {
+                    ApiFailure::new(
+                        StatusCode::CONFLICT,
+                        "UPLOAD_COLLISION",
+                        "Upload konnte nicht angelegt werden.",
+                    )
+                })?;
+                Ok((Arc::new(file), reservation))
+            })();
+            (result, io_permit)
+        })
+        .await
+        .map_err(|_| {
+            ApiFailure::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "UPLOAD_IO_FAILED",
+                "Der Upload konnte nicht sicher vorbereitet werden.",
+            )
+        })?;
+        let (partial_file, mut object_reservation) = prepared?;
+        if let Err(error) = ensure_session_active(&task_state, &session).await {
+            let cleanup_file = partial_file.clone();
+            let cleanup_path = partial_path.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                let _io_permit = _io_permit;
+                delete_open_upload(&cleanup_file, &cleanup_path)
+            })
+            .await;
+            return Err(error);
+        }
+
+        let transfer_id = Uuid::new_v4().to_string();
+        let transfer_name = name.clone();
+        let record = UploadRecord {
+            id: id.clone(),
+            owner_session: session.id,
+            owner_address: session.address,
+            name,
+            declared_size: payload.size,
+            offset: 0,
+            last_modified: payload.last_modified,
+            client_token,
+            created_at: Instant::now(),
+            last_activity: Instant::now(),
+            cancelled: false,
+            finalizing: false,
+            cancel_signal: Arc::new(AtomicBool::new(false)),
+            chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
+            partial_path,
+            partial_file,
+            transfer_id: transfer_id.clone(),
+        };
+        task_state
+            .uploads
+            .lock()
+            .await
+            .insert(id.clone(), Arc::new(Mutex::new(record)));
+        object_reservation.commit();
+        task_state
+            .record_transfer_with_id(&transfer_id, "upload", &transfer_name, payload.size)
+            .await;
+        Ok(UploadResponse {
+            upload_id: id,
+            offset: 0,
+            total_bytes: payload.size,
+            chunk_size: CHUNK_SIZE,
+            service_id: task_state.service_id.clone(),
+            last_modified: payload.last_modified,
+        })
+    });
+    create
+        .await
+        .map_err(|_| {
+            ApiFailure::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "UPLOAD_IO_FAILED",
+                "Der Upload konnte nicht sicher vorbereitet werden.",
+            )
+        })?
+        .map(Json)
 }
 
 async fn owned_upload(
@@ -1628,93 +1845,142 @@ async fn upload_chunk(
             )
         })?;
     let record = owned_upload(&state, &id, &session).await?;
-    let mut record = record.lock().await;
-    if record.cancelled {
-        return Err(ApiFailure::new(
-            StatusCode::NOT_FOUND,
-            "UPLOAD_NOT_FOUND",
-            "Teilübertragung wurde nicht gefunden.",
-        ));
-    }
-    if record.finalizing {
-        return Err(ApiFailure::new(
-            StatusCode::CONFLICT,
-            "UPLOAD_FINALIZING",
-            "Die Datei wird bereits endgültig übernommen.",
-        ));
-    }
     ensure_session_active(&state, &session).await?;
-    if supplied_offset != record.offset {
-        return Err(ApiFailure::new(
-            StatusCode::CONFLICT,
-            "OFFSET_MISMATCH",
-            format!("Erwarteter Offset: {}", record.offset),
-        ));
-    }
-    if record.offset.saturating_add(body.len() as u64) > record.declared_size {
-        return Err(ApiFailure::new(
-            StatusCode::BAD_REQUEST,
-            "SIZE_EXCEEDED",
-            "Der Upload überschreitet die angekündigte Dateigröße.",
-        ));
-    }
-    let remaining = record.declared_size.saturating_sub(record.offset);
-    let required = remaining.min(CHUNK_SIZE as u64) as usize;
-    if body.len() != required {
-        return Err(ApiFailure::new(
-            StatusCode::BAD_REQUEST,
-            "CHUNK_SIZE_INVALID",
-            format!("Für diesen Uploadblock werden genau {required} Bytes erwartet."),
-        ));
-    }
-    state.reserve_upload_bytes(body.len() as u64).map_err(|_| {
-        ApiFailure::new(
-            StatusCode::INSUFFICIENT_STORAGE,
-            "INBOX_BYTE_LIMIT",
-            "Der Upload-Eingang hat das konfigurierte Speicherlimit erreicht.",
+    let (partial_file, partial_path, cancel_signal, transfer_id, next_offset) = {
+        let record = record.lock().await;
+        if record.cancelled {
+            return Err(ApiFailure::new(
+                StatusCode::NOT_FOUND,
+                "UPLOAD_NOT_FOUND",
+                "Teilübertragung wurde nicht gefunden.",
+            ));
+        }
+        if record.finalizing {
+            return Err(ApiFailure::new(
+                StatusCode::CONFLICT,
+                "UPLOAD_FINALIZING",
+                "Die Datei wird bereits endgültig übernommen.",
+            ));
+        }
+        if supplied_offset != record.offset {
+            return Err(ApiFailure::new(
+                StatusCode::CONFLICT,
+                "OFFSET_MISMATCH",
+                format!("Erwarteter Offset: {}", record.offset),
+            ));
+        }
+        if record.offset.saturating_add(body.len() as u64) > record.declared_size {
+            return Err(ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "SIZE_EXCEEDED",
+                "Der Upload überschreitet die angekündigte Dateigröße.",
+            ));
+        }
+        let remaining = record.declared_size.saturating_sub(record.offset);
+        let required = remaining.min(CHUNK_SIZE as u64) as usize;
+        if body.len() != required {
+            return Err(ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "CHUNK_SIZE_INVALID",
+                format!("Für diesen Uploadblock werden genau {required} Bytes erwartet."),
+            ));
+        }
+        (
+            record.partial_file.clone(),
+            record.partial_path.clone(),
+            record.cancel_signal.clone(),
+            record.transfer_id.clone(),
+            record.offset.saturating_add(body.len() as u64),
         )
-    })?;
-    let write_result = (|| -> std::io::Result<()> {
-        if !state.roots_are_current() {
-            return Err(std::io::Error::other("upload root changed"));
+    };
+    let io_permit = state
+        .begin_upload_io(client.ip())
+        .await
+        .ok_or_else(upload_io_busy)?;
+    let reservation = UploadByteReservation::new(state.clone(), body.len() as u64)?;
+    let task_state = state.clone();
+    let task_record = record.clone();
+    let write = tokio::spawn(async move {
+        let mut reservation = reservation;
+        let blocking_state = task_state.clone();
+        let (write_result, _io_permit, _chunk_permit) = tokio::task::spawn_blocking(move || {
+            let result = write_upload_chunk_blocking(
+                &blocking_state,
+                &partial_file,
+                &partial_path,
+                supplied_offset,
+                &body,
+                &cancel_signal,
+            );
+            (result, io_permit, _chunk_permit)
+        })
+        .await
+        .map_err(|_| {
+            ApiFailure::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "UPLOAD_IO_FAILED",
+                "Der Uploadblock konnte nicht sicher verarbeitet werden.",
+            )
+        })?;
+        match write_result {
+            Ok(()) => {}
+            Err(UploadChunkIoError::Cancelled) => {
+                return Err(ApiFailure::new(
+                    StatusCode::NOT_FOUND,
+                    "UPLOAD_NOT_FOUND",
+                    "Teilübertragung wurde abgebrochen.",
+                ));
+            }
+            Err(UploadChunkIoError::Failed) => {
+                return Err(ApiFailure::new(
+                    StatusCode::INSUFFICIENT_STORAGE,
+                    "PARTIAL_WRITE_FAILED",
+                    "Uploadblock konnte nicht sicher gespeichert werden.",
+                ));
+            }
         }
-        let anchor = state
-            .partial_dir_anchor
-            .as_ref()
-            .ok_or_else(|| std::io::Error::other("partial root unavailable"))?;
-        anchor
-            .validate_open_file(&record.partial_file, &record.partial_path)
-            .map_err(std::io::Error::other)?;
-        let upload_root = state
-            .roots
-            .upload
-            .as_ref()
-            .ok_or_else(|| std::io::Error::other("upload root unavailable"))?;
-        if fs2::available_space(upload_root)? < DISK_RESERVE.saturating_add(body.len() as u64) {
-            return Err(std::io::Error::other("disk reserve reached"));
+
+        let still_active = task_state
+            .uploads
+            .lock()
+            .await
+            .get(&id)
+            .is_some_and(|current| Arc::ptr_eq(current, &task_record));
+        let mut current = task_record.lock().await;
+        if !still_active || current.cancelled {
+            return Err(ApiFailure::new(
+                StatusCode::NOT_FOUND,
+                "UPLOAD_NOT_FOUND",
+                "Teilübertragung wurde abgebrochen.",
+            ));
         }
-        let offset = record.offset;
-        record.partial_file.seek(std::io::SeekFrom::Start(offset))?;
-        record.partial_file.write_all(&body)?;
-        record.partial_file.sync_data()
-    })();
-    if write_result.is_err() {
-        state.release_upload_bytes(body.len() as u64);
-        return Err(ApiFailure::new(
-            StatusCode::INSUFFICIENT_STORAGE,
-            "PARTIAL_WRITE_FAILED",
-            "Uploadblock konnte nicht sicher gespeichert werden.",
-        ));
-    }
-    record.offset += body.len() as u64;
-    record.last_activity = Instant::now();
-    state
-        .update_transfer(&record.transfer_id, record.offset, None)
-        .await;
+        if current.offset != supplied_offset {
+            return Err(ApiFailure::new(
+                StatusCode::CONFLICT,
+                "OFFSET_MISMATCH",
+                format!("Erwarteter Offset: {}", current.offset),
+            ));
+        }
+        current.offset = next_offset;
+        current.last_activity = Instant::now();
+        reservation.commit();
+        drop(current);
+        task_state
+            .update_transfer(&transfer_id, next_offset, None)
+            .await;
+        Ok(next_offset)
+    });
+    let next_offset = write.await.map_err(|_| {
+        ApiFailure::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "UPLOAD_IO_FAILED",
+            "Der Uploadblock konnte nicht sicher verarbeitet werden.",
+        )
+    })??;
     let mut response = StatusCode::OK.into_response();
     response.headers_mut().insert(
         "upload-offset",
-        HeaderValue::from_str(&record.offset.to_string()).unwrap(),
+        HeaderValue::from_str(&next_offset.to_string()).unwrap(),
     );
     Ok(response)
 }
@@ -1728,6 +1994,8 @@ async fn finalize_upload_owned(
     state: Arc<TransferServiceState>,
     id: String,
     record: Arc<Mutex<UploadRecord>>,
+    _chunk_lease: UploadChunkLease,
+    io_permit: UploadIoPermit,
 ) -> ApiResult<CompleteResponse> {
     let result = async {
         let (
@@ -1758,24 +2026,6 @@ async fn finalize_upload_owned(
                     "Die Datei ist noch nicht vollständig übertragen.",
                 ));
             }
-            let actual_size = record
-                .partial_file
-                .metadata()
-                .map_err(|_| {
-                    ApiFailure::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "PARTIAL_STAT_FAILED",
-                        "Die Größe der Teilübertragung konnte nicht geprüft werden.",
-                    )
-                })?
-                .len();
-            if actual_size != record.declared_size {
-                return Err(ApiFailure::new(
-                    StatusCode::CONFLICT,
-                    "FINAL_SIZE_MISMATCH",
-                    "Die gespeicherte Dateigröße stimmt nicht mit dem Upload überein.",
-                ));
-            }
             let root = state.roots.upload.as_ref().cloned().ok_or_else(|| {
                 ApiFailure::new(
                     StatusCode::NOT_FOUND,
@@ -1799,13 +2049,7 @@ async fn finalize_upload_owned(
                 record.last_modified,
                 record.client_token.clone(),
                 record.cancel_signal.clone(),
-                record.partial_file.try_clone().map_err(|_| {
-                    ApiFailure::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "PARTIAL_OPEN_FAILED",
-                        "Teilübertragung konnte nicht sicher übernommen werden.",
-                    )
-                })?,
+                record.partial_file.clone(),
                 root,
                 anchor,
             )
@@ -1813,31 +2057,67 @@ async fn finalize_upload_owned(
         let publish_name = requested_name.clone();
         let publish_path = partial_path.clone();
         let publish_cancel = cancel_signal.clone();
-        let target = tokio::task::spawn_blocking(move || -> std::io::Result<PathBuf> {
-            use std::sync::atomic::Ordering;
-            if publish_cancel.load(Ordering::Acquire) {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Interrupted,
-                    "upload cancelled",
-                ));
-            }
-            file.sync_all()?;
-            if publish_cancel.load(Ordering::Acquire) {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Interrupted,
-                    "upload cancelled",
-                ));
-            }
-            let target = publish_open_upload(&file, &publish_path, &root, &anchor, &publish_name)
-                .map_err(std::io::Error::other)?;
-            if publish_cancel.load(Ordering::Acquire) {
-                let _ = delete_open_upload(&file, &target);
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Interrupted,
-                    "upload cancelled",
-                ));
-            }
-            Ok(target)
+        let cleanup_file = file.clone();
+        let (target, io_permit) = tokio::task::spawn_blocking(move || {
+            let result = (|| -> ApiResult<PathBuf> {
+                let actual_size = file
+                    .metadata()
+                    .map_err(|_| {
+                        ApiFailure::new(
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "PARTIAL_STAT_FAILED",
+                            "Die Größe der Teilübertragung konnte nicht geprüft werden.",
+                        )
+                    })?
+                    .len();
+                if actual_size != total {
+                    return Err(ApiFailure::new(
+                        StatusCode::CONFLICT,
+                        "FINAL_SIZE_MISMATCH",
+                        "Die gespeicherte Dateigröße stimmt nicht mit dem Upload überein.",
+                    ));
+                }
+                if publish_cancel.load(AtomicOrdering::Acquire) {
+                    return Err(ApiFailure::new(
+                        StatusCode::NOT_FOUND,
+                        "UPLOAD_NOT_FOUND",
+                        "Teilübertragung wurde abgebrochen.",
+                    ));
+                }
+                file.sync_all().map_err(|_| {
+                    ApiFailure::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "FINALIZE_FAILED",
+                        "Datei konnte nicht endgültig übernommen werden.",
+                    )
+                })?;
+                if publish_cancel.load(AtomicOrdering::Acquire) {
+                    return Err(ApiFailure::new(
+                        StatusCode::NOT_FOUND,
+                        "UPLOAD_NOT_FOUND",
+                        "Teilübertragung wurde abgebrochen.",
+                    ));
+                }
+                let target =
+                    publish_open_upload(&file, &publish_path, &root, &anchor, &publish_name)
+                        .map_err(|_| {
+                            ApiFailure::new(
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                "FINALIZE_FAILED",
+                                "Datei konnte nicht endgültig übernommen werden.",
+                            )
+                        })?;
+                if publish_cancel.load(AtomicOrdering::Acquire) {
+                    let _ = delete_open_upload(&file, &target);
+                    return Err(ApiFailure::new(
+                        StatusCode::NOT_FOUND,
+                        "UPLOAD_NOT_FOUND",
+                        "Teilübertragung wurde abgebrochen.",
+                    ));
+                }
+                Ok(target)
+            })();
+            (result, io_permit)
         })
         .await
         .map_err(|_| {
@@ -1846,22 +2126,8 @@ async fn finalize_upload_owned(
                 "FINALIZE_FAILED",
                 "Datei konnte nicht endgültig übernommen werden.",
             )
-        })?
-        .map_err(|error| {
-            if error.kind() == std::io::ErrorKind::Interrupted {
-                ApiFailure::new(
-                    StatusCode::NOT_FOUND,
-                    "UPLOAD_NOT_FOUND",
-                    "Teilübertragung wurde abgebrochen.",
-                )
-            } else {
-                ApiFailure::new(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "FINALIZE_FAILED",
-                    "Datei konnte nicht endgültig übernommen werden.",
-                )
-            }
         })?;
+        let target = target?;
         let final_name = target
             .file_name()
             .and_then(|value| value.to_str())
@@ -1869,6 +2135,13 @@ async fn finalize_upload_owned(
             .to_string();
         let _filesystem = state.upload_fs_lock.lock().await;
         if cancel_signal.load(std::sync::atomic::Ordering::Acquire) {
+            drop(_filesystem);
+            let cleanup_target = target.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                let _io_permit = io_permit;
+                delete_open_upload(&cleanup_file, &cleanup_target)
+            })
+            .await;
             return Err(ApiFailure::new(
                 StatusCode::NOT_FOUND,
                 "UPLOAD_NOT_FOUND",
@@ -1882,6 +2155,13 @@ async fn finalize_upload_owned(
             .get(&id)
             .is_some_and(|current| Arc::ptr_eq(current, &record));
         if !still_active {
+            drop(_filesystem);
+            let cleanup_target = target.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                let _io_permit = io_permit;
+                delete_open_upload(&cleanup_file, &cleanup_target)
+            })
+            .await;
             return Err(ApiFailure::new(
                 StatusCode::NOT_FOUND,
                 "UPLOAD_NOT_FOUND",
@@ -1937,7 +2217,7 @@ async fn complete_upload(
     let filesystem = state.upload_fs_lock.lock().await;
     ensure_session_active(&state, &session).await?;
     let record = owned_upload(&state, &id, &session).await?;
-    let mut record_guard = record.lock().await;
+    let record_guard = record.lock().await;
     if record_guard.cancelled {
         return Err(ApiFailure::new(
             StatusCode::NOT_FOUND,
@@ -1959,14 +2239,28 @@ async fn complete_upload(
             "Die Datei wird bereits endgültig übernommen.",
         ));
     }
+    let chunk_lease = state.begin_upload_chunk(&record_guard).map_err(|_| {
+        ApiFailure::new(
+            StatusCode::CONFLICT,
+            "UPLOAD_CHUNK_BUSY",
+            "Für diese Upload-ID wird noch ein Block verarbeitet.",
+        )
+    })?;
+    drop(record_guard);
+    let io_permit = state
+        .begin_upload_io(client.ip())
+        .await
+        .ok_or_else(upload_io_busy)?;
+    let mut record_guard = record.lock().await;
     record_guard.finalizing = true;
     drop(record_guard);
     drop(filesystem);
     let task_state = state.clone();
     let task_id = id.clone();
     let task_record = record.clone();
-    let commit =
-        tokio::spawn(async move { finalize_upload_owned(task_state, task_id, task_record).await });
+    let commit = tokio::spawn(async move {
+        finalize_upload_owned(task_state, task_id, task_record, chunk_lease, io_permit).await
+    });
     match commit.await {
         Ok(result) => result.map(Json),
         Err(_) => {
@@ -2002,11 +2296,13 @@ async fn cancel_upload(
         .cancel_signal
         .store(true, std::sync::atomic::Ordering::Release);
     let path = record.partial_path.clone();
+    let file = record.partial_file.clone();
+    let chunk_slots = record.chunk_slots.clone();
     let transfer_id = record.transfer_id.clone();
     let offset = record.offset;
-    let _ = delete_open_upload(&record.partial_file, &path);
     drop(record);
     state.uploads.lock().await.remove(&id);
+    state.schedule_upload_delete(file, path, chunk_slots);
     state.release_upload(offset);
     state
         .update_transfer(&transfer_id, offset, Some("cancelled"))
@@ -2054,8 +2350,9 @@ mod tests {
         settings::{AppSettings, ShareSettings},
         shares::ShareRoots,
     };
+    use crate::service::state::UploadIoTestGate;
     use axum::body::to_bytes;
-    use std::net::Ipv4Addr;
+    use std::{io::Write, net::Ipv4Addr, sync::Condvar};
     use tower::ServiceExt;
 
     fn test_state(root: &Path) -> Arc<TransferServiceState> {
@@ -2440,7 +2737,7 @@ mod tests {
                 cancel_signal: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
                 partial_path,
-                partial_file,
+                partial_file: Arc::new(partial_file),
                 transfer_id: "transfer".into(),
             })),
         );
@@ -2493,7 +2790,7 @@ mod tests {
             cancel_signal: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
             partial_path,
-            partial_file,
+            partial_file: Arc::new(partial_file),
             transfer_id: "transfer".into(),
         }));
         state
@@ -2527,6 +2824,267 @@ mod tests {
         drop(active_chunk);
         assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
         assert_eq!(json(response).await["code"], "UPLOAD_CHUNK_BUSY");
+    }
+
+    #[tokio::test]
+    async fn blocked_upload_io_does_not_delay_service_cleanup() {
+        let temp = tempfile::tempdir().unwrap();
+        let state = test_state(temp.path());
+        let address = IpAddr::V4(Ipv4Addr::new(192, 168, 10, 50));
+        let session = state.create_session(address, "owner".into()).await.unwrap();
+        let id = Uuid::new_v4().to_string();
+        let partial_path = state
+            .partial_dir
+            .as_ref()
+            .unwrap()
+            .join(format!("{id}.part"));
+        let partial_file = create_upload_partial(&partial_path).unwrap();
+        state.reserve_upload_object().unwrap();
+        state.uploads.lock().await.insert(
+            id.clone(),
+            Arc::new(Mutex::new(UploadRecord {
+                id: id.clone(),
+                owner_session: session.id,
+                owner_address: address,
+                name: "blocked.bin".into(),
+                declared_size: 1,
+                offset: 0,
+                last_modified: 1,
+                client_token: "blocked-token".into(),
+                created_at: Instant::now(),
+                last_activity: Instant::now(),
+                cancelled: false,
+                finalizing: false,
+                cancel_signal: Arc::new(AtomicBool::new(false)),
+                chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
+                partial_path,
+                partial_file: Arc::new(partial_file),
+                transfer_id: "blocked-transfer".into(),
+            })),
+        );
+        let release = Arc::new((std::sync::Mutex::new(false), Condvar::new()));
+        let (started, started_rx) = std::sync::mpsc::channel();
+        *state.upload_io_test_gate.lock().unwrap() = Some(UploadIoTestGate {
+            started,
+            release: release.clone(),
+        });
+
+        let mut patch = request(
+            Method::PATCH,
+            &format!("/api/v1/uploads/{id}"),
+            Body::from("x"),
+        );
+        patch.headers_mut().insert(
+            header::COOKIE,
+            HeaderValue::from_str(&format!("dmdc_session={}", session.token)).unwrap(),
+        );
+        patch
+            .headers_mut()
+            .insert("x-dmdc-csrf", HeaderValue::from_str(&session.csrf).unwrap());
+        patch
+            .headers_mut()
+            .insert("upload-offset", HeaderValue::from_static("0"));
+        let app = router(state.clone());
+        let chunk = tokio::spawn(async move { app.oneshot(patch).await.unwrap() });
+        tokio::task::spawn_blocking(move || started_rx.recv_timeout(Duration::from_secs(1)))
+            .await
+            .unwrap()
+            .expect("blocking upload I/O must start");
+
+        tokio::time::timeout(Duration::from_secs(1), state.cleanup_partials())
+            .await
+            .expect("service cleanup must not wait for blocked upload I/O");
+        let (released, wake) = &*release;
+        *released.lock().unwrap() = true;
+        wake.notify_all();
+        let response = tokio::time::timeout(Duration::from_secs(1), chunk)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(state.active_upload_bytes_for_test(), 0);
+    }
+
+    #[tokio::test]
+    async fn dropped_chunk_waiter_keeps_permits_and_commits_durable_progress() {
+        let temp = tempfile::tempdir().unwrap();
+        let state = test_state(temp.path());
+        let address = IpAddr::V4(Ipv4Addr::new(192, 168, 10, 50));
+        let session = state.create_session(address, "owner".into()).await.unwrap();
+        let id = Uuid::new_v4().to_string();
+        let partial_path = state
+            .partial_dir
+            .as_ref()
+            .unwrap()
+            .join(format!("{id}.part"));
+        let partial_file = create_upload_partial(&partial_path).unwrap();
+        let transfer_id = state.record_transfer("upload", "detached.bin", 1).await;
+        state.reserve_upload_object().unwrap();
+        let record = Arc::new(Mutex::new(UploadRecord {
+            id: id.clone(),
+            owner_session: session.id,
+            owner_address: address,
+            name: "detached.bin".into(),
+            declared_size: 1,
+            offset: 0,
+            last_modified: 1,
+            client_token: "detached-token".into(),
+            created_at: Instant::now(),
+            last_activity: Instant::now(),
+            cancelled: false,
+            finalizing: false,
+            cancel_signal: Arc::new(AtomicBool::new(false)),
+            chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
+            partial_path: partial_path.clone(),
+            partial_file: Arc::new(partial_file),
+            transfer_id: transfer_id.clone(),
+        }));
+        state
+            .uploads
+            .lock()
+            .await
+            .insert(id.clone(), record.clone());
+        let release = Arc::new((std::sync::Mutex::new(false), Condvar::new()));
+        let (started, started_rx) = std::sync::mpsc::channel();
+        *state.upload_io_test_gate.lock().unwrap() = Some(UploadIoTestGate {
+            started,
+            release: release.clone(),
+        });
+
+        let mut patch = request(
+            Method::PATCH,
+            &format!("/api/v1/uploads/{id}"),
+            Body::from("x"),
+        );
+        patch.headers_mut().insert(
+            header::COOKIE,
+            HeaderValue::from_str(&format!("dmdc_session={}", session.token)).unwrap(),
+        );
+        patch
+            .headers_mut()
+            .insert("x-dmdc-csrf", HeaderValue::from_str(&session.csrf).unwrap());
+        patch
+            .headers_mut()
+            .insert("upload-offset", HeaderValue::from_static("0"));
+        let app = router(state.clone());
+        let waiter = tokio::spawn(async move { app.oneshot(patch).await });
+        tokio::task::spawn_blocking(move || started_rx.recv_timeout(Duration::from_secs(1)))
+            .await
+            .unwrap()
+            .expect("blocking upload I/O must start");
+        waiter.abort();
+        assert!(waiter.await.unwrap_err().is_cancelled());
+        {
+            let record = record.lock().await;
+            assert!(matches!(state.begin_upload_chunk(&record), Err("upload")));
+        }
+
+        let (released, wake) = &*release;
+        *released.lock().unwrap() = true;
+        wake.notify_all();
+        tokio::time::timeout(Duration::from_secs(1), async {
+            loop {
+                if record.lock().await.offset == 1 {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("detached blocking upload must publish its durable offset");
+        assert_eq!(state.active_upload_bytes_for_test(), 1);
+        assert_eq!(
+            record.lock().await.partial_file.metadata().unwrap().len(),
+            1
+        );
+        let transfer = state
+            .transfers
+            .lock()
+            .await
+            .iter()
+            .find(|item| item.id == transfer_id)
+            .cloned()
+            .unwrap();
+        assert_eq!(transfer.transferred_bytes, 1);
+        let record = record.lock().await;
+        assert!(state.begin_upload_chunk(&record).is_ok());
+    }
+
+    #[tokio::test]
+    async fn failed_chunk_write_preserves_offset_budget_and_transfer_state() {
+        let temp = tempfile::tempdir().unwrap();
+        let state = test_state(temp.path());
+        let address = IpAddr::V4(Ipv4Addr::new(192, 168, 10, 50));
+        let session = state.create_session(address, "owner".into()).await.unwrap();
+        let id = Uuid::new_v4().to_string();
+        let partial_path = state
+            .partial_dir
+            .as_ref()
+            .unwrap()
+            .join(format!("{id}.part"));
+        drop(create_upload_partial(&partial_path).unwrap());
+        let partial_file = fs::OpenOptions::new()
+            .read(true)
+            .open(&partial_path)
+            .unwrap();
+        let transfer_id = state.record_transfer("upload", "readonly.bin", 1).await;
+        state.reserve_upload_object().unwrap();
+        let record = Arc::new(Mutex::new(UploadRecord {
+            id: id.clone(),
+            owner_session: session.id,
+            owner_address: address,
+            name: "readonly.bin".into(),
+            declared_size: 1,
+            offset: 0,
+            last_modified: 1,
+            client_token: "readonly-token".into(),
+            created_at: Instant::now(),
+            last_activity: Instant::now(),
+            cancelled: false,
+            finalizing: false,
+            cancel_signal: Arc::new(AtomicBool::new(false)),
+            chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
+            partial_path: partial_path.clone(),
+            partial_file: Arc::new(partial_file),
+            transfer_id: transfer_id.clone(),
+        }));
+        state
+            .uploads
+            .lock()
+            .await
+            .insert(id.clone(), record.clone());
+
+        let mut patch = request(
+            Method::PATCH,
+            &format!("/api/v1/uploads/{id}"),
+            Body::from("x"),
+        );
+        patch.headers_mut().insert(
+            header::COOKIE,
+            HeaderValue::from_str(&format!("dmdc_session={}", session.token)).unwrap(),
+        );
+        patch
+            .headers_mut()
+            .insert("x-dmdc-csrf", HeaderValue::from_str(&session.csrf).unwrap());
+        patch
+            .headers_mut()
+            .insert("upload-offset", HeaderValue::from_static("0"));
+        let response = router(state.clone()).oneshot(patch).await.unwrap();
+        assert_eq!(response.status(), StatusCode::INSUFFICIENT_STORAGE);
+        assert_eq!(json(response).await["code"], "PARTIAL_WRITE_FAILED");
+        assert_eq!(record.lock().await.offset, 0);
+        assert_eq!(state.active_upload_bytes_for_test(), 0);
+        let transfer = state
+            .transfers
+            .lock()
+            .await
+            .iter()
+            .find(|item| item.id == transfer_id)
+            .cloned()
+            .unwrap();
+        assert_eq!(transfer.transferred_bytes, 0);
+        assert_eq!(transfer.state, "active");
+        assert_eq!(fs::metadata(partial_path).unwrap().len(), 0);
     }
 
     #[tokio::test]
@@ -2744,7 +3302,7 @@ mod tests {
             cancel_signal: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             chunk_slots: Arc::new(tokio::sync::Semaphore::new(1)),
             partial_path,
-            partial_file,
+            partial_file: Arc::new(partial_file),
             transfer_id,
         }));
         state
@@ -2752,10 +3310,19 @@ mod tests {
             .lock()
             .await
             .insert(id.clone(), record.clone());
+        let chunk_lease = {
+            let record = record.lock().await;
+            state.begin_upload_chunk(&record).unwrap()
+        };
+        let io_permit = state
+            .begin_upload_io(IpAddr::V4(Ipv4Addr::new(192, 168, 10, 50)))
+            .await
+            .unwrap();
         let task_state = state.clone();
         let task_id = id.clone();
-        let commit =
-            tokio::spawn(async move { finalize_upload_owned(task_state, task_id, record).await });
+        let commit = tokio::spawn(async move {
+            finalize_upload_owned(task_state, task_id, record, chunk_lease, io_permit).await
+        });
         drop(commit);
 
         tokio::time::timeout(Duration::from_secs(2), async {

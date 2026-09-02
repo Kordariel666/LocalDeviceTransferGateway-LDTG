@@ -33,6 +33,8 @@ pub const MAX_DOWNLOADS_GLOBAL: usize = 12;
 pub const MAX_DOWNLOADS_PER_SESSION: usize = 3;
 pub const MAX_DOWNLOADS_PER_ADDRESS: usize = 4;
 pub const MAX_UPLOAD_CHUNKS_ACTIVE: usize = 8;
+pub const MAX_UPLOAD_IO_ACTIVE: usize = 4;
+pub const MAX_UPLOAD_IO_PER_ADDRESS: usize = 2;
 pub const MAX_UPLOADS_PER_ADDRESS: usize = 4;
 pub const MAX_SESSIONS_GLOBAL: usize = 128;
 pub const MAX_SESSIONS_PER_ADDRESS: usize = 4;
@@ -150,6 +152,11 @@ pub struct UploadChunkLease {
     _upload: OwnedSemaphorePermit,
 }
 
+pub struct UploadIoPermit {
+    _global: OwnedSemaphorePermit,
+    _address: OwnedSemaphorePermit,
+}
+
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DirectoryEntry {
@@ -202,7 +209,7 @@ pub struct UploadRecord {
     pub cancel_signal: Arc<AtomicBool>,
     pub chunk_slots: Arc<Semaphore>,
     pub partial_path: PathBuf,
-    pub partial_file: fs::File,
+    pub partial_file: Arc<fs::File>,
     pub transfer_id: String,
 }
 
@@ -301,6 +308,8 @@ pub struct TransferServiceState {
     listing_address_slots: Mutex<HashMap<IpAddr, Weak<Semaphore>>>,
     listing_session_slots: Mutex<HashMap<String, Weak<Semaphore>>>,
     upload_chunk_slots: Arc<Semaphore>,
+    upload_io_slots: Arc<Semaphore>,
+    upload_io_address_slots: Mutex<HashMap<IpAddr, Weak<Semaphore>>>,
     request_slots: Arc<Semaphore>,
     anonymous_request_slots: Arc<Semaphore>,
     authenticated_request_slots: Arc<Semaphore>,
@@ -311,6 +320,15 @@ pub struct TransferServiceState {
     pub last_activity_unix: AtomicI64,
     pub app: Option<AppHandle>,
     pub upload_fs_lock: Arc<Mutex<()>>,
+    #[cfg(test)]
+    pub upload_io_test_gate: StdMutex<Option<UploadIoTestGate>>,
+}
+
+#[cfg(test)]
+#[derive(Clone)]
+pub struct UploadIoTestGate {
+    pub started: std::sync::mpsc::Sender<()>,
+    pub release: Arc<(StdMutex<bool>, std::sync::Condvar)>,
 }
 
 fn random_token(bytes: usize) -> String {
@@ -473,6 +491,8 @@ impl TransferServiceState {
             listing_address_slots: Mutex::new(HashMap::new()),
             listing_session_slots: Mutex::new(HashMap::new()),
             upload_chunk_slots: Arc::new(Semaphore::new(MAX_UPLOAD_CHUNKS_ACTIVE)),
+            upload_io_slots: Arc::new(Semaphore::new(MAX_UPLOAD_IO_ACTIVE)),
+            upload_io_address_slots: Mutex::new(HashMap::new()),
             request_slots: Arc::new(Semaphore::new(MAX_REQUESTS_GLOBAL)),
             anonymous_request_slots: Arc::new(Semaphore::new(MAX_ANONYMOUS_REQUESTS_GLOBAL)),
             authenticated_request_slots: Arc::new(Semaphore::new(
@@ -489,6 +509,8 @@ impl TransferServiceState {
             last_activity_unix: AtomicI64::new(Utc::now().timestamp()),
             app,
             upload_fs_lock: Arc::new(Mutex::new(())),
+            #[cfg(test)]
+            upload_io_test_gate: StdMutex::new(None),
         })
     }
 
@@ -559,6 +581,14 @@ impl TransferServiceState {
     pub fn release_upload_bytes(&self, bytes: u64) {
         let mut usage = self.inbox_usage.lock().expect("inbox usage lock poisoned");
         usage.active_bytes = usage.active_bytes.saturating_sub(bytes);
+    }
+
+    #[cfg(test)]
+    pub fn active_upload_bytes_for_test(&self) -> u64 {
+        self.inbox_usage
+            .lock()
+            .expect("inbox usage lock poisoned")
+            .active_bytes
     }
 
     pub fn release_upload(&self, bytes: u64) {
@@ -860,6 +890,49 @@ impl TransferServiceState {
             _global: global,
             _upload: upload,
         })
+    }
+
+    pub async fn begin_upload_io(&self, address: IpAddr) -> Option<UploadIoPermit> {
+        let global = self.upload_io_slots.clone().try_acquire_owned().ok()?;
+        let address_slots = {
+            let mut slots = self.upload_io_address_slots.lock().await;
+            slots.retain(|_, slots| slots.strong_count() > 0);
+            if let Some(existing) = slots.get(&address).and_then(Weak::upgrade) {
+                existing
+            } else {
+                let created = Arc::new(Semaphore::new(MAX_UPLOAD_IO_PER_ADDRESS));
+                slots.insert(address, Arc::downgrade(&created));
+                created
+            }
+        };
+        let address = address_slots.try_acquire_owned().ok()?;
+        Some(UploadIoPermit {
+            _global: global,
+            _address: address,
+        })
+    }
+
+    pub fn schedule_upload_delete(
+        &self,
+        file: Arc<fs::File>,
+        path: PathBuf,
+        chunk_slots: Arc<Semaphore>,
+    ) {
+        let upload_io_slots = self.upload_io_slots.clone();
+        tokio::spawn(async move {
+            let Ok(chunk_permit) = chunk_slots.acquire_owned().await else {
+                return;
+            };
+            let Ok(io_permit) = upload_io_slots.acquire_owned().await else {
+                return;
+            };
+            let _ = tokio::task::spawn_blocking(move || {
+                let _chunk_permit = chunk_permit;
+                let _io_permit = io_permit;
+                delete_open_upload(&file, &path)
+            })
+            .await;
+        });
     }
 
     pub async fn create_directory_listing(
@@ -1195,10 +1268,12 @@ impl TransferServiceState {
             record.cancel_signal.store(true, Ordering::Release);
             self.uploads.lock().await.remove(&id);
             let path = record.partial_path.clone();
+            let file = record.partial_file.clone();
+            let chunk_slots = record.chunk_slots.clone();
             let transfer_id = record.transfer_id.clone();
             let offset = record.offset;
-            let _ = delete_open_upload(&record.partial_file, &path);
             drop(record);
+            self.schedule_upload_delete(file, path, chunk_slots);
             self.release_upload(offset);
             self.update_transfer(&transfer_id, offset, Some("cancelled"))
                 .await;
@@ -1289,10 +1364,12 @@ impl TransferServiceState {
             record.cancel_signal.store(true, Ordering::Release);
             self.uploads.lock().await.remove(&id);
             let path = record.partial_path.clone();
+            let file = record.partial_file.clone();
+            let chunk_slots = record.chunk_slots.clone();
             let transfer_id = record.transfer_id.clone();
             let offset = record.offset;
-            let _ = delete_open_upload(&record.partial_file, &path);
             drop(record);
+            self.schedule_upload_delete(file, path, chunk_slots);
             self.release_upload(offset);
             self.update_transfer(&transfer_id, offset, Some("expired"))
                 .await;
@@ -1692,8 +1769,9 @@ mod tests {
                 cancel_signal: Arc::new(AtomicBool::new(false)),
                 chunk_slots: Arc::new(Semaphore::new(1)),
                 partial_path: temp.path().join(format!("upload-{index}.part")),
-                partial_file: fs::File::create(temp.path().join(format!("upload-{index}.part")))
-                    .unwrap(),
+                partial_file: Arc::new(
+                    fs::File::create(temp.path().join(format!("upload-{index}.part"))).unwrap(),
+                ),
                 transfer_id: format!("transfer-{index}"),
             })
             .collect::<Vec<_>>();
@@ -1715,6 +1793,88 @@ mod tests {
         assert!(state
             .begin_upload_chunk(&records[MAX_UPLOAD_CHUNKS_ACTIVE])
             .is_ok());
+    }
+
+    #[tokio::test]
+    async fn limits_upload_io_globally_and_per_address() {
+        let temp = tempfile::tempdir().unwrap();
+        let state = test_state(temp.path()).unwrap();
+        let first_address = IpAddr::V4(Ipv4Addr::new(192, 168, 10, 50));
+        let first = state.begin_upload_io(first_address).await.unwrap();
+        let second = state.begin_upload_io(first_address).await.unwrap();
+        assert!(state.begin_upload_io(first_address).await.is_none());
+
+        let mut permits = vec![first, second];
+        for index in 0..(MAX_UPLOAD_IO_ACTIVE - MAX_UPLOAD_IO_PER_ADDRESS) {
+            permits.push(
+                state
+                    .begin_upload_io(IpAddr::V6(Ipv6Addr::from(index as u128 + 1)))
+                    .await
+                    .unwrap(),
+            );
+        }
+        assert!(state
+            .begin_upload_io(IpAddr::V6(Ipv6Addr::from(100_u128)))
+            .await
+            .is_none());
+        drop(permits.pop());
+        assert!(state
+            .begin_upload_io(IpAddr::V6(Ipv6Addr::from(101_u128)))
+            .await
+            .is_some());
+    }
+
+    #[tokio::test]
+    async fn dropped_upload_io_waiters_do_not_release_running_blocking_work() {
+        let temp = tempfile::tempdir().unwrap();
+        let state = test_state(temp.path()).unwrap();
+        let release = Arc::new((StdMutex::new(false), Condvar::new()));
+        let (started, started_rx) = std::sync::mpsc::channel();
+        for index in 0..MAX_UPLOAD_IO_ACTIVE {
+            let permit = state
+                .begin_upload_io(IpAddr::V6(Ipv6Addr::from(index as u128 + 1)))
+                .await
+                .unwrap();
+            let release = release.clone();
+            let started = started.clone();
+            let task = tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                started.send(()).unwrap();
+                let (flag, wake) = &*release;
+                let mut released = flag.lock().unwrap();
+                while !*released {
+                    released = wake.wait(released).unwrap();
+                }
+            });
+            drop(task);
+        }
+        for _ in 0..MAX_UPLOAD_IO_ACTIVE {
+            started_rx
+                .recv_timeout(Duration::from_secs(1))
+                .expect("blocking upload I/O task must start");
+        }
+        assert!(state
+            .begin_upload_io(IpAddr::V6(Ipv6Addr::from(100_u128)))
+            .await
+            .is_none());
+
+        let (flag, wake) = &*release;
+        *flag.lock().unwrap() = true;
+        wake.notify_all();
+        tokio::time::timeout(Duration::from_secs(1), async {
+            loop {
+                if state
+                    .begin_upload_io(IpAddr::V6(Ipv6Addr::from(101_u128)))
+                    .await
+                    .is_some()
+                {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("capacity must recover after the blocking upload I/O exits");
     }
 
     #[tokio::test]
@@ -2331,13 +2491,19 @@ mod tests {
                 cancel_signal: Arc::new(AtomicBool::new(false)),
                 chunk_slots: Arc::new(Semaphore::new(1)),
                 partial_path: partial_path.clone(),
-                partial_file,
+                partial_file: Arc::new(partial_file),
                 transfer_id: transfer_id.clone(),
             })),
         );
 
         state.expire_stale_uploads().await;
-        assert!(!partial_path.exists());
+        tokio::time::timeout(Duration::from_secs(1), async {
+            while partial_path.exists() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("expired upload cleanup must remove its partial");
         assert!(!state.uploads.lock().await.contains_key(&id));
         assert_eq!(
             state
@@ -2383,13 +2549,19 @@ mod tests {
                 cancel_signal: Arc::new(AtomicBool::new(false)),
                 chunk_slots: Arc::new(Semaphore::new(1)),
                 partial_path: partial_path.clone(),
-                partial_file,
+                partial_file: Arc::new(partial_file),
                 transfer_id,
             })),
         );
 
         state.expire_stale_uploads().await;
-        assert!(!partial_path.exists());
+        tokio::time::timeout(Duration::from_secs(1), async {
+            while partial_path.exists() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("absolute upload expiry must remove its partial");
         assert!(!state.uploads.lock().await.contains_key(&id));
     }
 }

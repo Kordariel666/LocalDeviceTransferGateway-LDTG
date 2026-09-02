@@ -166,6 +166,8 @@ Umgesetzt:
 
 ### R1.2 Blockierende Uploadarbeit aus Async-Workern entfernen
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - Inbox-Scan, Dateischreiben, `sync_data` und weitere blockierende Dateisystemarbeit in begrenzte `spawn_blocking`-Jobs verschieben.
@@ -180,6 +182,31 @@ Regressionstests:
 - Abgebrochene HTTP-Waiter geben Blocking-Permits nicht zu früh frei.
 - Parallele Uploads überschreiten den I/O-Pool nicht.
 - Offset, Bytebudget und Transferstatus bleiben nach Schreibfehlern konsistent.
+
+Umgesetzt:
+
+- Uploadanlage, Inbox-Scan, Speicherprüfung, Chunk-Schreiben, `sync_data`,
+  Abschlussprüfung, Veröffentlichung und Live-Partial-Löschung laufen außerhalb
+  der Async-Worker in begrenzten Blocking-Jobs. Auch die periodische Rootprüfung
+  teilt sich nun den abbrechbaren Blocking-Pfad der Netzwerkprüfung.
+- Ein eigener fairer Upload-I/O-Pool erlaubt höchstens vier clientgetriebene
+  Dateisystemjobs gleichzeitig und höchstens zwei pro Client-IP. Die bereits vor
+  dem Body geltende Grenze von acht Chunks und genau einem Chunk pro Upload-ID
+  bleibt als separate frühe Schutzschicht bestehen.
+- Offene Partial-Dateien werden über stabile geteilte Handles und positionsfeste
+  Schreibzugriffe verwendet. Offset, Aktivitätszeit, Bytebudget und
+  Transferfortschritt wechseln erst nach erfolgreichem `sync_data` gemeinsam auf
+  den neuen Stand; RAII-Reservierungen rollen Fehler und Taskabbrüche zurück.
+- Create- und Chunkarbeit bleibt nach Verlust des HTTP-Waiters dienstbesessen.
+  Blocking-Permits werden bis zum tatsächlichen Jobende gehalten. Stop,
+  Sitzungswiderruf und Ablauf können während langsamer I/O sofort signalisieren;
+  die exklusive, begrenzte Löschung folgt nach dem laufenden Job.
+- Pro erfolgreich bestätigtem Block entsteht genau ein Progress-Update. Wegen
+  der festen Zwischenblockgröße entspricht das höchstens einem Update je 8 MiB;
+  nur der letzte Block darf kleiner sein.
+- Fünf neue Rust-Regressionstests prüfen globale und IP-bezogene I/O-Grenzen,
+  Permitbesitz nach Waiter-Abbruch, reaktionsfähige Dienstbereinigung, den
+  dienstbesessenen Abschluss eines Chunks sowie konsistente Fehlerzustände.
 
 ### R1.3 Versionierte Einstellungs-Migration
 

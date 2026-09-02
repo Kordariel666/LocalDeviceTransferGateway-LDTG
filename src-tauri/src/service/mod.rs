@@ -414,21 +414,24 @@ pub async fn start(
                         monitor_state.emit_auto_stop();
                         break;
                     }
-                    if !monitor_state.roots_are_current() {
-                        monitor_state.set_stop_reason("Ein freigegebener Ordner wurde ersetzt oder umgeleitet. DMDC wurde sicher gestoppt.");
-                        break;
-                    }
                     if network_checks.is_empty() {
                         let expected = monitor_state.interface.clone();
+                        let checked_state = monitor_state.clone();
                         network_checks.spawn_blocking(move || {
-                            network::list_interfaces()
+                            let roots_are_current = checked_state.roots_are_current();
+                            let network_is_current = network::list_interfaces()
                                 .into_iter()
-                                .any(|item| same_network_identity(&expected, &item))
+                                .any(|item| same_network_identity(&expected, &item));
+                            (roots_are_current, network_is_current)
                         });
                     }
                 }
                 Some(result) = network_checks.join_next(), if !network_checks.is_empty() => {
-                    if !matches!(result, Ok(true)) {
+                    if matches!(result, Ok((false, _))) {
+                        monitor_state.set_stop_reason("Ein freigegebener Ordner wurde ersetzt oder umgeleitet. DMDC wurde sicher gestoppt.");
+                        break;
+                    }
+                    if !matches!(result, Ok((true, true))) {
                         monitor_state.set_stop_reason("Die ausgewählte Netzwerkverbindung wurde getrennt oder geändert. DMDC wurde sicher gestoppt.");
                         monitor_state.emit_network_lost();
                         break;
