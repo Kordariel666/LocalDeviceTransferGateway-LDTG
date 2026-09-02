@@ -36,6 +36,10 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Meldungen und typisierten Bestätigungskontexten. Der Desktop zerlegt keine
   delimiter-basierten Backendfehler mehr; rohe interne Details bleiben außerhalb
   der IPC-Antworten und lokalen Logs.
+- Der R4.3-Design-Spike behält für v1 den bewusst mehrgerätefähigen Zugangscode
+  und dienstweite Freigaberollen bei. Automatische Rotation und individuelle
+  Rollen werden erst mit einem lokal bestätigten, serverseitig autorisierten
+  Kopplungsablauf erwogen; eine bloße Clientauswahl gilt nicht als Schutz.
 
 ### Added
 
@@ -49,6 +53,8 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Optionale, ausschließlich sitzungsbezogene Gerätenamen beim mobilen Login und
   verständliche lokale Browser-/Plattformerkennung. Der Desktop zeigt je Sitzung
   IP-Adresse, Verbindungsbeginn, letzte Aktivität und aktive Übertragungen.
+- Ein aktuelles quellgestütztes Bedrohungsmodell sowie ein dokumentierter
+  Mindestentwurf für eine mögliche spätere strengere Gerätekopplung.
 
 ### Fixed
 

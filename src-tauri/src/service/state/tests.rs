@@ -320,6 +320,44 @@ fn global_cooldown_is_checked_before_the_access_code() {
     );
 }
 
+#[tokio::test]
+async fn manual_code_rotation_resets_throttling_without_revoking_sessions() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path()).unwrap();
+    let address = IpAddr::V4(Ipv4Addr::new(192, 168, 10, 50));
+    let session = state
+        .create_session(address, "legitimes Gerät".into())
+        .await
+        .unwrap();
+    *state.access_code.write().unwrap() = "ungueltig".into();
+    for _ in 0..AUTH_FAILURES_PER_ADDRESS - 1 {
+        assert_eq!(
+            state.verify_access_code(address, "00000000"),
+            AuthDecision::Invalid
+        );
+    }
+    assert_eq!(
+        state.verify_access_code(address, "00000000"),
+        AuthDecision::AddressBlocked
+    );
+
+    let rotated = state.rotate_code();
+
+    assert_eq!(rotated.len(), ACCESS_CODE_DIGITS);
+    assert!(rotated.bytes().all(|value| value.is_ascii_digit()));
+    {
+        let throttle = state.auth_attempts.lock().unwrap();
+        assert!(throttle.attempts.is_empty());
+        assert_eq!(throttle.global_failures, 0);
+        assert!(throttle.global_blocked_until.is_none());
+    }
+    assert_eq!(
+        state.verify_access_code(address, &rotated),
+        AuthDecision::Accepted
+    );
+    assert!(state.session_is_active(&session).await);
+}
+
 #[test]
 fn auth_attempt_records_expire_and_remain_capacity_bounded() {
     let temp = tempfile::tempdir().unwrap();

@@ -7,6 +7,7 @@
 DMDC v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gibt keine Cloud, kein Konto, keine öffentliche Webseite, keine Portweiterleitung und keine externen Web-Ressourcen. HTTP ist jedoch keine Ende-zu-Ende-Verschlüsselung: Andere Teilnehmer oder Administratoren des lokalen Netzes könnten Verkehr grundsätzlich mitlesen oder manipulieren. DMDC darf deshalb nur in einem bewusst bestätigten Netzwerk eingesetzt werden.
 
 - Der achtstellige Code steht nie in URL oder QR-Code. Verteilte Fehlversuche besitzen zusätzlich einen dienstweiten Grenzwert. Eine aktive Abkühlphase wird vor dem Codevergleich geprüft und rotiert den Code nicht, damit fremde Geräte weder einen Codewechsel erzwingen noch den gültigen Code als Prüf-Orakel verwenden können.
+- Der Code bleibt innerhalb eines Dienstlaufs absichtlich für mehrere legitime Geräte verwendbar, bis er lokal rotiert wird. Eine Rotation widerruft bestehende Sitzungen nicht; dafür stehen getrennte Geräte- und Gesamtwiderrufe bereit. Die aktive Download-/Uploadrolle gilt derzeit dienstweit und kann nicht vom Mobilgerät als eigene Berechtigung gewählt werden.
 - Sitzungen sind an Dienstinstanz und Client-IP gebunden, laufen nach 6 Stunden 15 Minuten Inaktivität beziehungsweise nach 24 Stunden absolut ab und enden spätestens beim Dienststopp. Ein optionaler Gerätename lebt nur in dieser Sitzung; der rohe User-Agent wird lokal in eine verständliche Browser-/Plattformbezeichnung übersetzt und danach nicht an die Desktopoberfläche weitergegeben.
 - Die Downloadfreigabe ist ausschließlich lesbar.
 - Der Upload-Eingang erlaubt nur neue Dateien und zeigt seinen vorhandenen Inhalt nicht an. Das Backend weist gleiche oder verschachtelte Download-/Uploadwurzeln ab, damit diese Zusage auch bei abweichenden Pfadschreibweisen gilt.
@@ -19,7 +20,11 @@ DMDC v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gi
 - Löschen, Überschreiben, Umbenennen, Verschieben und Ausführen von Dateien sind nicht implementiert.
 - Eingehende Dateien erhalten immer einen unvorhersagbaren serverseitigen Namenszusatz. Die atomare No-Replace-Übernahme bleibt erhalten, ohne durch den Antwortnamen die Existenz gleichnamiger Inbox-Dateien offenzulegen.
 
-Weitere Details stehen in [SECURITY.md](SECURITY.md) und [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Weitere Details stehen in [SECURITY.md](SECURITY.md),
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) und
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Die R4.3-Entscheidung gegen eine
+wirkungslos clientseitig gewählte Rolle ist in
+[docs/PAIRING_DESIGN.md](docs/PAIRING_DESIGN.md) begründet.
 
 ## Entwicklung
 

@@ -25,6 +25,8 @@ DMDC v1 nutzt HTTP im bestätigten lokalen Netzwerk und beansprucht keine Transp
 - Abgeschlossene und aktive Uploads teilen sich endliche Byte- und Objektbudgets. Nicht abschließende Uploadblöcke sind exakt 8 MiB groß; Abschlusswiederholungen sind über eine begrenzte, ablaufende Quittung idempotent.
 - Dateinamen mit bidirektionalen oder unsichtbaren Unicode-Steuerzeichen werden beim Upload entschärft und in den Oberflächen isoliert dargestellt.
 - Optionale Gerätenamen gelten nur für die aktuelle Sitzung, sind auf 64 Zeichen begrenzt, verbieten Steuer- und bidirektionale Formatierungszeichen und werden im Desktop bidi-isoliert ausgegeben. Rohe User-Agent-Header werden nach lokaler Klassifizierung nicht im Desktopstatus offengelegt.
+- Der Zugangscode bleibt bis zur lokalen Rotation oder zum Dienstende für mehrere legitime Geräte verwendbar. Rotation ersetzt nur den Code und setzt dessen Fehlversuchszustand zurück; bestehende Sitzungen werden ausschließlich durch Ablauf, Einzel-/Gesamtwiderruf oder Dienststopp beendet. Gerätename und User-Agent beeinflussen weder Fehlversuchs- noch Sitzungslimits.
+- Download- und Uploadrollen werden in v1 dienstweit durch die beim Start aktivierten Freigabewurzeln festgelegt. Eine vom LAN-Client selbst angegebene Rolle wäre keine Autorisierung und wird deshalb nicht als Sicherheitskontrolle angeboten.
 
 Der `.dmdc`-Arbeitsordner ist kein öffentlicher Eigentumsnachweis. Laufende Uploads werden über ihre offenen Handles aufgeräumt; nach einem Prozessabsturz bleiben nicht mehr sicher zuordenbare Teildateien erhalten und müssen bei Bedarf manuell geprüft werden.
 

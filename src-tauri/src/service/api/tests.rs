@@ -4,7 +4,7 @@ use crate::domain::{
     settings::{AppSettings, ShareSettings},
     shares::ShareRoots,
 };
-use crate::service::state::UploadIoTestGate;
+use crate::service::state::{UploadIoTestGate, MAX_SESSIONS_PER_ADDRESS};
 use axum::body::to_bytes;
 use std::{io::Write, net::Ipv4Addr, sync::Condvar};
 use tower::ServiceExt;
@@ -216,14 +216,21 @@ async fn enforces_csrf_for_writes() {
 }
 
 #[tokio::test]
-async fn locks_ip_on_the_tenth_wrong_code() {
+async fn device_names_do_not_partition_the_address_code_limit() {
     let temp = tempfile::tempdir().unwrap();
-    let app = router(test_state(temp.path()));
-    for _ in 0..9 {
+    let state = test_state(temp.path());
+    let app = router(state.clone());
+    for index in 0..9 {
         let mut auth = request(
             Method::POST,
             "/api/v1/auth",
-            Body::from(r#"{"code":"00000000"}"#),
+            Body::from(
+                serde_json::json!({
+                    "code": "00000000",
+                    "deviceName": format!("Gerät {index}"),
+                })
+                .to_string(),
+            ),
         );
         auth.headers_mut().insert(
             header::CONTENT_TYPE,
@@ -237,7 +244,7 @@ async fn locks_ip_on_the_tenth_wrong_code() {
     let mut tenth = request(
         Method::POST,
         "/api/v1/auth",
-        Body::from(r#"{"code":"00000000"}"#),
+        Body::from(r#"{"code":"00000000","deviceName":"Anderer Name"}"#),
     );
     tenth.headers_mut().insert(
         header::CONTENT_TYPE,
@@ -250,7 +257,7 @@ async fn locks_ip_on_the_tenth_wrong_code() {
     let mut blocked = request(
         Method::POST,
         "/api/v1/auth",
-        Body::from(r#"{"code":"12345678"}"#),
+        Body::from(r#"{"code":"12345678","deviceName":"Legitimes Gerät"}"#),
     );
     blocked.headers_mut().insert(
         header::CONTENT_TYPE,
@@ -259,6 +266,54 @@ async fn locks_ip_on_the_tenth_wrong_code() {
     assert_eq!(
         app.oneshot(blocked).await.unwrap().status(),
         StatusCode::TOO_MANY_REQUESTS
+    );
+    assert!(state.status().await.sessions.is_empty());
+}
+
+#[tokio::test]
+async fn device_names_do_not_partition_the_address_session_limit() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path());
+    let app = router(state.clone());
+
+    for index in 0..MAX_SESSIONS_PER_ADDRESS {
+        let mut auth = request(
+            Method::POST,
+            "/api/v1/auth",
+            Body::from(
+                serde_json::json!({
+                    "code": "12345678",
+                    "deviceName": format!("Gerät {index}"),
+                })
+                .to_string(),
+            ),
+        );
+        auth.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+        assert_eq!(
+            app.clone().oneshot(auth).await.unwrap().status(),
+            StatusCode::NO_CONTENT
+        );
+    }
+
+    let mut overflow = request(
+        Method::POST,
+        "/api/v1/auth",
+        Body::from(r#"{"code":"12345678","deviceName":"Zusätzliches Gerät"}"#),
+    );
+    overflow.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
+    let response = app.oneshot(overflow).await.unwrap();
+
+    assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(json(response).await["code"], "SESSION_CLIENT_LIMIT");
+    assert_eq!(
+        state.status().await.sessions.len(),
+        MAX_SESSIONS_PER_ADDRESS
     );
 }
 

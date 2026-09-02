@@ -1,6 +1,6 @@
 # DMDC Entwicklungsroadmap
 
-Stand: 2. September 2026  
+Stand: 3. September 2026
 Ausgangsversion: 0.1.3  
 Ziel: DMDC schrittweise von einem sicherheitsgehärteten v1-Kern zu einer wartbaren, alltagstauglichen und veröffentlichungsreifen Anwendung ausbauen.
 
@@ -663,12 +663,51 @@ Umgesetzt:
 
 ### R4.3 Optionale strengere Kopplung
 
+Status: abgeschlossen als Design-Gate am 3. September 2026; keine zusätzliche
+Kopplungszustandsmaschine für v1 implementiert.
+
 Design-Spike vor Implementierung:
 
 - Einmal-Code beziehungsweise automatische Code-Rotation nach der ersten erfolgreichen Kopplung bewerten.
 - Optional pro Sitzung nur Upload, nur Download oder beide Rollen freigeben.
 - Bedienbarkeit für mehrere legitime Geräte gegen zusätzlichen Sicherheitsgewinn abwägen.
 - Threat Model und Rate-Limit-Tests vor der Umsetzung aktualisieren.
+
+Entschieden und nachgewiesen:
+
+- Der Zugangscode bleibt in v1 innerhalb eines Dienstlaufs bewusst für mehrere
+  legitime Geräte verwendbar. Eine automatische Rotation nach der ersten
+  Anmeldung würde weitere Geräte unerwartet aussperren, konkurrierende
+  Anmeldungen verkomplizieren und bereits angelegte Sitzungen dennoch nicht
+  entziehen. Manuelle Rotation und expliziter Sitzungswiderruf bleiben die klar
+  getrennten Betreiberaktionen.
+- Vom Mobilclient selbst angeforderte Rollen werden nicht als Sicherheitsfunktion
+  umgesetzt: Ein Client mit gültigem Code könnte genauso „beide“ anfordern. Eine
+  echte sitzungsbezogene Einschränkung muss lokal am Desktop bestätigt und als
+  unveränderliche serverseitige Fähigkeit gebunden werden.
+- `docs/PAIRING_DESIGN.md` hält Entscheidung, Abwägung, Mindestprotokoll und
+  Pflichttests für eine spätere Desktop-bestätigte Kopplung fest. Eine Umsetzung
+  wird erst bei belegtem Bedarf erneut priorisiert.
+- `docs/THREAT_MODEL.md` ersetzt für den aktuellen Stand das historische
+  Auditmodell als wiederverwendbare, quellgestützte Referenz und führt Codebesitz,
+  globale Rollen, Sitzungsbindung und offene Deploymentannahmen ausdrücklich.
+- Neue Backendregressionen beweisen, dass wechselnde Gerätenamen weder das
+  IP-Codeversuchslimit noch das IP-Sitzungslimit aufteilen. Eine weitere
+  Regression fixiert die Semantik der manuellen Rotation: Drosselung wird
+  zurückgesetzt, bestehende Sitzungen bleiben aktiv.
+- Das vollständige Qualitätsgate ist mit 115 Rust-, 30 Desktop- und 39
+  Mobile-Tests grün.
+
+Phasen-Gate 4:
+
+Status: erfüllt am 3. September 2026.
+
+- Vertraute Netzwerke sind migrierbar, sichtbar, aktualisierbar und löschbar.
+- Verbundene Geräte sind datensparsam verständlich, live zuordenbar und einzeln
+  widerrufbar.
+- Strengere Kopplung erweitert die Angriffsfläche nicht durch wirkungslose
+  Clientangaben; eine spätere Umsetzung besitzt vorab definierte
+  Autorisierungs-, Ablauf- und Ressourceninvarianten.
 
 ## 10. Phase 5 – Profile und mehrere Freigaben
 

@@ -107,6 +107,22 @@ Live-Ereignissen zählen, ohne den Gerätenamen in Transferdaten zu duplizieren.
 Frei eingegebene Gerätenamen werden von React escaped und zusätzlich in einem
 `bdi`-Element isoliert angezeigt.
 
+Der Code bleibt innerhalb einer Dienstinstanz absichtlich wiederverwendbar, damit
+mehrere legitime Geräte nacheinander eine eigene Sitzung anlegen können. Eine
+lokale Rotation ersetzt den Code und leert die Fehlversuchszähler, widerruft
+aber keine bereits erzeugte Sitzung. Gerätename und User-Agent sind keine
+Rate-Limit- oder Autorisierungsidentität; Fehlversuche, Sitzungskapazität und
+Übertragungslimits bleiben an Dienst, IP und gegebenenfalls Sitzung gebunden.
+
+Freigaberollen sind in v1 Eigenschaften des laufenden Dienstes. Jede Sitzung
+sieht genau die global aktivierten Download- und Uploadwurzeln. Eine vom Client
+selbst gewünschte Rolle würde keine Rechte begrenzen, weil derselbe Client auch
+beide Rollen anfordern könnte. Individuelle Rollen erfordern deshalb zuerst
+einen Desktop-bestätigten Pending-Pairing-Ablauf mit serverseitig
+unveränderlichen Sitzungsfähigkeiten. R4.3 implementiert diese zusätzliche
+Zustandsmaschine mangels belegten Bedarfs nicht; Entscheidung, Invarianten und
+Pflichttests stehen in [`PAIRING_DESIGN.md`](PAIRING_DESIGN.md).
+
 ## Datenwege
 
 - Download: begrenzte blockierende kanonische Pfad- und Metadatenprüfung → read-only Datei-Handle → gestreamte HTTP-Antwort mit Attachment- und Range-Headern.
