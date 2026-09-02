@@ -112,33 +112,28 @@ pub fn peer_fairness_key(address: IpAddr) -> String {
 #[cfg(windows)]
 fn windows_profiles() -> HashMap<String, (String, String, String)> {
     let script = r#"
-$adapters = @{}
-Get-NetAdapter -ErrorAction Stop | ForEach-Object { $adapters[$_.InterfaceGuid.ToString('D')] = $_.Name }
-$manager = New-Object -ComObject NetworkListManager
-$profiles = foreach ($network in @($manager.GetNetworks(1))) {
-  $networkId = $network.GetNetworkId().ToString('D')
-  foreach ($connection in @($network.GetNetworkConnections())) {
-    $adapterId = $connection.GetAdapterId().ToString('D')
-    if ($adapters.ContainsKey($adapterId)) {
-      [pscustomobject]@{
-        InterfaceAlias = $adapters[$adapterId]
-        Name = $network.GetName()
-        NetworkCategory = $network.GetCategory()
-        NetworkGuid = $networkId
-      }
-    }
+$profiles = Get-NetConnectionProfile -ErrorAction Stop | ForEach-Object {
+  [pscustomobject]@{
+    InterfaceAlias = [string]$_.InterfaceAlias
+    Name = [string]$_.Name
+    NetworkCategory = [string]$_.NetworkCategory
+    NetworkGuid = [string]$_.InstanceID
   }
 }
 @($profiles) | ConvertTo-Json -Compress
 "#;
-    let output = crate::platform::run_encoded(script);
-    let Ok(output) = output else {
+    let Ok(output) = crate::platform::run_encoded(script) else {
         return HashMap::new();
     };
     if !output.status.success() {
         return HashMap::new();
     }
-    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&output.stdout) else {
+    parse_windows_profiles(&output.stdout)
+}
+
+#[cfg(windows)]
+fn parse_windows_profiles(bytes: &[u8]) -> HashMap<String, (String, String, String)> {
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
         return HashMap::new();
     };
     let values = value.as_array().cloned().unwrap_or_else(|| vec![value]);
@@ -149,23 +144,20 @@ $profiles = foreach ($network in @($manager.GetNetworks(1))) {
             let name = item
                 .get("Name")
                 .and_then(|value| value.as_str())
+                .filter(|value| !value.is_empty())
                 .unwrap_or(&alias)
                 .to_string();
-            let category = match item.get("NetworkCategory").and_then(|value| value.as_i64()) {
-                Some(0) => "Öffentlich",
-                Some(1) => "Privat",
-                Some(2) => "Domänennetzwerk",
-                _ => match item.get("NetworkCategory").and_then(|value| value.as_str()) {
-                    Some("Public") => "Öffentlich",
-                    Some("Private") => "Privat",
-                    Some("DomainAuthenticated") => "Domänennetzwerk",
-                    Some(value) => value,
-                    None => "Unbekannt",
-                },
+            let category = match item.get("NetworkCategory").and_then(|value| value.as_str()) {
+                Some("Public") => "Öffentlich",
+                Some("Private") => "Privat",
+                Some("DomainAuthenticated") => "Domänennetzwerk",
+                Some(value) => value,
+                None => "Unbekannt",
             }
             .to_string();
             let network_guid = item.get("NetworkGuid")?.as_str()?.to_string();
-            Some((alias, (name, category, network_guid)))
+            (!alias.is_empty() && !network_guid.is_empty())
+                .then_some((alias, (name, category, network_guid)))
         })
         .collect()
 }
@@ -307,5 +299,17 @@ mod tests {
 
         assert!(!same_network_identity(&expected, &changed));
         assert!(same_network_identity(&expected, &expected));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_profile_output_preserves_identity_and_category() {
+        let profiles = parse_windows_profiles(
+            br#"[{"InterfaceAlias":"Ethernet","Name":"Heimnetz","NetworkCategory":"Private","NetworkGuid":"{1234}"}]"#,
+        );
+        assert_eq!(
+            profiles.get("Ethernet"),
+            Some(&("Heimnetz".into(), "Privat".into(), "{1234}".into()))
+        );
     }
 }
