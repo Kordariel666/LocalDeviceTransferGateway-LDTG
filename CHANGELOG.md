@@ -26,6 +26,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 
 ### Fixed
 
+- Die vollständige Prüfkette baut eingebettete Mobile-Webassets nun vor Rust-
+  Tests und Clippy; `pnpm test:rust` bereitet sie auch einzeln selbst vor und
+  funktioniert dadurch auf einem frischen Checkout.
 - Windows-Netzwerkprofile werden über `Get-NetConnectionProfile` einschließlich
   stabiler Profil-ID ermittelt; der Dienststart hängt damit nicht mehr von der auf
   manchen Systemen fehlschlagenden dynamischen `NetworkListManager`-COM-Abfrage ab.
