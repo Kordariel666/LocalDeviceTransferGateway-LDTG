@@ -12,6 +12,7 @@ type LifecycleOptions = {
   onError: (message: string) => void;
   onSessionChanged: (event: SessionChangedEvent) => void;
   onTransferChanged: (event: TransferChangedEvent) => void;
+  onNetworkChanged: (available: boolean) => void;
 };
 
 export function useLifecycle({
@@ -24,6 +25,7 @@ export function useLifecycle({
   onError,
   onSessionChanged,
   onTransferChanged,
+  onNetworkChanged,
 }: LifecycleOptions) {
   const allowUnload = useRef(false);
 
@@ -78,7 +80,10 @@ export function useLifecycle({
       listen("service-status-changed", scheduleServiceRefresh),
       listen<SessionChangedEvent>("sessions-changed", (event) => onSessionChanged(event.payload)),
       listen<TransferChangedEvent>("transfer-updated", (event) => onTransferChanged(event.payload)),
-      listen("network-changed", scheduleServiceRefresh),
+      listen<{ available: boolean }>("network-changed", (event) => {
+        onNetworkChanged(event.payload.available);
+        scheduleServiceRefresh();
+      }),
     ]);
     return () => {
       if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);

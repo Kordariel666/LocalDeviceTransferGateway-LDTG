@@ -824,6 +824,7 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             if let Ok(log_dir) = app.path().app_log_dir() {
                 initialize_logging(&log_dir);
@@ -874,7 +875,7 @@ mod capability_tests {
     use tokio::time::{timeout, Duration};
 
     #[test]
-    fn desktop_capability_allows_every_used_dialog_command() {
+    fn desktop_capability_allows_every_used_plugin_command() {
         let capability: serde_json::Value =
             serde_json::from_str(include_str!("../capabilities/default.json"))
                 .expect("desktop capability must be valid JSON");
@@ -885,6 +886,7 @@ mod capability_tests {
             "dialog:allow-message",
             "dialog:allow-open",
             "dialog:allow-save",
+            "notification:default",
         ] {
             assert!(
                 permissions.iter().any(|value| value == required),

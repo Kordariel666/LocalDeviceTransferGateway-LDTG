@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   open: vi.fn(),
   ask: vi.fn(),
   save: vi.fn(),
+  isPermissionGranted: vi.fn(),
+  requestPermission: vi.fn(),
+  sendNotification: vi.fn(),
   listeners: new Map<string, (event?: { payload: unknown }) => void>(),
 }));
 
@@ -36,6 +39,11 @@ let currentSnapshot = snapshot;
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: mocks.ask, open: mocks.open, save: mocks.save }));
+vi.mock("@tauri-apps/plugin-notification", () => ({
+  isPermissionGranted: mocks.isPermissionGranted,
+  requestPermission: mocks.requestPermission,
+  sendNotification: mocks.sendNotification,
+}));
 
 import { App } from "./DesktopApp";
 
@@ -61,6 +69,10 @@ beforeEach(() => {
   mocks.open.mockReset();
   mocks.ask.mockReset();
   mocks.save.mockReset();
+  mocks.isPermissionGranted.mockReset();
+  mocks.isPermissionGranted.mockResolvedValue(true);
+  mocks.requestPermission.mockReset();
+  mocks.sendNotification.mockReset();
 });
 
 afterEach(() => {
@@ -513,5 +525,115 @@ describe("Desktop-Dashboard", () => {
     expect(screen.getByText("Geschwindigkeit 1 MiB/s")).toBeTruthy();
     expect(screen.getByText("Noch etwa 3 s")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Pausieren|Abbrechen/ })).toBeNull();
+  });
+
+  it("stoppt nur nach sichtbarer einmaliger Aktivierung und niemals allein durch ein Batchende", async () => {
+    const activeTransfer = {
+      id: "transfer",
+      direction: "upload" as const,
+      name: "Batch-Datei.bin",
+      startedAt: "2026-09-03T10:00:00Z",
+      lastProgressAt: "2026-09-03T10:00:01Z",
+      transferredBytes: 5,
+      totalBytes: 10,
+      bytesPerSecond: 5,
+      speedSampleCount: 1,
+      state: "active" as const,
+      updatedAt: "2026-09-03T10:00:01Z",
+    };
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.service = {
+      ...currentSnapshot.service,
+      state: "running",
+      serviceId: "service",
+      activeTransfers: 1,
+      transfers: [activeTransfer],
+    };
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Übertragungen/ }));
+    const stopAfterBatch = screen.getByRole("checkbox", {
+      name: "Dienst stoppen, wenn alle aktuellen Übertragungen beendet sind",
+    }) as HTMLInputElement;
+    expect(stopAfterBatch.disabled).toBe(false);
+    expect(stopAfterBatch.checked).toBe(false);
+
+    await act(async () => {
+      mocks.listeners.get("transfer-updated")?.({
+        payload: {
+          serviceId: "service",
+          transfer: { ...activeTransfer, state: "complete", transferredBytes: 10 },
+        },
+      });
+      await Promise.resolve();
+    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "stop_service")).toHaveLength(0);
+
+    await act(async () => {
+      mocks.listeners.get("transfer-updated")?.({
+        payload: { serviceId: "service", transfer: activeTransfer },
+      });
+    });
+    fireEvent.click(stopAfterBatch);
+    expect(stopAfterBatch.checked).toBe(true);
+
+    await act(async () => {
+      mocks.listeners.get("transfer-updated")?.({
+        payload: {
+          serviceId: "service",
+          transfer: { ...activeTransfer, state: "complete", transferredBytes: 10 },
+        },
+      });
+    });
+
+    const nextTransfer = { ...activeTransfer, id: "transfer-2", name: "Zweite-Datei.bin" };
+    await act(async () => {
+      mocks.listeners.get("transfer-updated")?.({
+        payload: { serviceId: "service", transfer: nextTransfer },
+      });
+    });
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 850));
+    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "stop_service")).toHaveLength(0);
+
+    await act(async () => {
+      mocks.listeners.get("transfer-updated")?.({
+        payload: {
+          serviceId: "service",
+          transfer: { ...nextTransfer, state: "complete", transferredBytes: 10 },
+        },
+      });
+    });
+
+    await waitFor(
+      () => expect(mocks.invoke).toHaveBeenCalledWith("stop_service", { force: false }),
+      { timeout: 2_000 },
+    );
+    expect(stopAfterBatch.checked).toBe(false);
+    await waitFor(() => expect(mocks.sendNotification).toHaveBeenCalledWith(expect.objectContaining({
+      title: expect.stringContaining("Batch abgeschlossen"),
+    })), { timeout: 2_000 });
+  });
+
+  it("meldet einen echten Netzwerkverlust lokal und lässt den allgemeinen Idle-Timeout unverändert", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.service = {
+      ...currentSnapshot.service,
+      state: "running",
+      serviceId: "service",
+    };
+    render(<App />);
+    await screen.findByRole("button", { name: "Dienst stoppen" });
+
+    await act(async () => {
+      mocks.listeners.get("network-changed")?.({ payload: { available: false } });
+      await Promise.resolve();
+    });
+
+    expect(mocks.sendNotification).toHaveBeenCalledWith(expect.objectContaining({
+      title: expect.stringContaining("Netzwerkverbindung verloren"),
+    }));
+    expect(currentSnapshot.settings.idleTimeoutMinutes).toBeNull();
   });
 });

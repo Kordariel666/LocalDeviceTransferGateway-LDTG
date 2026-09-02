@@ -226,6 +226,7 @@ select:focus-visible {
 .share-editor,
 .settings-section,
 .firewall-section,
+.runtime-option,
 .transfer-section,
 .diagnostics-panel {
   border: 1px solid var(--line);
@@ -330,6 +331,12 @@ select:focus-visible {
 .settings-grid small { min-height: 32px; color: var(--muted); font-size: .71rem; font-weight: 400; line-height: 1.45; }
 .firewall-section { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 16px; padding: 18px 20px; }
 .firewall-section p:not(.eyebrow) { margin: 6px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+
+.runtime-option { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 18px; padding: 18px 20px; transition: border-color 150ms ease, background 150ms ease; }
+.runtime-option.armed { border-color: #76501f; background: #17130e; }
+.runtime-option h2 { margin: 4px 0 0; font-size: 1rem; }
+.runtime-option div > p:last-child { max-width: 680px; margin: 7px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+.runtime-switch { flex: none; }
 
 .transfer-section { margin-top: 18px; }
 .transfer-section > .section-title-row { min-height: 58px; padding: 0 20px; border-bottom: 1px solid var(--line); }

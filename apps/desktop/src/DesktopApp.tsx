@@ -18,6 +18,12 @@ import {
   TransfersPage,
 } from "./pages/DesktopPages";
 import { hasErrors, settingsEqual, shareSignature, validateDraft } from "./settingsDraft";
+import {
+  type BatchSettlement,
+  createTransferNotificationState,
+  notifyDesktop,
+  trackTransferNotification,
+} from "./notifications";
 import { applySessionsChanged, applyTransferChanged } from "./statusEvents";
 import { commandError, errorMessage, invoke } from "./tauriClient";
 import { useLifecycle } from "./useLifecycle";
@@ -26,6 +32,7 @@ type View = "overview" | "shares" | "transfers" | "security" | "diagnostics";
 type BusyAction = "start" | "stop" | "save" | "firewall" | "diagnostics" | "command" | null;
 
 const brandIconUrl = new URL("../../../assets/icon.svg", import.meta.url).href;
+const batchQuietPeriodMs = 750;
 
 const emptyService: ServiceStatus = {
   state: "stopped",
@@ -62,12 +69,22 @@ function serviceHostname(url: string | null): string | null {
   }
 }
 
+function mergeBatchSettlement(
+  current: BatchSettlement | null,
+  next: BatchSettlement,
+): BatchSettlement {
+  if (current === "failed" || next === "failed") return "failed";
+  if (current === "cancelled" || next === "cancelled") return "cancelled";
+  return "complete";
+}
+
 export function App() {
   const [snapshot, setSnapshot] = useState<AppSnapshot | null>(null);
   const [draft, setDraft] = useState<AppSettings | null>(null);
   const [view, setView] = useState<View>("overview");
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [notice, setNotice] = useState<{ kind: "info" | "error"; text: string } | null>(null);
+  const [stopAfterBatch, setStopAfterBatch] = useState(false);
   const [shareCheck, setShareCheck] = useState<{
     signature: string;
     result: ShareValidation;
@@ -78,6 +95,13 @@ export function App() {
   const shareValidationRequest = useRef(0);
   const snapshotRetryAttempt = useRef(0);
   const snapshotAvailable = useRef(false);
+  const transferNotifications = useRef(createTransferNotificationState());
+  const pendingBatchSettlement = useRef<BatchSettlement | null>(null);
+  const batchNotificationTimer = useRef<number | undefined>(undefined);
+  const stopAfterBatchService = useRef<string | null>(null);
+  const autoStopTimer = useRef<number | undefined>(undefined);
+  const autoStopInFlight = useRef(false);
+  const previousTransferActivity = useRef({ serviceId: null as string | null, active: 0 });
 
   const refreshSnapshot = useCallback(async (synchronizeDraft = false) => {
     const request = ++snapshotRequest.current;
@@ -118,12 +142,55 @@ export function App() {
   }, []);
 
   const handleTransferChanged = useCallback((event: TransferChangedEvent) => {
+    if (
+      transferNotifications.current.serviceId !== null
+      && transferNotifications.current.serviceId !== event.serviceId
+    ) {
+      if (batchNotificationTimer.current !== undefined) {
+        window.clearTimeout(batchNotificationTimer.current);
+        batchNotificationTimer.current = undefined;
+      }
+      pendingBatchSettlement.current = null;
+    }
+    const tracked = trackTransferNotification(transferNotifications.current, event);
+    transferNotifications.current = tracked.state;
+    if (event.transfer.state === "active" && batchNotificationTimer.current !== undefined) {
+      window.clearTimeout(batchNotificationTimer.current);
+      batchNotificationTimer.current = undefined;
+    }
+    if (tracked.outcome) {
+      pendingBatchSettlement.current = mergeBatchSettlement(
+        pendingBatchSettlement.current,
+        tracked.outcome,
+      );
+      if (batchNotificationTimer.current !== undefined) {
+        window.clearTimeout(batchNotificationTimer.current);
+      }
+      batchNotificationTimer.current = window.setTimeout(() => {
+        const outcome = pendingBatchSettlement.current;
+        pendingBatchSettlement.current = null;
+        batchNotificationTimer.current = undefined;
+        transferNotifications.current = createTransferNotificationState();
+        if (outcome === "complete" || outcome === "failed") void notifyDesktop(outcome);
+      }, batchQuietPeriodMs);
+    }
     setSnapshot((current) => current
       ? { ...current, service: applyTransferChanged(current.service, event) }
       : current);
   }, []);
 
+  const handleNetworkChanged = useCallback((available: boolean) => {
+    if (!available) void notifyDesktop("network-lost");
+  }, []);
+
   useEffect(() => { void refreshSnapshot(); }, [refreshSnapshot]);
+
+  useEffect(() => () => {
+    if (batchNotificationTimer.current !== undefined) {
+      window.clearTimeout(batchNotificationTimer.current);
+    }
+    if (autoStopTimer.current !== undefined) window.clearTimeout(autoStopTimer.current);
+  }, []);
 
   useEffect(() => {
     if (snapshot || notice?.kind !== "error" || snapshotRetryAttempt.current >= 3) return;
@@ -135,6 +202,7 @@ export function App() {
 
   const service = snapshot?.service ?? emptyService;
   const running = service.state === "running";
+  const activeTransfers = useMemo(() => service.transfers.filter((transfer) => transfer.state === "active"), [service.transfers]);
   const busy = busyAction !== null;
   const dirty = useMemo(
     () => snapshot !== null && draft !== null && !settingsEqual(snapshot.settings, draft),
@@ -167,7 +235,52 @@ export function App() {
     onError: (message) => setNotice({ kind: "error", text: message }),
     onSessionChanged: handleSessionChanged,
     onTransferChanged: handleTransferChanged,
+    onNetworkChanged: handleNetworkChanged,
   });
+
+  useEffect(() => {
+    const serviceId = service.serviceId;
+    const active = activeTransfers.length;
+    const previous = previousTransferActivity.current;
+
+    if (!running || stopAfterBatchService.current !== serviceId) {
+      if (autoStopTimer.current !== undefined) {
+        window.clearTimeout(autoStopTimer.current);
+        autoStopTimer.current = undefined;
+      }
+      if (stopAfterBatch) setStopAfterBatch(false);
+      stopAfterBatchService.current = null;
+    } else if (active > 0 && autoStopTimer.current !== undefined) {
+      window.clearTimeout(autoStopTimer.current);
+      autoStopTimer.current = undefined;
+    } else if (
+      stopAfterBatch
+      && previous.serviceId === serviceId
+      && previous.active > 0
+      && active === 0
+      && autoStopTimer.current === undefined
+      && !autoStopInFlight.current
+    ) {
+      autoStopTimer.current = window.setTimeout(() => {
+        autoStopTimer.current = undefined;
+        autoStopInFlight.current = true;
+        stopAfterBatchService.current = null;
+        setStopAfterBatch(false);
+        setBusyAction("stop");
+        setNotice(null);
+        void invoke("stop_service", { force: false })
+          .then(refreshService)
+          .then(() => setNotice({ kind: "info", text: text.stoppedAfterBatch }))
+          .catch((error) => setNotice({ kind: "error", text: errorMessage(error) }))
+          .finally(() => {
+            autoStopInFlight.current = false;
+            setBusyAction(null);
+          });
+      }, batchQuietPeriodMs);
+    }
+
+    previousTransferActivity.current = { serviceId, active };
+  }, [activeTransfers.length, refreshService, running, service.serviceId, stopAfterBatch]);
 
   useEffect(() => {
     if (!draft || running || !sharesNeedBackendValidation
@@ -225,7 +338,6 @@ export function App() {
       ?? snapshot.networks[0];
   }, [snapshot, draft, service.url]);
 
-  const activeTransfers = useMemo(() => service.transfers.filter((transfer) => transfer.state === "active"), [service.transfers]);
   const transferHistory = useMemo(() => service.transfers.filter((transfer) => transfer.state !== "active").slice().reverse(), [service.transfers]);
 
   async function validateSharesNow(settings: AppSettings): Promise<ShareValidation> {
@@ -269,6 +381,25 @@ export function App() {
     setDraft((current) => (current ? { ...current, ...patch } : current));
   }
 
+  function updateStopAfterBatch(enabled: boolean) {
+    if (!enabled) {
+      if (autoStopTimer.current !== undefined) {
+        window.clearTimeout(autoStopTimer.current);
+        autoStopTimer.current = undefined;
+      }
+      stopAfterBatchService.current = null;
+      setStopAfterBatch(false);
+      return;
+    }
+    if (!running || !service.serviceId || activeTransfers.length === 0) return;
+    stopAfterBatchService.current = service.serviceId;
+    previousTransferActivity.current = {
+      serviceId: service.serviceId,
+      active: activeTransfers.length,
+    };
+    setStopAfterBatch(true);
+  }
+
   async function saveCurrentSettings() {
     setBusyAction("save");
     setNotice(null);
@@ -290,6 +421,7 @@ export function App() {
       return;
     }
     setBusyAction("start");
+    updateStopAfterBatch(false);
     setNotice(null);
     try {
       const saved = await saveSettings(draft, false);
@@ -353,6 +485,7 @@ export function App() {
     setNotice(null);
     try {
       await invoke("stop_service", { force });
+      updateStopAfterBatch(false);
       await refreshService();
     } catch (error) {
       const failure = commandError(error);
@@ -548,7 +681,14 @@ export function App() {
             />
           )}
           {view === "transfers" && (
-            <TransfersPage running={running} activeTransfers={activeTransfers} transferHistory={transferHistory} />
+            <TransfersPage
+              running={running}
+              busy={busy}
+              activeTransfers={activeTransfers}
+              transferHistory={transferHistory}
+              stopAfterBatch={stopAfterBatch}
+              onStopAfterBatchChange={updateStopAfterBatch}
+            />
           )}
           {view === "security" && (
             <SecurityPage

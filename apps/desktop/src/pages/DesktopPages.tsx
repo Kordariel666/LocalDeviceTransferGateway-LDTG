@@ -183,14 +183,43 @@ export function SharesPage(props: SharesPageProps) {
   );
 }
 
-export function TransfersPage({ running, activeTransfers, transferHistory }: {
+export function TransfersPage({
+  running,
+  busy,
+  activeTransfers,
+  transferHistory,
+  stopAfterBatch,
+  onStopAfterBatchChange,
+}: {
   running: boolean;
+  busy: boolean;
   activeTransfers: TransferInfo[];
   transferHistory: TransferInfo[];
+  stopAfterBatch: boolean;
+  onStopAfterBatchChange: (enabled: boolean) => void;
 }) {
+  const canEnableStopAfterBatch = running && activeTransfers.length > 0;
   return (
     <>
       <PageHeading eyebrow={text.activity} title={text.transfers} description={text.transfersDescription} />
+      <section className={`runtime-option${stopAfterBatch ? " armed" : ""}`}>
+        <div>
+          <p className="eyebrow">{text.runtimeOption}</p>
+          <h2>{text.stopAfterBatchShort}</h2>
+          <p>{canEnableStopAfterBatch || stopAfterBatch ? text.stopAfterBatchHint : text.stopAfterBatchUnavailable}</p>
+        </div>
+        <label className="switch runtime-switch">
+          <input
+            type="checkbox"
+            checked={stopAfterBatch}
+            disabled={busy || (!stopAfterBatch && !canEnableStopAfterBatch)}
+            aria-label={text.stopAfterBatch}
+            onChange={(event) => onStopAfterBatchChange(event.target.checked)}
+          />
+          <span aria-hidden="true" />
+          <b>{stopAfterBatch ? text.active : text.off}</b>
+        </label>
+      </section>
       <section className="transfer-section">
         <div className="section-title-row simple"><h2>{text.activeTransfers}</h2><span>{text.transferCount(activeTransfers.length)}</span></div>
         {!activeTransfers.length ? (

@@ -508,10 +508,39 @@ Umgesetzt:
 
 ### R3.3 Benachrichtigungen und automatisches Ende
 
+Status: abgeschlossen am 3. September 2026.
+
 - Lokale Desktop-Benachrichtigung für Batch abgeschlossen, fehlgeschlagen und Netzwerkverlust anbieten.
 - „Dienst stoppen, wenn alle aktuellen Übertragungen beendet sind“ als einmalige Laufzeitoption ergänzen.
 - Bestehenden allgemeinen Idle-Timeout unverändert daneben anbieten.
 - Niemals ohne sichtbare Aktivierung einen laufenden Dienst stoppen.
+
+Umgesetzt:
+
+- Das offizielle Tauri-Benachrichtigungs-Plugin meldet lokal abgeschlossene und
+  fehlgeschlagene Batches sowie den vom Backend erkannten Netzwerkverlust. Die
+  Betriebssystemberechtigung wird erst bei Bedarf angefragt; eine Ablehnung oder
+  ein Plattformfehler beeinflusst den Transferdienst nicht.
+- Benachrichtigungen entstehen ausschließlich aus live beobachteten
+  Transferereignissen. Geladene Snapshots und alte Verlaufseinträge lösen keine
+  Meldung aus; die Texte enthalten weder Dateinamen noch Pfade.
+- Ein kurzes Ruhefenster fasst direkt aufeinanderfolgende Queue-Dateien zu einem
+  Batch zusammen. Fehler oder Ablauf haben Vorrang vor einem Teilerfolg;
+  abgebrochene Batches werden nicht fälschlich als abgeschlossen gemeldet.
+- Auf der Übertragungsseite kann „Nach diesem Batch stoppen“ nur bei mindestens
+  einer aktiven Übertragung sichtbar eingeschaltet werden. Die Option lebt
+  ausschließlich im aktuellen UI-Laufzeitstatus, wird nach einem Stoppversuch
+  verworfen und ruft den sicheren Stopp niemals mit `force` auf.
+- Beginnt während des Ruhefensters eine weitere Übertragung, wird der Stopp
+  verschoben. Ohne die sichtbare Aktivierung führt ein Batchende zu keinem
+  Stopp. Dienstwechsel, manueller Stopp und Neustart verwerfen die Option.
+- Der bestehende persistente Idle-Timeout bleibt unverändert unter „Netzwerk &
+  Sicherheit“ verfügbar und wird von der einmaligen Batchoption nicht
+  überschrieben.
+- Zustands-, Berechtigungs- und Oberflächentests prüfen Batchabschluss,
+  Fehlerpriorität, Dienstlauftrennung, datensparsame Meldungen, Netzwerkverlust
+  und den ausschließlich aktivierten Stopp. Das vollständige Qualitätsgate ist
+  mit 108 Rust-, 27 Desktop- und 39 Mobile-Tests grün.
 
 ### R3.4 Verlauf sinnvoll ausbauen
 
