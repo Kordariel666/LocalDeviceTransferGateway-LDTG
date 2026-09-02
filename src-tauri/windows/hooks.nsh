@@ -1,0 +1,6 @@
+!macro NSIS_HOOK_PREUNINSTALL
+  nsExec::ExecToLog "$\"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe$\" -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -Command $\"$$process = Start-Process -FilePath (Join-Path $$PSHOME 'powershell.exe') -Verb RunAs -WindowStyle Hidden -Wait -PassThru -ArgumentList '-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand JABFAHIAcgBvAHIAQQBjAHQAaQBvAG4AUAByAGUAZgBlAHIAZQBuAGMAZQA9ACcAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAnADsAIABJAG0AcABvAHIAdAAtAE0AbwBkAHUAbABlACAAKABKAG8AaQBuAC0AUABhAHQAaAAgACQAUABTAEgATwBNAEUAIAAnAE0AbwBkAHUAbABlAHMAXABOAGUAdABTAGUAYwB1AHIAaQB0AHkAXABOAGUAdABTAGUAYwB1AHIAaQB0AHkALgBwAHMAZAAxACcAKQAgAC0ARgBvAHIAYwBlACAALQBFAHIAcgBvAHIAQQBjAHQAaQBvAG4AIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlADsAIABHAGUAdAAtAE4AZQB0AEYAaQByAGUAdwBhAGwAbABSAHUAbABlACAALQBEAGkAcwBwAGwAYQB5AE4AYQBtAGUAIAAnAEQATQBEAEMAIABMAG8AYwBhAGwAIABUAHIAYQBuAHMAZgBlAHIAJwAgAC0ARQByAHIAbwByAEEAYwB0AGkAbwBuACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAgAHwAIABSAGUAbQBvAHYAZQAtAE4AZQB0AEYAaQByAGUAdwBhAGwAbABSAHUAbABlAA=='; exit $$process.ExitCode$\""
+!macroend
+
+; DMDC intentionally retains per-user configuration and logs during uninstall.
+; These directories may contain a user-selected share, so recursive deletion is unsafe.
