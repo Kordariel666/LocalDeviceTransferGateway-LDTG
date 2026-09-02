@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { ask, open, save } from "@tauri-apps/plugin-dialog";
-import { QRCodeSVG } from "qrcode.react";
+import { ask, save } from "@tauri-apps/plugin-dialog";
 import type {
   AppSettings,
   AppSnapshot,
-  CommandError,
   FirewallStatus,
-  NetworkInterfaceInfo,
   ServiceStatus,
-  ShareSettings,
   ShareValidation,
-  TransferInfo,
 } from "@dmdc/shared";
 import { text } from "./i18n";
+import {
+  DiagnosticsPage,
+  OverviewPage,
+  SecurityPage,
+  SharesPage,
+  TransfersPage,
+} from "./pages/DesktopPages";
+import { hasErrors, settingsEqual, shareSignature, validateDraft } from "./settingsDraft";
+import { commandError, errorMessage, invoke } from "./tauriClient";
+import { useLifecycle } from "./useLifecycle";
 
 type View = "overview" | "shares" | "transfers" | "security" | "diagnostics";
 type BusyAction = "start" | "stop" | "save" | "firewall" | "diagnostics" | "command" | null;
@@ -39,16 +42,6 @@ const emptyShareValidation: ShareValidation = {
   overlapError: null,
 };
 
-type DraftValidationErrors = {
-  port?: string;
-  maxUploadBytes?: string;
-  maxInboxBytes?: string;
-  maxInboxFiles?: string;
-  downloadShare?: string;
-  uploadShare?: string;
-  shareOverlap?: string;
-};
-
 const navigation: { id: View; label: string }[] = [
   { id: "overview", label: text.overview },
   { id: "shares", label: text.shares },
@@ -57,101 +50,6 @@ const navigation: { id: View; label: string }[] = [
   { id: "diagnostics", label: text.diagnostics },
 ];
 
-function formatBytes(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "0 B";
-  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: index ? 1 : 0 }).format(value / 1024 ** index)} ${units[index]}`;
-}
-
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" }).format(date);
-}
-
-function errorMessage(error: unknown): string {
-  const structured = commandError(error);
-  if (structured) return structured.message;
-  if (typeof error === "string") return error;
-  if (error && typeof error === "object" && "message" in error) return String(error.message);
-  return text.unknownError;
-}
-
-function commandError(error: unknown): CommandError | null {
-  if (!error || typeof error !== "object") return null;
-  const candidate = error as Partial<CommandError>;
-  if (typeof candidate.code !== "string" || typeof candidate.message !== "string") return null;
-  return candidate as CommandError;
-}
-
-function settingsEqual(left: AppSettings | null, right: AppSettings | null): boolean {
-  if (!left || !right) return left === right;
-  return left.version === right.version
-    && left.downloadShare.enabled === right.downloadShare.enabled
-    && left.downloadShare.path === right.downloadShare.path
-    && left.uploadShare.enabled === right.uploadShare.enabled
-    && left.uploadShare.path === right.uploadShare.path
-    && left.preferredAdapterId === right.preferredAdapterId
-    && left.port === right.port
-    && left.maxUploadBytes === right.maxUploadBytes
-    && left.maxInboxBytes === right.maxInboxBytes
-    && left.maxInboxFiles === right.maxInboxFiles
-    && left.idleTimeoutMinutes === right.idleTimeoutMinutes
-    && left.trustedNetworks.length === right.trustedNetworks.length
-    && left.trustedNetworks.every((network, index) => network === right.trustedNetworks[index]);
-}
-
-function validateDraft(settings: AppSettings): DraftValidationErrors {
-  const errors: DraftValidationErrors = {};
-  if (!Number.isSafeInteger(settings.port) || settings.port < 1024 || settings.port > 65535) {
-    errors.port = text.portValidation;
-  }
-  if (settings.maxUploadBytes !== null
-    && (!Number.isSafeInteger(settings.maxUploadBytes) || settings.maxUploadBytes <= 0)) {
-    errors.maxUploadBytes = text.positiveUploadLimit;
-  }
-  if (!Number.isSafeInteger(settings.maxInboxBytes) || settings.maxInboxBytes <= 0) {
-    errors.maxInboxBytes = text.positiveInboxLimit;
-  }
-  if (!Number.isSafeInteger(settings.maxInboxFiles)
-    || settings.maxInboxFiles <= 0
-    || settings.maxInboxFiles > 4_294_967_295) {
-    errors.maxInboxFiles = text.fileLimitValidation;
-  }
-  if (settings.maxUploadBytes !== null
-    && settings.maxUploadBytes > settings.maxInboxBytes) {
-    errors.maxUploadBytes = text.uploadExceedsInbox;
-    errors.maxInboxBytes = text.inboxBelowUpload;
-  }
-  if (settings.downloadShare.enabled && !settings.downloadShare.path.trim()) {
-    errors.downloadShare = text.downloadFolderRequired;
-  }
-  if (settings.uploadShare.enabled && !settings.uploadShare.path.trim()) {
-    errors.uploadShare = text.uploadFolderRequired;
-  }
-  if (settings.downloadShare.enabled
-    && settings.uploadShare.enabled
-    && settings.downloadShare.path
-    && settings.downloadShare.path.localeCompare(settings.uploadShare.path, undefined, { sensitivity: "accent" }) === 0) {
-    errors.shareOverlap = text.sameFolderWarning;
-  }
-  return errors;
-}
-
-function hasErrors(errors: DraftValidationErrors | ShareValidation): boolean {
-  return Object.values(errors).some(Boolean);
-}
-
-function shareSignature(settings: AppSettings): string {
-  return JSON.stringify([
-    settings.downloadShare.enabled,
-    settings.downloadShare.path,
-    settings.uploadShare.enabled,
-    settings.uploadShare.path,
-  ]);
-}
-
 function serviceHostname(url: string | null): string | null {
   if (!url) return null;
   try {
@@ -159,124 +57,6 @@ function serviceHostname(url: string | null): string | null {
   } catch {
     return null;
   }
-}
-
-function transferPercentage(transfer: TransferInfo): number | null {
-  if (!Number.isFinite(transfer.totalBytes) || transfer.totalBytes <= 0) return null;
-  return Math.min(100, Math.max(0, transfer.transferredBytes / transfer.totalBytes * 100));
-}
-
-function TransferProgress({ transfer }: { transfer: TransferInfo }) {
-  const percentage = transferPercentage(transfer);
-  const sizeLabel = percentage === null
-    ? text.transferredUnknown(formatBytes(transfer.transferredBytes))
-    : `${formatBytes(transfer.transferredBytes)} ${text.of} ${formatBytes(transfer.totalBytes)}`;
-
-  return (
-    <div className="transfer-details">
-      <div className="transfer-meta">
-        <span>{sizeLabel}</span>
-        <strong>{percentage === null ? text.unknownTotal : `${Math.round(percentage)} %`}</strong>
-      </div>
-      <div
-        className={`progress-track${percentage === null ? " unknown" : ""}`}
-        role="progressbar"
-        aria-label={`${transfer.name}: ${sizeLabel}`}
-        aria-valuemin={0}
-        aria-valuemax={percentage === null ? undefined : 100}
-        aria-valuenow={percentage === null ? undefined : Math.round(percentage)}
-        aria-valuetext={percentage === null ? sizeLabel : `${Math.round(percentage)} Prozent, ${sizeLabel}`}
-      >
-        <span style={percentage === null ? undefined : { width: `${percentage}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function TransferRow({ transfer, compact = false }: { transfer: TransferInfo; compact?: boolean }) {
-  const active = transfer.state === "active";
-  return (
-    <article className={`transfer-row${compact ? " compact" : ""}`}>
-      <div className="transfer-heading">
-        <div className="transfer-name">
-          <strong title={transfer.name}><bdi className="untrusted-name">{transfer.name}</bdi></strong>
-          <span>{transfer.direction === "upload" ? text.fromPhone : text.toPhone}</span>
-        </div>
-        <span className={`state-label ${transfer.state}`}>{text.transferState(transfer.state)}</span>
-      </div>
-      {(active || !compact) && <TransferProgress transfer={transfer} />}
-      {!active && !compact && <time dateTime={transfer.updatedAt}>{text.updatedAt(formatDateTime(transfer.updatedAt))}</time>}
-    </article>
-  );
-}
-
-function EmptyState({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="empty-state">
-      <strong>{title}</strong>
-      <p>{description}</p>
-    </div>
-  );
-}
-
-function PageHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return (
-    <header className="page-heading">
-      <p className="eyebrow">{eyebrow}</p>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </header>
-  );
-}
-
-function NetworkLabel({ network }: { network?: NetworkInterfaceInfo }) {
-  if (!network) return <span>{text.noNetwork}</span>;
-  return <span>{network.profileName} · {network.name} · {network.address}/{network.prefixLength} · {network.category}</span>;
-}
-
-type ShareEditorProps = {
-  title: string;
-  description: string;
-  value: ShareSettings;
-  locked: boolean;
-  error?: string | null;
-  onChange: (value: ShareSettings) => void;
-};
-
-function ShareEditor({ title, description, value, locked, error, onChange }: ShareEditorProps) {
-  async function choose() {
-    const selected = await open({ directory: true, multiple: false, title });
-    if (typeof selected === "string") onChange({ enabled: true, path: selected });
-  }
-
-  return (
-    <section className={`share-editor${error ? " invalid" : ""}`}>
-      <div className="section-title-row">
-        <div>
-          <p className="eyebrow">{text.share}</p>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
-        <label className="switch">
-          <input
-            type="checkbox"
-            checked={value.enabled}
-            disabled={locked}
-            aria-label={`${title}: ${value.enabled ? text.active : text.off}`}
-            onChange={(event) => onChange({ ...value, enabled: event.target.checked })}
-          />
-          <span aria-hidden="true" />
-          <b>{value.enabled ? text.active : text.off}</b>
-        </label>
-      </div>
-      <div className="path-row">
-        <div className="path-value" title={value.path || text.noFolder}>{value.path || text.noFolder}</div>
-        <button className="button secondary" type="button" disabled={locked} onClick={choose}>{text.chooseFolder}</button>
-      </div>
-      {error && <p className="field-error" role="alert">{error}</p>}
-      {locked && <p className="field-note">{text.shareLocked}</p>}
-    </section>
-  );
 }
 
 export function App() {
@@ -293,7 +73,6 @@ export function App() {
   const snapshotRequest = useRef(0);
   const serviceRequest = useRef(0);
   const shareValidationRequest = useRef(0);
-  const allowUnload = useRef(false);
   const snapshotRetryAttempt = useRef(0);
   const snapshotAvailable = useRef(false);
 
@@ -363,23 +142,15 @@ export function App() {
     || hasErrors(activeShareValidation)
     || shareValidationPending;
 
-  useEffect(() => {
-    if (!snapshotAvailable.current) return;
-    void invoke("set_unsaved_changes", { dirty }).catch((error) => {
-      setNotice({ kind: "error", text: errorMessage(error) });
-    });
-  }, [dirty]);
-
-  useEffect(() => {
-    if (!dirty) return;
-    const preventUnload = (event: BeforeUnloadEvent) => {
-      if (allowUnload.current) return;
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", preventUnload);
-    return () => window.removeEventListener("beforeunload", preventUnload);
-  }, [dirty]);
+  const allowUnload = useLifecycle({
+    dirty,
+    running,
+    snapshotAvailable: snapshotAvailable.current,
+    refreshService,
+    stop,
+    quit,
+    onError: (message) => setNotice({ kind: "error", text: message }),
+  });
 
   useEffect(() => {
     if (!draft || running || !sharesNeedBackendValidation
@@ -427,47 +198,6 @@ export function App() {
     running,
     sharesNeedBackendValidation,
   ]);
-
-  useEffect(() => {
-    if (!running) return;
-    let cancelled = false;
-    let timer: number | undefined;
-    const poll = async () => {
-      await refreshService();
-      if (!cancelled) timer = window.setTimeout(() => void poll(), 5000);
-    };
-    timer = window.setTimeout(() => void poll(), 5000);
-    return () => {
-      cancelled = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [refreshService, running]);
-
-  useEffect(() => {
-    let refreshTimer: number | undefined;
-    const scheduleServiceRefresh = () => {
-      if (refreshTimer !== undefined) return;
-      refreshTimer = window.setTimeout(() => {
-        refreshTimer = undefined;
-        void refreshService();
-      }, 200);
-    };
-    const unlisteners = Promise.all([
-      listen("stop-requested", () => void stop(false)),
-      listen("quit-requested", () => void quit(false)),
-      listen("service-status-changed", scheduleServiceRefresh),
-      listen("sessions-changed", scheduleServiceRefresh),
-      listen("transfer-updated", scheduleServiceRefresh),
-      listen("network-changed", scheduleServiceRefresh),
-    ]);
-    return () => {
-      if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
-      void unlisteners.then((items) => items.forEach((unlisten) => unlisten()));
-    };
-    // Lifecycle commands use stable setters/invocations; rebinding on every render would
-    // create short listener gaps while the native application is dispatching events.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshService]);
 
   const selectedNetwork = useMemo(() => {
     if (!snapshot || !draft) return undefined;
@@ -731,224 +461,6 @@ export function App() {
   const enabledShares = Number(currentDraft.downloadShare.enabled) + Number(currentDraft.uploadShare.enabled);
   const statusLabel = running ? text.serviceOnline : service.state === "error" ? text.serviceError : text.serviceOffline;
 
-  function renderConnectionPanel() {
-    if (!running || !service.url || !service.accessCode) {
-      return (
-        <section className="connection-panel unavailable">
-          <div>
-            <p className="eyebrow">{text.connectPhone}</p>
-            <h2>{text.connectionAfterStart}</h2>
-            <p>{text.connectionAfterStartDescription}</p>
-          </div>
-          <span className="status-chip offline">{text.serviceOffline}</span>
-        </section>
-      );
-    }
-    return (
-      <section className="connection-panel">
-        <QRCodeSVG value={service.url} size={106} level="M" bgColor="#f4efe5" fgColor="#11100e" />
-        <div className="connection-address">
-          <p className="eyebrow">{text.connectPhone}</p>
-          <h2>{text.openAndCode}</h2>
-          <a href={service.url} target="_blank" rel="noreferrer">{service.url}</a>
-        </div>
-        <div className="access-block">
-          <p className="eyebrow">{text.accessCode}</p>
-          <strong className="access-code">{service.accessCode.replace(/(\d{4})(\d{4})/, "$1 $2")}</strong>
-        </div>
-        <div className="connection-actions">
-          <button className="button secondary" type="button" onClick={() => void copyAccessCode()}>{text.copyCode}</button>
-          <button className="button ghost" type="button" disabled={busy} onClick={() => void simpleCommand("rotate_access_code")}>{text.rotateCode}</button>
-        </div>
-      </section>
-    );
-  }
-
-  function renderOverview() {
-    return (
-      <>
-        <PageHeading eyebrow={text.commandCenter} title={text.overview} description={text.overviewDescription} />
-        {renderConnectionPanel()}
-        <div className="overview-primary-grid">
-          <section className="primary-panel">
-            <div className="panel-heading"><h2>{text.connectedDevices}</h2><span>{text.deviceCount(service.sessions.length)}</span></div>
-            {!service.sessions.length ? (
-              <EmptyState title={running ? text.noConnectedDevices : text.serviceNotRunning} description={running ? text.noSessionsDescription : text.devicesAfterStart} />
-            ) : (
-              <div className="device-list">
-                {service.sessions.map((session) => (
-                  <article className="device-row" key={session.id}>
-                    <div>
-                      <strong>{session.userAgent || text.mobileBrowser}</strong>
-                      <span>{session.address}</span>
-                      <time dateTime={session.lastActivity}>{text.lastActive(formatDateTime(session.lastActivity))}</time>
-                    </div>
-                    <button className="button secondary small" type="button" disabled={busy} onClick={() => void simpleCommand("revoke_session", { sessionId: session.id })}>{text.disconnect}</button>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-          <section className="primary-panel">
-            <div className="panel-heading"><h2>{text.activeTransfers}</h2><span>{text.transferCount(activeTransfers.length)}</span></div>
-            {!activeTransfers.length ? (
-              <EmptyState title={running ? text.noActiveTransfers : text.serviceNotRunning} description={running ? text.noTransfersDescription : text.transfersAfterStart} />
-            ) : (
-              <div className="transfer-list">{activeTransfers.map((transfer) => <TransferRow transfer={transfer} key={transfer.id} compact />)}</div>
-            )}
-          </section>
-        </div>
-        <div className="overview-summary-grid">
-          <section className="summary-panel">
-            <div className="summary-heading">
-              <div><h2>{text.shares}</h2><span>{text.enabledShareCount(enabledShares)}</span></div>
-              <button className="text-button" type="button" onClick={() => setView("shares")}>{text.openSection}</button>
-            </div>
-            <ul>
-              <li><span>{text.downloadTitle}</span><b>{currentDraft.downloadShare.enabled ? text.active : text.off}</b></li>
-              <li><span>{text.uploadTitle}</span><b>{currentDraft.uploadShare.enabled ? text.active : text.off}</b></li>
-            </ul>
-          </section>
-          <section className="summary-panel">
-            <div className="summary-heading">
-              <div><h2>{text.networkSecurity}</h2><span>{currentSnapshot.firewall.configured ? text.firewallReady : text.firewallMissingShort}</span></div>
-              <button className="text-button" type="button" onClick={() => setView("security")}>{text.openSection}</button>
-            </div>
-            <p>{selectedNetwork?.name ?? text.automatic} · {selectedNetwork?.address ?? text.noNetworkShort} · {text.portSummary(currentDraft.port)}</p>
-          </section>
-        </div>
-      </>
-    );
-  }
-
-  function renderShares() {
-    return (
-      <>
-        <PageHeading eyebrow={text.configuration} title={text.shares} description={text.sharesDescription} />
-        {running && <div className="locked-notice"><strong>{text.viewOnlyWhileRunning}</strong><span>{text.sharesRuntimeExplanation}</span></div>}
-        {!running && noEnabledShares && <div className="notice error" role="alert">{text.oneShareRequired}</div>}
-        {!running && shareOverlapError && <div className="notice error" role="alert">{shareOverlapError}</div>}
-        {!running && shareValidationPending && <div className="validation-pending" role="status">{text.validatingShares}</div>}
-        <div className="share-page-grid">
-          <ShareEditor title={text.downloadTitle} description={text.downloadDescription} value={currentDraft.downloadShare} locked={running || busy} error={downloadShareError} onChange={(downloadShare) => updateDraft({ downloadShare })} />
-          <ShareEditor title={text.uploadTitle} description={text.uploadDescription} value={currentDraft.uploadShare} locked={running || busy} error={uploadShareError} onChange={(uploadShare) => updateDraft({ uploadShare })} />
-        </div>
-        <footer className="page-actions">
-          <span>{running ? text.stopToEdit : dirty ? text.unsavedChanges : recoveryPending ? text.safeDefaultsPending : text.allChangesSaved}</span>
-          <button className="button primary" type="button" disabled={busy || running || !saveAvailable || persistBlocked} onClick={() => void saveCurrentSettings()}>{text.saveShares}</button>
-        </footer>
-      </>
-    );
-  }
-
-  function renderTransfers() {
-    return (
-      <>
-        <PageHeading eyebrow={text.activity} title={text.transfers} description={text.transfersDescription} />
-        <section className="transfer-section">
-          <div className="section-title-row simple"><h2>{text.activeTransfers}</h2><span>{text.transferCount(activeTransfers.length)}</span></div>
-          {!activeTransfers.length ? (
-            <EmptyState title={text.noActiveTransfers} description={running ? text.noTransfersDescription : text.transfersAfterStart} />
-          ) : (
-            <div className="transfer-list roomy">{activeTransfers.map((transfer) => <TransferRow transfer={transfer} key={transfer.id} />)}</div>
-          )}
-        </section>
-        <section className="transfer-section history">
-          <div className="section-title-row simple"><h2>{text.transferHistory}</h2><span>{text.entryCount(transferHistory.length)}</span></div>
-          {!transferHistory.length ? (
-            <EmptyState title={text.noHistory} description={text.noHistoryDescription} />
-          ) : (
-            <div className="transfer-list roomy">{transferHistory.map((transfer) => <TransferRow transfer={transfer} key={transfer.id} />)}</div>
-          )}
-        </section>
-      </>
-    );
-  }
-
-  function renderSecurity() {
-    return (
-      <>
-        <PageHeading eyebrow={text.configuration} title={text.networkSecurity} description={text.networkDescription} />
-        {running && <div className="locked-notice"><strong>{text.viewOnlyWhileRunning}</strong><span>{text.networkRuntimeExplanation}</span></div>}
-        <section className="settings-section">
-          <div className="section-title-row simple"><h2>{text.networkSettings}</h2></div>
-          <div className="settings-grid">
-            <label>
-              <span>{text.networkInterface}</span>
-              <select disabled={running || busy} value={currentDraft.preferredAdapterId ?? ""} onChange={(event) => updateDraft({ preferredAdapterId: event.target.value || null })}>
-                <option value="">{text.automatic}</option>
-                {currentSnapshot.networks.map((network) => <option value={network.id} key={network.id}>{network.profileName} · {network.name} · {network.address}</option>)}
-              </select>
-              <small>{running ? text.restartFieldLocked : <NetworkLabel network={selectedNetwork} />}</small>
-            </label>
-            <label>
-              <span>{text.tcpPort}</span>
-              <input disabled={running || busy} type="number" min={1024} max={65535} value={currentDraft.port} aria-invalid={Boolean(draftErrors.port)} aria-describedby="port-help" onChange={(event) => updateDraft({ port: Number(event.target.value) })} />
-              <small id="port-help" className={draftErrors.port ? "field-error" : undefined} role={draftErrors.port ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.port ?? text.defaultPort}</small>
-            </label>
-            <label>
-              <span>{text.uploadLimit}</span>
-              <select disabled={running || busy} value={currentDraft.maxUploadBytes === null ? "unlimited" : String(currentDraft.maxUploadBytes / 1024 ** 3)} aria-invalid={Boolean(draftErrors.maxUploadBytes)} aria-describedby="upload-limit-help" onChange={(event) => updateDraft({ maxUploadBytes: event.target.value === "unlimited" ? null : Number(event.target.value) * 1024 ** 3 })}>
-                <option value="5">5 GiB</option><option value="20">20 GiB</option><option value="50">50 GiB</option><option value="100">100 GiB</option><option value="unlimited">{text.unlimited}</option>
-              </select>
-              <small id="upload-limit-help" className={draftErrors.maxUploadBytes ? "field-error" : undefined} role={draftErrors.maxUploadBytes ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.maxUploadBytes ?? text.diskReserve}</small>
-            </label>
-            <label>
-              <span>{text.inboxStorageLimit}</span>
-              <select disabled={running || busy} value={String(currentDraft.maxInboxBytes / 1024 ** 3)} aria-invalid={Boolean(draftErrors.maxInboxBytes)} aria-describedby="inbox-limit-help" onChange={(event) => updateDraft({ maxInboxBytes: Number(event.target.value) * 1024 ** 3 })}>
-                <option value="25">25 GiB</option><option value="50">50 GiB</option><option value="100">100 GiB</option><option value="250">250 GiB</option>
-              </select>
-              <small id="inbox-limit-help" className={draftErrors.maxInboxBytes ? "field-error" : undefined} role={draftErrors.maxInboxBytes ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.maxInboxBytes ?? text.inboxStorageHint}</small>
-            </label>
-            <label>
-              <span>{text.inboxFileLimit}</span>
-              <select disabled={running || busy} value={String(currentDraft.maxInboxFiles)} aria-invalid={Boolean(draftErrors.maxInboxFiles)} aria-describedby="inbox-files-help" onChange={(event) => updateDraft({ maxInboxFiles: Number(event.target.value) })}>
-                <option value="1000">1.000</option><option value="5000">5.000</option><option value="10000">10.000</option><option value="50000">50.000</option>
-              </select>
-              <small id="inbox-files-help" className={draftErrors.maxInboxFiles ? "field-error" : undefined} role={draftErrors.maxInboxFiles ? "alert" : undefined}>{running ? text.restartFieldLocked : draftErrors.maxInboxFiles ?? text.inboxFileHint}</small>
-            </label>
-            <label>
-              <span>{text.automaticStop}</span>
-              <select disabled={running || busy} value={currentDraft.idleTimeoutMinutes ?? 0} onChange={(event) => updateDraft({ idleTimeoutMinutes: Number(event.target.value) || null })}>
-                <option value={0}>{text.off}</option><option value={30}>{text.after30}</option><option value={60}>{text.after60}</option><option value={240}>{text.after240}</option><option value={720}>{text.after720}</option>
-              </select>
-              <small>{running ? text.restartFieldLocked : text.activeNeverStops}</small>
-            </label>
-          </div>
-        </section>
-        <section className="firewall-section">
-          <div>
-            <p className="eyebrow">{text.windows}</p><h2>{text.windowsFirewall}</h2><p>{currentSnapshot.firewall.detail}</p>
-            {running && <span className="field-note">{text.firewallLocked}</span>}
-          </div>
-          <button className="button secondary" type="button" disabled={busy || running || persistBlocked} onClick={() => void configureFirewall()}>{currentSnapshot.firewall.configured ? text.updateRule : text.setupFirewall}</button>
-        </section>
-        <footer className="page-actions">
-          <span>{running ? text.stopToEdit : dirty ? text.unsavedChanges : recoveryPending ? text.safeDefaultsPending : text.allChangesSaved}</span>
-          <button className="button primary" type="button" disabled={busy || running || !saveAvailable || persistBlocked} onClick={() => void saveCurrentSettings()}>{text.saveSettings}</button>
-        </footer>
-      </>
-    );
-  }
-
-  function renderDiagnostics() {
-    return (
-      <>
-        <PageHeading eyebrow={text.system} title={text.diagnostics} description={text.diagnosticsDescription} />
-        <section className="diagnostics-panel">
-          <div><p className="eyebrow">{text.privacy}</p><h2>{text.diagnosticExportTitle}</h2><p>{text.diagnosticPrivacy}</p></div>
-          <dl>
-            <div><dt>{text.service}</dt><dd>{statusLabel}</dd></div>
-            <div><dt>{text.network}</dt><dd>{selectedNetwork ? `${selectedNetwork.name} · ${selectedNetwork.address}` : text.noNetworkShort}</dd></div>
-            <div><dt>{text.firewall}</dt><dd>{currentSnapshot.firewall.configured ? text.configured : text.notConfigured}</dd></div>
-            <div><dt>{text.version}</dt><dd>{currentSnapshot.appVersion}</dd></div>
-          </dl>
-          <button className="button primary" type="button" disabled={busy} onClick={() => void exportDiagnostics()}>{text.exportDiagnostics}</button>
-        </section>
-      </>
-    );
-  }
-
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -985,11 +497,68 @@ export function App() {
           {!notice && !currentSnapshot.configurationWarning && service.error && <div className="notice error" role="alert">{service.error}</div>}
         </div>
         <main className="page-content">
-          {view === "overview" && renderOverview()}
-          {view === "shares" && renderShares()}
-          {view === "transfers" && renderTransfers()}
-          {view === "security" && renderSecurity()}
-          {view === "diagnostics" && renderDiagnostics()}
+          {view === "overview" && (
+            <OverviewPage
+              service={service}
+              running={running}
+              busy={busy}
+              activeTransfers={activeTransfers}
+              enabledShares={enabledShares}
+              draft={currentDraft}
+              snapshot={currentSnapshot}
+              selectedNetwork={selectedNetwork}
+              onCommand={simpleCommand}
+              onCopyAccessCode={copyAccessCode}
+              onNavigate={setView}
+            />
+          )}
+          {view === "shares" && (
+            <SharesPage
+              running={running}
+              busy={busy}
+              noEnabledShares={noEnabledShares}
+              shareOverlapError={shareOverlapError}
+              shareValidationPending={shareValidationPending}
+              draft={currentDraft}
+              downloadShareError={downloadShareError}
+              uploadShareError={uploadShareError}
+              dirty={dirty}
+              recoveryPending={recoveryPending}
+              saveAvailable={saveAvailable}
+              persistBlocked={persistBlocked}
+              onUpdate={updateDraft}
+              onSave={saveCurrentSettings}
+            />
+          )}
+          {view === "transfers" && (
+            <TransfersPage running={running} activeTransfers={activeTransfers} transferHistory={transferHistory} />
+          )}
+          {view === "security" && (
+            <SecurityPage
+              running={running}
+              busy={busy}
+              draft={currentDraft}
+              snapshot={currentSnapshot}
+              selectedNetwork={selectedNetwork}
+              draftErrors={draftErrors}
+              persistBlocked={persistBlocked}
+              dirty={dirty}
+              recoveryPending={recoveryPending}
+              saveAvailable={saveAvailable}
+              onUpdate={updateDraft}
+              onConfigureFirewall={configureFirewall}
+              onSave={saveCurrentSettings}
+            />
+          )}
+          {view === "diagnostics" && (
+            <DiagnosticsPage
+              statusLabel={statusLabel}
+              selectedNetwork={selectedNetwork}
+              snapshot={currentSnapshot}
+              busy={busy}
+              onExport={exportDiagnostics}
+            />
+          )}
         </main>
       </div>
     </div>

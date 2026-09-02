@@ -1,6 +1,11 @@
 import { FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { ApiError, DirectoryResponse, SessionResponse, UploadCreated } from "@dmdc/shared";
+import { api, HttpError } from "./apiClient";
+import { DirectoryBrowser } from "./DirectoryBrowser";
 import { text } from "./i18n";
+import { formatBytes } from "./presentation";
+import { UploadQueueView } from "./UploadQueueView";
+import { useSessionState } from "./useSession";
 import {
   abortableDelay,
   initialUploadQueue,
@@ -15,29 +20,7 @@ type View = "download" | "upload";
 
 const brandIconUrl = new URL("../../../assets/icon.svg", import.meta.url).href;
 
-class HttpError extends Error {
-  constructor(public status: number, public code: string, message: string) { super(message); }
-}
-
 class UploadInterrupted extends Error {}
-
-async function api<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(url, { credentials: "same-origin", ...init });
-  if (!response.ok) {
-    let body: ApiError = { code: `HTTP_${response.status}`, message: `HTTP ${response.status}` };
-    try { body = await response.json() as ApiError; } catch { /* Textantwort ignorieren. */ }
-    throw new HttpError(response.status, body.code, body.message);
-  }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
-}
-
-function formatBytes(value: number): string {
-  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
-  if (!value) return "0 B";
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 }).format(value / 1024 ** index)} ${units[index]}`;
-}
 
 function localQueueId(): string {
   const values = new Uint32Array(4);
@@ -46,7 +29,7 @@ function localQueueId(): string {
 }
 
 export function App() {
-  const [session, setSession] = useState<SessionResponse | null>(null);
+  const { session, sessionRef, setCurrentSession, clearSession } = useSessionState();
   const [checking, setChecking] = useState(true);
   const [loginError, setLoginError] = useState("");
   const [view, setView] = useState<View>("download");
@@ -58,7 +41,6 @@ export function App() {
   const loginPending = useRef(false);
   const [uploadQueue, reduceUploadQueue] = useReducer(uploadQueueReducer, initialUploadQueue);
   const uploadQueueRef = useRef(initialUploadQueue);
-  const sessionRef = useRef<SessionResponse | null>(null);
   const processingQueue = useRef(false);
   const activeRequests = useRef(new Map<string, XMLHttpRequest>());
   const activeControllers = useRef(new Map<string, AbortController>());
@@ -76,8 +58,7 @@ export function App() {
   const uploads = useMemo(() => uploadQueueItems(uploadQueue), [uploadQueue]);
 
   const handleSessionLost = useCallback(() => {
-    sessionRef.current = null;
-    setSession(null);
+    clearSession();
     directoryAbort.current?.abort();
     for (const controller of activeControllers.current.values()) controller.abort();
     for (const controller of retryDelays.current.values()) controller.abort();
@@ -88,19 +69,18 @@ export function App() {
     workInterrupts.current.clear();
     activeRequests.current.clear();
     updateQueue({ type: "session-lost", queuedMessage: text.waiting, pausedMessage: text.paused });
-  }, [updateQueue]);
+  }, [clearSession, updateQueue]);
 
   const loadSession = useCallback(async () => {
     try {
       const next = await api<SessionResponse>("/api/v1/session");
-      sessionRef.current = next;
-      setSession(next);
+      setCurrentSession(next);
       setView(next.downloadEnabled ? "download" : "upload");
     } catch (error) {
       if (!(error instanceof HttpError) || error.status !== 401) console.error(error);
       handleSessionLost();
     } finally { setChecking(false); }
-  }, [handleSessionLost]);
+  }, [handleSessionLost, setCurrentSession]);
 
   useEffect(() => { void loadSession(); }, [loadSession]);
 
@@ -451,11 +431,6 @@ export function App() {
     void drainUploadQueue();
   }
 
-  const breadcrumbs = useMemo(() => {
-    const parts = path.split("/").filter(Boolean);
-    return [{ name: text.shareRoot, path: "" }, ...parts.map((name, index) => ({ name, path: parts.slice(0, index + 1).join("/") }))];
-  }, [path]);
-
   if (checking) return <main className="center-card"><div className="spinner" /><p>{text.checking}</p></main>;
   if (!session) return (
     <main className="login-shell">
@@ -489,45 +464,25 @@ export function App() {
       </nav>
       <main className="mobile-content">
         {view === "download" && session.downloadEnabled && (
-          <section>
-            <p className="eyebrow">{text.readOnly}</p><h1>{text.filesFromPc}</h1><p className="intro">{text.downloadIntro}</p>
-            <form className="search-row" onSubmit={(event) => { event.preventDefault(); void loadDirectory(path); }}>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={text.searchPlaceholder} aria-label={text.searchPlaceholder} />
-              <button type="submit">{text.search}</button>
-            </form>
-            <div className="breadcrumbs" aria-label={text.currentPath}>{breadcrumbs.map((item) => <button type="button" key={item.path} onClick={() => loadDirectory(item.path)}><bdi className="untrusted-name">{item.name}</bdi></button>)}</div>
-            {directoryError && <div className="error-box">{directoryError}</div>}
-            <div className="file-list">
-              {directory?.entries.map((entry) => entry.kind === "directory" ? (
-                <button className="file-row folder-row" type="button" key={entry.path} onClick={() => loadDirectory(entry.path)}><span><strong><bdi className="untrusted-name">{entry.name}</bdi></strong><small>{text.folder}</small></span><b>{text.openFolder}</b></button>
-              ) : (
-                <a className="file-row file-download-row" key={entry.path} href={`/api/v1/download?path=${encodeURIComponent(entry.path)}`} download><span><strong><bdi className="untrusted-name">{entry.name}</bdi></strong><small>{formatBytes(entry.size)}{entry.modifiedAt ? ` · ${new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" }).format(new Date(entry.modifiedAt))}` : ""}</small></span><b>{text.load}</b></a>
-              ))}
-              {directory && !directory.entries.length && <p className="empty">{text.emptyFolder}</p>}
-              {directory?.nextCursor && directory.nextPage !== null && <button className="more-button" onClick={() => loadDirectory(path, directory.nextCursor ?? undefined, directory.nextPage ?? undefined, directory.query)}>{text.moreFiles}</button>}
-            </div>
-          </section>
+          <DirectoryBrowser
+            path={path}
+            search={search}
+            directory={directory}
+            error={directoryError}
+            onSearchChange={setSearch}
+            onLoad={loadDirectory}
+          />
         )}
         {view === "upload" && session.uploadEnabled && (
-          <section>
-            <p className="eyebrow">{text.addOnly}</p><h1>{text.filesToPc}</h1><p className="intro">{text.uploadIntro}</p>
-            <label className="file-picker"><input type="file" multiple onChange={(event) => { void queueFiles([...(event.target.files ?? [])]); event.target.value = ""; }} /><strong>{text.chooseFiles}</strong><span>{text.allowedTypes(session.maxUploadBytes ? formatBytes(session.maxUploadBytes) : text.byFreeSpace)}</span></label>
-            <div className="upload-list" aria-live="polite">
-              {uploads.map((item) => (
-                <article className={`upload-item ${item.state}`} data-error-code={item.errorCode} key={item.id}>
-                  <header className="upload-heading">
-                    <div><strong><bdi className="untrusted-name">{item.file.name}</bdi></strong><span>{formatBytes(item.file.size)} · {item.message}</span></div>
-                    <b className="upload-state">{text.uploadState(item.state)}</b>
-                  </header>
-                  <div className="upload-progress"><progress aria-label={`${item.file.name}: ${Math.round(item.progress)} Prozent`} max={100} value={item.progress} /><span>{Math.round(item.progress)} %</span></div>
-                  {(item.state === "queued" || item.state === "uploading") && <div className="upload-actions"><button onClick={() => pauseUpload(item)}>{text.pause}</button><button onClick={() => cancelUpload(item)}>{text.cancel}</button></div>}
-                  {item.state === "paused" && <div className="upload-actions"><button onClick={() => resumeUpload(item)}>{text.resume}</button><button onClick={() => cancelUpload(item)}>{text.cancel}</button></div>}
-                  {item.state === "failed" && <button className="retry-button" onClick={() => retryUpload(item)}>{text.retry}</button>}
-                </article>
-              ))}
-              {!uploads.length && <p className="empty">{text.noFiles}</p>}
-            </div>
-          </section>
+          <UploadQueueView
+            session={session}
+            uploads={uploads}
+            onFiles={queueFiles}
+            onCancel={cancelUpload}
+            onPause={pauseUpload}
+            onResume={resumeUpload}
+            onRetry={retryUpload}
+          />
         )}
       </main>
       <footer>{text.localWarning}</footer>

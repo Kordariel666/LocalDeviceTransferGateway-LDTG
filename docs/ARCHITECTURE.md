@@ -12,6 +12,29 @@ Der Rust-Code ist in drei Schichten gegliedert:
 
 Die mobile React-App wird separat gebaut und mit `rust-embed` in die Rust-Binärdatei aufgenommen. Dadurch benötigt DMDC weder Internet noch einen separaten Webserver.
 
+Innerhalb der Schichten gelten folgende Modulgrenzen:
+
+- `service/api.rs` verdrahtet ausschließlich den Axum-Router. Die Untermodule
+  `auth`, `common`, `directory`, `download`, `upload` und `assets` besitzen die
+  jeweiligen HTTP-Abläufe; `common` ist die einzige Stelle für API-Fehler,
+  Request-Guard und Sicherheitsheader.
+- `service/state.rs` besitzt die gemeinsamen Records, Permits, Konstanten und
+  die Initialisierung einer Dienstinstanz. `sessions`, `limits`, `cursors`,
+  `uploads`, `downloads` und `journal` ergänzen darauf ausschließlich ihre
+  domänenspezifischen Zustandsübergänge.
+- Die Rust-Regressionen für diese beiden Bereiche liegen in den dedizierten
+  Untermodulen `api/tests.rs` und `state/tests.rs`. Sie dürfen private
+  Invarianten prüfen, werden aber nicht in Produktionsdateien eingebettet.
+- Mobile verwendet `apiClient` für HTTP-Fehler und JSON, `useSession` für den
+  synchronisierten Session-State, `DirectoryBrowser` für die
+  Downloadnavigation sowie `uploadQueue` und `UploadQueueView` für fachlichen
+  Queue-Zustand und Darstellung.
+- Desktop verwendet `tauriClient` als IPC-Grenze, `useLifecycle` für native
+  Ereignisse, Polling und Dirty-State-Spiegelung, `settingsDraft` für lokale
+  Entwurfsregeln sowie getrennte `components`- und `pages`-Module für die
+  Darstellung. `DesktopApp` koordiniert diese Bausteine und besitzt weiterhin
+  die Benutzeraktionen und ihren Zustand.
+
 Serialisierbare DTOs in `src-tauri/src/domain` bilden die einzige Quelle für die
 von Rust, Desktop und Mobile gemeinsam verwendeten Verträge. `ts-rs` erzeugt
 daraus `packages/shared/src/index.ts`; Dienst- und Transferzustände,

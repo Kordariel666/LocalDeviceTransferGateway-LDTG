@@ -362,6 +362,8 @@ Umgesetzt:
 
 ### R2.3 Große Module zerlegen
 
+Status: abgeschlossen am 2. September 2026.
+
 Zielstruktur:
 
 - `service/api/`: Auth, Directory, Download, Upload, Static Assets und gemeinsame Fehler/Middleware.
@@ -374,6 +376,27 @@ Zusätzlich:
 - Nicht verwendete alte Stylesheets entfernen oder klar archivieren.
 - Testhilfen aus Produktionsdateien in dedizierte Testmodule verschieben, soweit dies die Invarianten nicht versteckt.
 - Keine Verhaltensänderung in reinen Refactoring-Commits.
+
+Umgesetzt:
+
+- Der HTTP-Einstieg `service/api.rs` enthält nur noch Router und Modulverdrahtung.
+  Authentifizierung, gemeinsame Fehler und Middleware, Verzeichnisauflistung,
+  Download, Upload und eingebettete Assets liegen in benannten Untermodulen.
+- `service/state.rs` beschränkt sich auf gemeinsame Datentypen, Konstanten und
+  Initialisierung. Sitzungen, Ressourcenlimits, Verzeichniscursor, Uploads,
+  Downloads und Transferjournal besitzen getrennte Implementierungsmodule.
+- Die zuvor eingebetteten Rust-Testmodule wurden nach `api/tests.rs` und
+  `state/tests.rs` verschoben. Damit liegen umfangreiche Fixtures und
+  Parallelitätsregressionen nicht mehr in Produktionsdateien, prüfen aber
+  weiterhin dieselben privaten Invarianten.
+- Mobile trennt HTTP-Client, Session-State, Directory-Browser,
+  Upload-Queue-Darstellung und Formatierung. Desktop trennt Tauri-Client,
+  Lifecycle, Settings-Draft, Basiskomponenten und Seiten.
+- Die beiden nicht importierten komprimierten Alt-Stylesheets `styles.css`
+  wurden entfernt; die aktiven Redesign-Stylesheets bleiben unverändert.
+- Das vollständige Qualitätsgate bleibt mit 105 Rust-, 15 Desktop- und
+  28 Mobile-Tests grün. Der Schritt ist ein reines Refactoring ohne
+  Vertrags- oder Verhaltensänderung.
 
 ### R2.4 Stabiler und sparsamer Statuspfad
 
