@@ -238,11 +238,14 @@ async fn current_service_status(state: &AppState) -> ServiceStatus {
     let (service, last_error) = {
         let runtime = state.runtime.lock().await;
         (
-            runtime.service.as_ref().map(ServiceHandle::status),
+            runtime.service.as_ref().map(|handle| handle.state.clone()),
             runtime.last_error.clone(),
         )
     };
-    service.unwrap_or_else(|| ServiceStatus::stopped(last_error))
+    match service {
+        Some(service) => service.status().await,
+        None => ServiceStatus::stopped(last_error),
+    }
 }
 
 #[tauri::command]
@@ -653,8 +656,12 @@ async fn export_diagnostics(
         let runtime = state.runtime.lock().await;
         (
             runtime.settings.clone(),
-            runtime.service.as_ref().map(ServiceHandle::status),
+            runtime.service.as_ref().map(|handle| handle.state.clone()),
         )
+    };
+    let service = match service {
+        Some(service) => Some(service.status().await),
+        None => None,
     };
     let networks = cached_networks(&state).await;
     let firewall = cached_firewall(app, &state, settings.port).await;

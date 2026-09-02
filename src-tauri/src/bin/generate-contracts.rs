@@ -4,8 +4,9 @@ use dmdc_lib::domain::{
     types::{
         AppSnapshot, CommandError, CommandErrorCode, CommandErrorContext, CompleteResponse,
         DirectoryEntry, DirectoryEntryKind, DirectoryResponse, ErrorBody, FirewallStatus,
-        ServiceState, ServiceStatus, SessionInfo, SessionResponse, ShareValidation,
-        TransferDirection, TransferInfo, TransferState, UploadResponse,
+        ServiceState, ServiceStatus, SessionChangedEvent, SessionInfo, SessionResponse,
+        ShareValidation, TransferChangedEvent, TransferDirection, TransferInfo, TransferState,
+        UploadResponse,
     },
 };
 use std::{env, error::Error, fs, path::PathBuf};
@@ -24,9 +25,11 @@ fn bindings() -> String {
         declaration::<AppSettings>(),
         declaration::<NetworkInterfaceInfo>(),
         declaration::<SessionInfo>(),
+        declaration::<SessionChangedEvent>(),
         declaration::<TransferDirection>(),
         declaration::<TransferState>(),
         declaration::<TransferInfo>(),
+        declaration::<TransferChangedEvent>(),
         declaration::<ServiceState>(),
         declaration::<ServiceStatus>(),
         declaration::<FirewallStatus>(),

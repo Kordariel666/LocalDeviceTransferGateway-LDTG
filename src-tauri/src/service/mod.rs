@@ -5,7 +5,6 @@ use crate::domain::{
     network::{self, same_network_identity, same_subnet, NetworkInterfaceInfo},
     settings::AppSettings,
     shares::ShareRoots,
-    types::ServiceStatus,
 };
 use axum::{body::Body, extract::ConnectInfo, http::Request, Extension, Router};
 use hyper::body::Incoming;
@@ -318,9 +317,6 @@ pub struct ServiceHandle {
 }
 
 impl ServiceHandle {
-    pub fn status(&self) -> ServiceStatus {
-        self.state.status()
-    }
     pub fn is_finished(&self) -> bool {
         self.join.is_finished()
     }

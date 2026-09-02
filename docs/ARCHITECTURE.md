@@ -93,7 +93,17 @@ Der Sitzungspool enthält höchstens 128 Sitzungen, davon höchstens 4 pro Clien
 
 - Download: begrenzte blockierende kanonische Pfad- und Metadatenprüfung → read-only Datei-Handle → gestreamte HTTP-Antwort mit Attachment- und Range-Headern.
 - Upload: dienstbesessene Metadaten-, Inbox- und Speicherprüfung → neue `.part`-Datei → frühe Besitzprüfung vor PATCH-Bodyverbrauch → exakt 8 MiB pro Zwischenblock und genau die verbleibende Größe im letzten Block am jeweils bestätigten Offset → positionsfestes Schreiben und `sync_data` im Blocking-Pool → atomare Übernahme von Offset, Bytebudget und genau einem Progress-Update → dienstbesessener Commit → atomare No-Replace-Umbenennung auf einen immer zufällig suffigierten Zielnamen. Erst nach erfolgreichem `sync_data` bestätigt die PATCH-Antwort den neuen Offset. Das Verschwinden des HTTP-Waiters trennt weder Chunkjob noch Commit ab; Abbruch und Stop signalisieren sofort und lassen die exklusive Bereinigung nach der laufenden Dateiarbeit folgen.
-- Desktopstatus: kleine Metadatenereignisse und typisierte Tauri-Aufrufe. Keine Dateiinhalte über IPC.
+- Desktopstatus: Der vollständige Status wartet asynchron auf echte Sitzungs-
+  und Transfersnapshots und erfindet bei kurzer Sperrbelegung keine leeren
+  Listen. Typisierte Sitzungs- und Transferereignisse tragen die Dienst-ID und
+  werden bei passender Instanz direkt in den Desktopstatus eingearbeitet.
+  Transferereignisse werden bei einem Fortschrittsupdate nach mindestens
+  250 Millisekunden, nach 1 MiB zusätzlichem Fortschritt oder bei jedem
+  Terminalzustand gesendet; der
+  maßgebliche Backendzustand bleibt davon unabhängig bytegenau. Lifecycle- und
+  Netzwerkereignisse führen zu einer gedrosselten Vollabfrage, ein
+  30-Sekunden-Polling bleibt als Resynchronisierungsfallback. Keine Dateiinhalte
+  werden über IPC übertragen.
 
 ## Netzgrenze
 

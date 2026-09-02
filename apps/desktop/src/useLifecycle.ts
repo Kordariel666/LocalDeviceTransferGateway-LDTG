@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { SessionChangedEvent, TransferChangedEvent } from "@dmdc/shared";
 import { errorMessage, invoke, listen } from "./tauriClient";
 
 type LifecycleOptions = {
@@ -9,6 +10,8 @@ type LifecycleOptions = {
   stop: (force?: boolean) => Promise<void>;
   quit: (force?: boolean, discardUnsaved?: boolean) => Promise<void>;
   onError: (message: string) => void;
+  onSessionChanged: (event: SessionChangedEvent) => void;
+  onTransferChanged: (event: TransferChangedEvent) => void;
 };
 
 export function useLifecycle({
@@ -19,6 +22,8 @@ export function useLifecycle({
   stop,
   quit,
   onError,
+  onSessionChanged,
+  onTransferChanged,
 }: LifecycleOptions) {
   const allowUnload = useRef(false);
 
@@ -49,9 +54,9 @@ export function useLifecycle({
     let timer: number | undefined;
     const poll = async () => {
       await refreshService();
-      if (!cancelled) timer = window.setTimeout(() => void poll(), 5000);
+      if (!cancelled) timer = window.setTimeout(() => void poll(), 30_000);
     };
-    timer = window.setTimeout(() => void poll(), 5000);
+    timer = window.setTimeout(() => void poll(), 30_000);
     return () => {
       cancelled = true;
       if (timer !== undefined) window.clearTimeout(timer);
@@ -71,8 +76,8 @@ export function useLifecycle({
       listen("stop-requested", () => void stop(false)),
       listen("quit-requested", () => void quit(false)),
       listen("service-status-changed", scheduleServiceRefresh),
-      listen("sessions-changed", scheduleServiceRefresh),
-      listen("transfer-updated", scheduleServiceRefresh),
+      listen<SessionChangedEvent>("sessions-changed", (event) => onSessionChanged(event.payload)),
+      listen<TransferChangedEvent>("transfer-updated", (event) => onTransferChanged(event.payload)),
       listen("network-changed", scheduleServiceRefresh),
     ]);
     return () => {

@@ -11,6 +11,26 @@ pub struct SessionInfo {
     pub last_activity: String,
 }
 
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum SessionChangedEvent {
+    Upsert {
+        service_id: String,
+        session: SessionInfo,
+    },
+    Remove {
+        service_id: String,
+        ids: Vec<String>,
+    },
+    Reset {
+        service_id: String,
+    },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum TransferDirection {
@@ -40,6 +60,13 @@ pub struct TransferInfo {
     pub total_bytes: u64,
     pub state: TransferState,
     pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct TransferChangedEvent {
+    pub service_id: String,
+    pub transfer: TransferInfo,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]

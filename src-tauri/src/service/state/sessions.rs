@@ -1,6 +1,29 @@
 use super::*;
 
 impl TransferServiceState {
+    fn emit_session_upsert(&self, session: &SessionRecord) {
+        self.emit(
+            "sessions-changed",
+            &SessionChangedEvent::Upsert {
+                service_id: self.service_id.clone(),
+                session: session.info(),
+            },
+        );
+    }
+
+    fn emit_sessions_removed(&self, ids: &[String]) {
+        if ids.is_empty() {
+            return;
+        }
+        self.emit(
+            "sessions-changed",
+            &SessionChangedEvent::Remove {
+                service_id: self.service_id.clone(),
+                ids: ids.to_vec(),
+            },
+        );
+    }
+
     pub fn rotate_code(&self) -> String {
         let mut throttle = self
             .auth_attempts
@@ -119,7 +142,7 @@ impl TransferServiceState {
             created_at_instant: now_instant,
             last_activity_instant: now_instant,
         };
-        let (expired, result, count) = {
+        let (expired, result) = {
             let mut sessions = self.sessions.lock().await;
             let expired: Vec<_> = sessions
                 .values()
@@ -140,37 +163,38 @@ impl TransferServiceState {
                 sessions.insert(record.token.clone(), record.clone());
                 Ok(record.clone())
             };
-            (expired, result, sessions.len())
+            (expired, result)
         };
         self.cleanup_expired_sessions(&expired).await;
-        if !expired.is_empty() || result.is_ok() {
-            self.emit("sessions-changed", &serde_json::json!({ "count": count }));
+        self.emit_sessions_removed(&expired);
+        if let Ok(session) = &result {
+            self.emit_session_upsert(session);
         }
         result
     }
 
     pub async fn authenticate(&self, token: &str, address: IpAddr) -> Option<SessionRecord> {
         let now = Instant::now();
-        let (session, expired, count) = {
+        let (session, expired) = {
             let mut sessions = self.sessions.lock().await;
             let current = sessions.get(token)?;
             if current.expired_at(now) {
                 let id = current.id.clone();
                 sessions.remove(token);
-                (None, Some(id), sessions.len())
+                (None, Some(id))
             } else if current.address != address {
                 return None;
             } else {
                 let current = sessions.get_mut(token).expect("session remains present");
                 current.last_activity = Utc::now().to_rfc3339();
                 current.last_activity_instant = now;
-                (Some(current.clone()), None, sessions.len())
+                (Some(current.clone()), None)
             }
         };
         if let Some(expired) = expired {
             self.cleanup_expired_sessions(std::slice::from_ref(&expired))
                 .await;
-            self.emit("sessions-changed", &serde_json::json!({ "count": count }));
+            self.emit_sessions_removed(std::slice::from_ref(&expired));
             return None;
         }
         self.touch();
@@ -188,7 +212,7 @@ impl TransferServiceState {
 
     pub async fn session_is_active(&self, expected: &SessionRecord) -> bool {
         let now = Instant::now();
-        let (active, expired, count) = {
+        let (active, expired) = {
             let mut sessions = self.sessions.lock().await;
             let expired = sessions
                 .get(&expected.token)
@@ -199,12 +223,12 @@ impl TransferServiceState {
             let active = sessions.get(&expected.token).is_some_and(|current| {
                 current.id == expected.id && current.address == expected.address
             });
-            (active, expired, sessions.len())
+            (active, expired)
         };
         if let Some(expired) = expired {
             self.cleanup_expired_sessions(std::slice::from_ref(&expired))
                 .await;
-            self.emit("sessions-changed", &serde_json::json!({ "count": count }));
+            self.emit_sessions_removed(std::slice::from_ref(&expired));
         }
         active
     }
@@ -219,7 +243,7 @@ impl TransferServiceState {
 
     pub async fn expire_stale_sessions(&self) {
         let now = Instant::now();
-        let (expired, count) = {
+        let expired = {
             let mut sessions = self.sessions.lock().await;
             let expired: Vec<_> = sessions
                 .values()
@@ -227,11 +251,11 @@ impl TransferServiceState {
                 .map(|session| session.id.clone())
                 .collect();
             sessions.retain(|_, session| !session.expired_at(now));
-            (expired, sessions.len())
+            expired
         };
         if !expired.is_empty() {
             self.cleanup_expired_sessions(&expired).await;
-            self.emit("sessions-changed", &serde_json::json!({ "count": count }));
+            self.emit_sessions_removed(&expired);
         }
     }
 
@@ -240,13 +264,12 @@ impl TransferServiceState {
         let before = sessions.len();
         sessions.retain(|_, item| item.id != id);
         let changed = before != sessions.len();
-        let count = sessions.len();
         drop(sessions);
         if changed {
             self.cancel_downloads(Some(id)).await;
             self.cancel_uploads(Some(id)).await;
             self.remove_directory_listings(Some(id)).await;
-            self.emit("sessions-changed", &serde_json::json!({ "count": count }));
+            self.emit_sessions_removed(&[id.into()]);
         }
         changed
     }
@@ -262,6 +285,11 @@ impl TransferServiceState {
             revoked
         };
         self.cleanup_expired_sessions(&revoked).await;
-        self.emit("sessions-changed", &serde_json::json!({ "count": 0 }));
+        self.emit(
+            "sessions-changed",
+            &SessionChangedEvent::Reset {
+                service_id: self.service_id.clone(),
+            },
+        );
     }
 }

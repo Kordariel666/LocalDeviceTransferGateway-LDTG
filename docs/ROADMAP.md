@@ -400,6 +400,8 @@ Umgesetzt:
 
 ### R2.4 Stabiler und sparsamer Statuspfad
 
+Status: abgeschlossen am 2. September 2026.
+
 Aufgaben:
 
 - Verhindern, dass `try_lock` bei kurzer Sperrbelegung scheinbar leere Session- oder Transferlisten liefert.
@@ -407,7 +409,31 @@ Aufgaben:
 - Kleine Event-Payloads direkt in der Desktop-App anwenden; vollständigen Status nur zur Resynchronisierung abrufen.
 - Polling als Fallback beibehalten, aber unnötige Vollabfragen reduzieren.
 
+Umgesetzt:
+
+- `TransferServiceState::status` erzeugt Sitzungs- und Transfersnapshots nun
+  asynchron über die regulären Mutex-Sperren. Kurze parallele Änderungen lassen
+  den Status warten und können nicht mehr als scheinbar leere Listen erscheinen.
+- Der maßgebliche Transferzustand wird weiterhin nach jedem gelesenen oder
+  geschriebenen Block aktualisiert. Ein UI-Ereignis folgt dagegen nur bei einem
+  Terminalzustand, bei einem Fortschrittsupdate nach mindestens 250 Millisekunden
+  oder nach mindestens 1 MiB zusätzlichem Fortschritt.
+- Die generierten Ereignisverträge `SessionChangedEvent` und
+  `TransferChangedEvent` enthalten die Dienst-ID. Der Desktop verwirft dadurch
+  verspätete Ereignisse einer alten Dienstinstanz und wendet passende
+  Upserts, Entfernungen, Resets und Transferfortschritte direkt lokal an.
+- Lifecycle- und Netzwerkereignisse lösen weiterhin eine gedrosselte
+  Resynchronisierung aus. Das Vollstatus-Polling bleibt als Ausfallsicherung
+  erhalten, läuft aber nur noch alle 30 statt alle 5 Sekunden.
+- Zwei neue Rust-Regressionen prüfen vollständige Statussnapshots unter
+  Sperrbelegung und die Fortschrittsdrosselung. Vier neue Desktoptests prüfen
+  Ereignisreducer, direkte UI-Anwendung ohne Vollabfrage und das
+  30-Sekunden-Fallback. Das vollständige Gate ist mit 107 Rust-, 19 Desktop-
+  und 28 Mobile-Tests grün.
+
 Phasen-Gate 2:
+
+Status: erfüllt am 2. September 2026.
 
 - Kein manueller Rust/TypeScript-Vertragsduplikatbestand bleibt übrig.
 - Frontends verarbeiten keine Backendfehler mehr durch String-Splitting.

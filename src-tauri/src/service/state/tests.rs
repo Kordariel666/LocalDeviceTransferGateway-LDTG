@@ -1,3 +1,4 @@
+use super::journal::TRANSFER_EVENT_BYTES;
 use super::*;
 use crate::domain::settings::ShareSettings;
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -32,6 +33,98 @@ fn test_state(root: &Path) -> Result<TransferServiceState, String> {
         },
         None,
     )
+}
+
+#[tokio::test]
+async fn status_waits_for_complete_session_and_transfer_snapshots() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = Arc::new(test_state(temp.path()).unwrap());
+    let session = state
+        .create_session(
+            IpAddr::V4(Ipv4Addr::new(192, 168, 10, 20)),
+            "Browser".into(),
+        )
+        .await
+        .unwrap();
+    let transfer_id = state
+        .record_transfer(TransferDirection::Download, "status.bin", 2048)
+        .await;
+    let sessions = state.sessions.lock().await;
+    let transfers = state.transfers.lock().await;
+    let mut pending = Box::pin(state.status());
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), &mut pending)
+            .await
+            .is_err(),
+        "status must wait instead of fabricating empty snapshots"
+    );
+    drop(sessions);
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), &mut pending)
+            .await
+            .is_err(),
+        "status must also wait for the transfer snapshot"
+    );
+    drop(transfers);
+    let status = tokio::time::timeout(Duration::from_secs(1), pending)
+        .await
+        .expect("status snapshot should complete after both locks are released");
+    assert_eq!(status.sessions.len(), 1);
+    assert_eq!(status.sessions[0].id, session.id);
+    assert_eq!(status.transfers.len(), 1);
+    assert_eq!(status.transfers[0].id, transfer_id);
+}
+
+#[tokio::test]
+async fn transfer_progress_notifications_are_byte_throttled_but_terminal_updates_are_immediate() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path()).unwrap();
+    let id = state
+        .record_transfer(
+            TransferDirection::Download,
+            "gross.bin",
+            TRANSFER_EVENT_BYTES * 2,
+        )
+        .await;
+
+    state.update_transfer(&id, 64 * 1024, None).await;
+    assert_eq!(
+        state.transfers.lock().await[0].transferred_bytes,
+        64 * 1024,
+        "the authoritative state still tracks every progress update"
+    );
+    assert_eq!(
+        state
+            .transfer_notifications
+            .lock()
+            .await
+            .get(&id)
+            .unwrap()
+            .transferred_bytes,
+        0,
+        "small immediate progress must not advance the notification watermark"
+    );
+
+    state.update_transfer(&id, TRANSFER_EVENT_BYTES, None).await;
+    assert_eq!(
+        state
+            .transfer_notifications
+            .lock()
+            .await
+            .get(&id)
+            .unwrap()
+            .transferred_bytes,
+        TRANSFER_EVENT_BYTES,
+        "one MiB of progress must advance the notification watermark"
+    );
+
+    state
+        .update_transfer(&id, TRANSFER_EVENT_BYTES + 1, Some(TransferState::Complete))
+        .await;
+    assert!(
+        !state.transfer_notifications.lock().await.contains_key(&id),
+        "terminal updates must emit immediately and release throttle state"
+    );
 }
 
 #[test]

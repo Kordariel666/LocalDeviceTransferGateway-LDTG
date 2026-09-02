@@ -1,5 +1,8 @@
 use super::*;
 
+const TRANSFER_EVENT_INTERVAL: Duration = Duration::from_millis(250);
+pub(super) const TRANSFER_EVENT_BYTES: u64 = 1024 * 1024;
+
 impl TransferServiceState {
     #[cfg(test)]
     pub async fn record_transfer(
@@ -31,7 +34,7 @@ impl TransferServiceState {
             updated_at: Utc::now().to_rfc3339(),
         };
         let mut transfers = self.transfers.lock().await;
-        transfers.push(item);
+        transfers.push(item.clone());
         while transfers.len() > 100 {
             let Some(index) = transfers
                 .iter()
@@ -42,25 +45,71 @@ impl TransferServiceState {
             transfers.remove(index);
         }
         drop(transfers);
-        self.emit("transfer-updated", &serde_json::json!({ "id": id }));
+        self.transfer_notifications.lock().await.insert(
+            id.into(),
+            TransferNotification {
+                transferred_bytes: 0,
+                emitted_at: Instant::now(),
+            },
+        );
+        self.emit(
+            "transfer-updated",
+            &TransferChangedEvent {
+                service_id: self.service_id.clone(),
+                transfer: item,
+            },
+        );
     }
 
     pub async fn update_transfer(&self, id: &str, bytes: u64, state: Option<TransferState>) {
-        if let Some(item) = self
-            .transfers
-            .lock()
-            .await
-            .iter_mut()
-            .find(|item| item.id == id)
-        {
-            item.transferred_bytes = bytes;
-            if let Some(state) = state {
-                item.state = state;
-            }
-            item.updated_at = Utc::now().to_rfc3339();
-        }
+        let updated = {
+            let mut transfers = self.transfers.lock().await;
+            transfers.iter_mut().find(|item| item.id == id).map(|item| {
+                item.transferred_bytes = bytes;
+                if let Some(state) = state {
+                    item.state = state;
+                }
+                item.updated_at = Utc::now().to_rfc3339();
+                item.clone()
+            })
+        };
         self.touch();
-        self.emit("transfer-updated", &serde_json::json!({ "id": id }));
+        let Some(updated) = updated else {
+            return;
+        };
+        let now = Instant::now();
+        let terminal = updated.state != TransferState::Active;
+        let should_emit = {
+            let mut notifications = self.transfer_notifications.lock().await;
+            let notification =
+                notifications
+                    .entry(id.into())
+                    .or_insert_with(|| TransferNotification {
+                        transferred_bytes: 0,
+                        emitted_at: now,
+                    });
+            let due = terminal
+                || bytes.saturating_sub(notification.transferred_bytes) >= TRANSFER_EVENT_BYTES
+                || now.saturating_duration_since(notification.emitted_at)
+                    >= TRANSFER_EVENT_INTERVAL;
+            if due {
+                notification.transferred_bytes = bytes;
+                notification.emitted_at = now;
+            }
+            if terminal {
+                notifications.remove(id);
+            }
+            due
+        };
+        if should_emit {
+            self.emit(
+                "transfer-updated",
+                &TransferChangedEvent {
+                    service_id: self.service_id.clone(),
+                    transfer: updated,
+                },
+            );
+        }
     }
 
     pub(super) fn emit<T: serde::Serialize + Clone>(&self, event: &str, payload: &T) {
@@ -93,30 +142,17 @@ impl TransferServiceState {
         );
     }
 
-    pub fn status(&self) -> ServiceStatus {
+    pub async fn status(&self) -> ServiceStatus {
         let now = Instant::now();
         let sessions = self
             .sessions
-            .try_lock()
-            .map(|items| {
-                items
-                    .values()
-                    .filter(|session| !session.expired_at(now))
-                    .map(|session| SessionInfo {
-                        id: session.id.clone(),
-                        address: session.address.to_string(),
-                        user_agent: session.user_agent.clone(),
-                        created_at: session.created_at.clone(),
-                        last_activity: session.last_activity.clone(),
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
-        let transfers = self
-            .transfers
-            .try_lock()
-            .map(|items| items.clone())
-            .unwrap_or_default();
+            .lock()
+            .await
+            .values()
+            .filter(|session| !session.expired_at(now))
+            .map(SessionRecord::info)
+            .collect();
+        let transfers = self.transfers.lock().await.clone();
         let active_transfers = transfers
             .iter()
             .filter(|item| item.state == TransferState::Active)

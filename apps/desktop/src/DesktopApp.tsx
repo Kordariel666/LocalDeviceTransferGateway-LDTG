@@ -5,7 +5,9 @@ import type {
   AppSnapshot,
   FirewallStatus,
   ServiceStatus,
+  SessionChangedEvent,
   ShareValidation,
+  TransferChangedEvent,
 } from "@dmdc/shared";
 import { text } from "./i18n";
 import {
@@ -16,6 +18,7 @@ import {
   TransfersPage,
 } from "./pages/DesktopPages";
 import { hasErrors, settingsEqual, shareSignature, validateDraft } from "./settingsDraft";
+import { applySessionsChanged, applyTransferChanged } from "./statusEvents";
 import { commandError, errorMessage, invoke } from "./tauriClient";
 import { useLifecycle } from "./useLifecycle";
 
@@ -108,6 +111,18 @@ export function App() {
     }
   }, [refreshSnapshot]);
 
+  const handleSessionChanged = useCallback((event: SessionChangedEvent) => {
+    setSnapshot((current) => current
+      ? { ...current, service: applySessionsChanged(current.service, event) }
+      : current);
+  }, []);
+
+  const handleTransferChanged = useCallback((event: TransferChangedEvent) => {
+    setSnapshot((current) => current
+      ? { ...current, service: applyTransferChanged(current.service, event) }
+      : current);
+  }, []);
+
   useEffect(() => { void refreshSnapshot(); }, [refreshSnapshot]);
 
   useEffect(() => {
@@ -150,6 +165,8 @@ export function App() {
     stop,
     quit,
     onError: (message) => setNotice({ kind: "error", text: message }),
+    onSessionChanged: handleSessionChanged,
+    onTransferChanged: handleTransferChanged,
   });
 
   useEffect(() => {

@@ -8,11 +8,15 @@ export type NetworkInterfaceInfo = { id: string, name: string, profileName: stri
 
 export type SessionInfo = { id: string, address: string, userAgent: string, createdAt: string, lastActivity: string, };
 
+export type SessionChangedEvent = { "kind": "upsert", serviceId: string, session: SessionInfo, } | { "kind": "remove", serviceId: string, ids: Array<string>, } | { "kind": "reset", serviceId: string, };
+
 export type TransferDirection = "upload" | "download";
 
 export type TransferState = "active" | "complete" | "cancelled" | "failed" | "expired";
 
 export type TransferInfo = { id: string, direction: TransferDirection, name: string, transferredBytes: number, totalBytes: number, state: TransferState, updatedAt: string, };
+
+export type TransferChangedEvent = { serviceId: string, transfer: TransferInfo, };
 
 export type ServiceState = "stopped" | "starting" | "running" | "stopping" | "error";
 

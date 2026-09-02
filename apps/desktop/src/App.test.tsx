@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   open: vi.fn(),
   ask: vi.fn(),
   save: vi.fn(),
-  listeners: new Map<string, () => void>(),
+  listeners: new Map<string, (event?: { payload: unknown }) => void>(),
 }));
 
 const snapshot: AppSnapshot = {
@@ -54,7 +54,7 @@ beforeEach(() => {
     return undefined;
   });
   mocks.listen.mockReset();
-  mocks.listen.mockImplementation(async (event: string, callback: () => void) => {
+  mocks.listen.mockImplementation(async (event: string, callback: (event?: { payload: unknown }) => void) => {
     mocks.listeners.set(event, callback);
     return () => mocks.listeners.delete(event);
   });
@@ -219,8 +219,8 @@ describe("Desktop-Dashboard", () => {
     expect(port.value).toBe("9123");
 
     await act(async () => {
-      mocks.listeners.get("sessions-changed")?.();
-      await vi.advanceTimersByTimeAsync(15_000);
+      mocks.listeners.get("service-status-changed")?.();
+      await vi.advanceTimersByTimeAsync(200);
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Freigaben" }));
@@ -230,6 +230,87 @@ describe("Desktop-Dashboard", () => {
     expect((screen.getByRole("spinbutton", { name: /TCP-Port/ }) as HTMLInputElement).value).toBe("9123");
     expect(mocks.invoke.mock.calls.filter(([command]) => command === "get_app_snapshot")).toHaveLength(1);
     expect(mocks.invoke.mock.calls.some(([command]) => command === "get_service_status")).toBe(true);
+  });
+
+  it("wendet Sitzungs- und Transferereignisse ohne vollständige Statusabfrage an", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.service = {
+      state: "running",
+      serviceId: "service-1",
+      url: "http://192.168.1.2:8765/",
+      accessCode: "12345678",
+      startedAt: "2026-09-02T10:00:00Z",
+      activeTransfers: 0,
+      sessions: [],
+      transfers: [],
+      error: null,
+    };
+    render(<App />);
+    await screen.findByText("Mit dem Handy verbinden");
+
+    await act(async () => {
+      mocks.listeners.get("sessions-changed")?.({
+        payload: {
+          kind: "upsert",
+          serviceId: "service-1",
+          session: {
+            id: "session-1",
+            address: "192.168.1.10",
+            userAgent: "Direkter Browser",
+            createdAt: "2026-09-02T10:00:00Z",
+            lastActivity: "2026-09-02T10:00:01Z",
+          },
+        },
+      });
+      mocks.listeners.get("transfer-updated")?.({
+        payload: {
+          serviceId: "service-1",
+          transfer: {
+            id: "transfer-1",
+            direction: "upload",
+            name: "direkt.txt",
+            transferredBytes: 1024,
+            totalBytes: 4096,
+            state: "active",
+            updatedAt: "2026-09-02T10:00:01Z",
+          },
+        },
+      });
+    });
+
+    expect(await screen.findByText("Direkter Browser")).toBeTruthy();
+    expect(screen.getByText("direkt.txt")).toBeTruthy();
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "get_service_status")).toHaveLength(0);
+  });
+
+  it("behält eine sparsame Statusabfrage als 30-Sekunden-Fallback bei", async () => {
+    vi.useFakeTimers();
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.service = {
+      state: "running",
+      serviceId: "service-1",
+      url: "http://192.168.1.2:8765/",
+      accessCode: "12345678",
+      startedAt: "2026-09-02T10:00:00Z",
+      activeTransfers: 0,
+      sessions: [],
+      transfers: [],
+      error: null,
+    };
+    await act(async () => {
+      render(<App />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(29_999);
+    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "get_service_status")).toHaveLength(0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "get_service_status")).toHaveLength(1);
   });
 
   it("zeigt eine Firewallregel erst nach bestätigter Backendprüfung als eingerichtet", async () => {

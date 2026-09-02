@@ -3,8 +3,8 @@ use crate::domain::{
     settings::AppSettings,
     shares::{delete_open_upload, is_reparse_point, RootAnchor, ShareRoots},
     types::{
-        DirectoryEntry, ServiceState, ServiceStatus, SessionInfo, TransferDirection, TransferInfo,
-        TransferState,
+        DirectoryEntry, ServiceState, ServiceStatus, SessionChangedEvent, SessionInfo,
+        TransferChangedEvent, TransferDirection, TransferInfo, TransferState,
     },
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
@@ -97,6 +97,16 @@ impl SessionRecord {
     fn expired_at(&self, now: Instant) -> bool {
         now.saturating_duration_since(self.last_activity_instant) >= SESSION_IDLE_TIMEOUT
             || now.saturating_duration_since(self.created_at_instant) >= SESSION_MAX_LIFETIME
+    }
+
+    fn info(&self) -> SessionInfo {
+        SessionInfo {
+            id: self.id.clone(),
+            address: self.address.to_string(),
+            user_agent: self.user_agent.clone(),
+            created_at: self.created_at.clone(),
+            last_activity: self.last_activity.clone(),
+        }
     }
 }
 
@@ -263,6 +273,12 @@ struct ActiveDownload {
     cancel: watch::Sender<bool>,
 }
 
+#[derive(Debug)]
+struct TransferNotification {
+    transferred_bytes: u64,
+    emitted_at: Instant,
+}
+
 pub struct DownloadLease {
     pub id: String,
     pub cancel: watch::Receiver<bool>,
@@ -316,6 +332,7 @@ pub struct TransferServiceState {
     request_address_slots: Mutex<HashMap<IpAddr, Weak<Semaphore>>>,
     inbox_usage: StdMutex<InboxUsage>,
     pub transfers: Mutex<Vec<TransferInfo>>,
+    transfer_notifications: Mutex<HashMap<String, TransferNotification>>,
     pub started_at: String,
     pub last_activity_unix: AtomicI64,
     pub app: Option<AppHandle>,
@@ -505,6 +522,7 @@ impl TransferServiceState {
                 ..InboxUsage::default()
             }),
             transfers: Mutex::new(vec![]),
+            transfer_notifications: Mutex::new(HashMap::new()),
             started_at: Utc::now().to_rfc3339(),
             last_activity_unix: AtomicI64::new(Utc::now().timestamp()),
             app,
