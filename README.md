@@ -60,6 +60,17 @@ src-tauri/platform plattformspezifische Firewallintegration
 
 Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals Tauri-IPC, sondern werden vom Rust-Server direkt gestreamt.
 
+## Dokumentation und Projektstatus
+
+- [Entwicklungsroadmap](docs/ROADMAP.md)
+- [Changelog](CHANGELOG.md)
+- [Aktuelle HTTP-API](docs/API.md)
+- [Aktuelle Architektur](docs/ARCHITECTURE.md)
+- [Sicherheitsrichtlinie](SECURITY.md)
+- [Abnahmeplan](docs/TESTPLAN.md)
+- [Geprüfter Git-Ausgangsstand](docs/BASELINE_2026-09-02.md)
+- [Letzter Sicherheits- und Fehlerbehebungsbericht](qa/security-fix-report-2026-09-02.md)
+
 ## Bedienung
 
 1. Downloadordner und/oder Upload-Eingang wählen.

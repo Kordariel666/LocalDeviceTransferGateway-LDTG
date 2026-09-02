@@ -1,5 +1,7 @@
 # Security-Fix-Bericht vom 1. September 2026
 
+> **Historischer Zwischenstand:** Dieser Bericht wurde durch die abschließende Härtungs- und Verifikationsrunde vom 2. September 2026 ergänzt. Maßgeblich ist `qa/security-fix-report-2026-09-02.md` zusammen mit der aktuellen API-, Architektur-, Sicherheits- und Testdokumentation.
+
 ## Ergebnis
 
 Status: **fixed**
