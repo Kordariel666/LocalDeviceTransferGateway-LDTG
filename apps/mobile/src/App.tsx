@@ -12,6 +12,7 @@ import {
   nextQueuedUploadId,
   uploadQueueItems,
   uploadQueueReducer,
+  uploadQueueSummary,
   type UploadItem,
   type UploadQueueAction,
 } from "./uploadQueue";
@@ -56,6 +57,7 @@ export function App() {
   }, []);
 
   const uploads = useMemo(() => uploadQueueItems(uploadQueue), [uploadQueue]);
+  const uploadSummary = useMemo(() => uploadQueueSummary(uploadQueue), [uploadQueue]);
 
   const handleSessionLost = useCallback(() => {
     clearSession();
@@ -68,7 +70,12 @@ export function App() {
     retryDelays.current.clear();
     workInterrupts.current.clear();
     activeRequests.current.clear();
-    updateQueue({ type: "session-lost", queuedMessage: text.waiting, pausedMessage: text.paused });
+    updateQueue({
+      type: "session-lost",
+      queuedMessage: text.waiting,
+      pausedMessage: text.paused,
+      notice: text.sessionLostNotice,
+    });
   }, [clearSession, updateQueue]);
 
   const loadSession = useCallback(async () => {
@@ -273,7 +280,8 @@ export function App() {
         if (sessionRef.current?.serviceId === created.serviceId) {
           updateQueue({ type: "set-upload-id", id: item.id, uploadId: created.uploadId });
         }
-        if (uploadQueueRef.current.items[item.id]?.state === "cancelled") {
+        const current = uploadQueueRef.current.items[item.id];
+        if (!current || current.state === "cancelled") {
           void removeServerUpload(created.uploadId);
         }
         return created;
@@ -431,6 +439,33 @@ export function App() {
     void drainUploadQueue();
   }
 
+  function pauseAllUploads() {
+    const pausable = uploadQueueRef.current.order.filter((id) => {
+      const state = uploadQueueRef.current.items[id]?.state;
+      return state === "queued" || state === "uploading";
+    });
+    updateQueue({ type: "pause-all", message: text.paused });
+    for (const id of pausable) abortUploadWork(id);
+  }
+
+  function resumeAllUploads() {
+    updateQueue({ type: "resume-all", message: text.waiting });
+    void drainUploadQueue();
+  }
+
+  function retryFailedUploads() {
+    updateQueue({ type: "retry-failed", message: text.waiting });
+    void drainUploadQueue();
+  }
+
+  function removeQueuedUpload(item: UploadItem) {
+    const current = uploadQueueRef.current.items[item.id];
+    if (current?.state !== "queued") return;
+    updateQueue({ type: "remove", id: item.id });
+    abortUploadWork(item.id);
+    if (current.uploadId && sessionRef.current) void removeServerUpload(current.uploadId);
+  }
+
   if (checking) return <main className="center-card"><div className="spinner" /><p>{text.checking}</p></main>;
   if (!session) return (
     <main className="login-shell">
@@ -477,11 +512,19 @@ export function App() {
           <UploadQueueView
             session={session}
             uploads={uploads}
+            summary={uploadSummary}
+            sessionNotice={uploadQueue.sessionNotice}
             onFiles={queueFiles}
             onCancel={cancelUpload}
             onPause={pauseUpload}
             onResume={resumeUpload}
             onRetry={retryUpload}
+            onPauseAll={pauseAllUploads}
+            onResumeAll={resumeAllUploads}
+            onRetryFailed={retryFailedUploads}
+            onClearFinished={() => updateQueue({ type: "clear-finished" })}
+            onRemoveQueued={removeQueuedUpload}
+            onDismissSessionNotice={() => updateQueue({ type: "dismiss-session-notice" })}
           />
         )}
       </main>

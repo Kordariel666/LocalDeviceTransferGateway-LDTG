@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "./App";
 
@@ -543,6 +543,53 @@ describe("mobile Oberfläche", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("pausiert, setzt fort und kürzt einen laufenden Batch über die Sammelsteuerung", async () => {
+    class PendingXhr {
+      upload = { onprogress: null as ((event: ProgressEvent) => void) | null };
+      status = 0;
+      responseText = "";
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onabort: (() => void) | null = null;
+      open() {}
+      setRequestHeader() {}
+      getResponseHeader() { return null; }
+      send() {}
+      abort() { this.onabort?.(); }
+    }
+    vi.stubGlobal("XMLHttpRequest", PendingXhr);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      if (input === "/api/v1/session") return json({
+        serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null,
+      });
+      if (input === "/api/v1/uploads" && init?.method === "POST") {
+        return json({ uploadId: "upload-a", offset: 0, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 });
+      }
+      if (input === "/api/v1/uploads/upload-a") {
+        return json({ uploadId: "upload-a", offset: 0, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 });
+      }
+      throw new Error(`Unerwartete Anfrage: ${String(input)}`);
+    });
+
+    render(<App />);
+    const picker = await screen.findByLabelText(/Dateien auswählen/);
+    await userEvent.upload(picker, [
+      new File(["AAAA"], "erste.bin", { lastModified: 1 }),
+      new File(["BBBB"], "zweite.bin", { lastModified: 2 }),
+    ]);
+    await screen.findByText("Läuft", { selector: ".upload-state" });
+    fireEvent.click(screen.getByRole("button", { name: "Alle pausieren" }));
+    await waitFor(() => expect(screen.getAllByText("Pausiert", { selector: ".upload-state" })).toHaveLength(2));
+
+    fireEvent.click(screen.getByRole("button", { name: "Alle fortsetzen" }));
+    await screen.findByText("Läuft", { selector: ".upload-state" });
+    const second = screen.getByText("zweite.bin").closest("article")!;
+    expect(second.querySelector(".upload-state")?.textContent).toBe("Wartet");
+    fireEvent.click(within(second).getByRole("button", { name: "Entfernen" }));
+    expect(screen.queryByText("zweite.bin")).toBeNull();
+    expect(screen.getByText("0 von 1 Dateien erledigt · 0 B von 4 B")).toBeTruthy();
+  });
+
   it("macht eine bereits finalisierende Datei nicht mehr pausier- oder abbrechbar", async () => {
     class CompletingXhr {
       upload = { onprogress: null as ((event: ProgressEvent) => void) | null };
@@ -575,6 +622,8 @@ describe("mobile Oberfläche", () => {
     expect(item.querySelector("button")).toBeNull();
     finish(json({ name: "final.bin" }));
     expect(await screen.findByText("Abgeschlossen", { selector: ".upload-state" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Erledigte entfernen" }));
+    expect(screen.queryByText("final.bin")).toBeNull();
   });
 
   it("wiederholt einen verlorenen Uploadabschluss ohne eine zweite Datei anzulegen", async () => {
@@ -677,6 +726,9 @@ describe("mobile Oberfläche", () => {
     await userEvent.type(code, "12345678");
     fireEvent.submit(code.closest("form")!);
     expect(await screen.findByText("erste.bin")).toBeTruthy();
+    expect(screen.getByText(/Die Sitzung wurde unterbrochen/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ausblenden" }));
+    expect(screen.queryByText(/Die Sitzung wurde unterbrochen/)).toBeNull();
     const second = (await screen.findByText("zweite.bin")).closest("article")!;
     expect(second.querySelector(".upload-state")?.textContent).toBe("Wartet");
     await waitFor(() => expect(createCalls).toBe(2));

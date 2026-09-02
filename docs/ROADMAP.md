@@ -443,10 +443,35 @@ Status: erfüllt am 2. September 2026.
 
 ### R3.1 Erweiterte Queue-Steuerung
 
+Status: abgeschlossen am 3. September 2026.
+
 - „Alle pausieren“, „Alle fortsetzen“, „Fehlgeschlagene wiederholen“ und „Erledigte entfernen“ ergänzen.
 - Einzelne wartende Elemente aus der Queue entfernen und optional umsortieren.
 - Summenfortschritt für einen Dateibatch anzeigen.
 - Queue-Zustand bei Sitzungsverlust eindeutig erklären.
+
+Umgesetzt:
+
+- Die mobile Batchleiste pausiert und setzt alle noch steuerbaren Uploads fort,
+  stellt sämtliche fehlgeschlagenen Dateien in stabiler Reihenfolge erneut an
+  und entfernt abgeschlossene oder abgebrochene Einträge gesammelt.
+- Wartende Dateien lassen sich einzeln aus der Queue entfernen. Bereits laufende
+  oder finalisierende Einträge können dadurch nicht versehentlich aus der
+  Zustandsverwaltung verschwinden; eine optionale manuelle Umsortierung wurde
+  bewusst nicht ergänzt.
+- Der Gesamtfortschritt wird über die Dateigrößen gewichtet und zeigt
+  übertragene Bytes sowie erledigte und gesamte Dateien. Abgebrochene Dateien
+  gelten als erledigt, ihre nicht übertragenen Bytes werden jedoch nicht als
+  Fortschritt ausgegeben.
+- Bei Sitzungsverlust werden servergebundene IDs und nicht mehr belastbare
+  Fortschrittswerte verworfen. Wartende oder laufende Dateien starten nach der
+  nächsten Anmeldung neu, ausdrücklich pausierte Dateien bleiben pausiert. Eine
+  ausblendbare Meldung erklärt dieses Verhalten; ohne wiederherstellbare Queue
+  erscheint keine irreführende Verlustmeldung.
+- Reducer- und Oberflächentests prüfen Sammelaktionen, Reihenfolge, Entfernen,
+  größenbewerteten Fortschritt und den sichtbaren Sitzungsverlust. Das
+  vollständige Qualitätsgate bleibt mit 107 Rust-, 19 Desktop- und 36
+  Mobile-Tests grün.
 
 ### R3.2 Geschwindigkeit, Dauer und ETA
 
