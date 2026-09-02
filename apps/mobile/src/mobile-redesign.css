@@ -421,6 +421,8 @@ input:focus-visible,
 .upload-progress progress::-webkit-progress-value { background: var(--amber); }
 .upload-progress progress::-moz-progress-bar { background: var(--amber); }
 .upload-progress > span { min-width: 38px; color: var(--amber-strong); font-size: .73rem; font-variant-numeric: tabular-nums; text-align: right; }
+.upload-timing { display: flex; flex-wrap: wrap; gap: 5px 13px; margin-top: -3px; color: var(--faint); font-size: .69rem; line-height: 1.4; }
+.upload-timing span { font-variant-numeric: tabular-nums; }
 
 .upload-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .upload-actions button,

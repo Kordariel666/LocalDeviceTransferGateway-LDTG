@@ -269,8 +269,12 @@ describe("Desktop-Dashboard", () => {
             id: "transfer-1",
             direction: "upload",
             name: "direkt.txt",
+            startedAt: "2026-09-02T10:00:00Z",
+            lastProgressAt: "2026-09-02T10:00:01Z",
             transferredBytes: 1024,
             totalBytes: 4096,
+            bytesPerSecond: 1024,
+            speedSampleCount: 1,
             state: "active",
             updatedAt: "2026-09-02T10:00:01Z",
           },
@@ -475,6 +479,7 @@ describe("Desktop-Dashboard", () => {
   });
 
   it("zeigt echten Fortschritt für aktive Übertragungen ohne erfundene Steueraktionen", async () => {
+    const now = Date.now();
     currentSnapshot = structuredClone(snapshot);
     currentSnapshot.service = {
       state: "running",
@@ -488,10 +493,14 @@ describe("Desktop-Dashboard", () => {
         id: "transfer",
         direction: "upload",
         name: "Urlaub-2026.zip",
+        startedAt: new Date(now - 5_000).toISOString(),
+        lastProgressAt: new Date(now - 1_000).toISOString(),
         transferredBytes: 1024 ** 2,
         totalBytes: 4 * 1024 ** 2,
+        bytesPerSecond: 1024 ** 2,
+        speedSampleCount: 4,
         state: "active",
-        updatedAt: "2026-08-29T12:01:00Z",
+        updatedAt: new Date(now - 1_000).toISOString(),
       }],
       error: null,
     };
@@ -501,6 +510,8 @@ describe("Desktop-Dashboard", () => {
     expect(progress.getAttribute("aria-valuenow")).toBe("25");
     expect(screen.getByText("25 %")).toBeTruthy();
     expect(screen.getByText(/1 MiB von 4 MiB/)).toBeTruthy();
+    expect(screen.getByText("Geschwindigkeit 1 MiB/s")).toBeTruthy();
+    expect(screen.getByText("Noch etwa 3 s")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Pausieren|Abbrechen/ })).toBeNull();
   });
 });

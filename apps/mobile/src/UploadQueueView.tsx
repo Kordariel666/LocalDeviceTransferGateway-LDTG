@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import type { SessionResponse } from "@dmdc/shared";
 import { text } from "./i18n";
-import { formatBytes } from "./presentation";
+import { estimateTransferTiming, formatBytes, formatDuration, formatRate } from "./presentation";
 import type { UploadItem, UploadQueueSummary } from "./uploadQueue";
 
 type UploadQueueViewProps = {
@@ -20,6 +21,35 @@ type UploadQueueViewProps = {
   onRemoveQueued: (item: UploadItem) => void;
   onDismissSessionNotice: () => void;
 };
+
+function UploadTimingDetails({ item, now }: { item: UploadItem; now: number }) {
+  if (item.timing.startedAt === null) return null;
+  const active = item.state === "uploading" || item.state === "finalizing";
+  const showEstimate = item.state === "uploading";
+  const timing = estimateTransferTiming({
+    startedAt: item.timing.startedAt,
+    lastProgressAt: item.timing.lastProgressAt,
+    finishedAt: item.timing.finishedAt,
+    active,
+    transferredBytes: item.transferredBytes,
+    totalBytes: item.file.size,
+    bytesPerSecond: item.timing.bytesPerSecond,
+    speedSampleCount: item.timing.speedSampleCount,
+  }, now);
+  if (timing.durationSeconds === null && !active) return null;
+  const eta = timing.etaQuality === "stable" && timing.remainingSeconds !== null
+    ? text.eta(formatDuration(timing.remainingSeconds))
+    : timing.etaQuality === "unstable" && timing.remainingSeconds !== null
+      ? text.etaUnstable(formatDuration(timing.remainingSeconds))
+      : text.etaPending;
+  return (
+    <div className="upload-timing">
+      {timing.durationSeconds !== null && <span>{text.duration(formatDuration(timing.durationSeconds))}</span>}
+      {showEstimate && <span>{item.timing.bytesPerSecond ? text.speed(formatRate(item.timing.bytesPerSecond)) : text.speedPending}</span>}
+      {showEstimate && <span>{eta}</span>}
+    </div>
+  );
+}
 
 export function UploadQueueView({
   session,
@@ -42,6 +72,16 @@ export function UploadQueueView({
   const hasPaused = uploads.some((item) => item.state === "paused");
   const hasFailed = uploads.some((item) => item.state === "failed");
   const hasFinished = uploads.some((item) => item.state === "complete" || item.state === "cancelled");
+  const hasTimedActiveUpload = uploads.some((item) => item.state === "uploading" || item.state === "finalizing");
+  const [now, setNow] = useState(() => uploads.reduce(
+    (latest, item) => Math.max(latest, item.timing.lastProgressAt ?? item.timing.startedAt ?? 0),
+    0,
+  ));
+  useEffect(() => {
+    if (!hasTimedActiveUpload) return undefined;
+    const timer = globalThis.setInterval(() => setNow(Date.now()), 1_000);
+    return () => globalThis.clearInterval(timer);
+  }, [hasTimedActiveUpload]);
 
   return (
     <section>
@@ -98,6 +138,7 @@ export function UploadQueueView({
               <progress aria-label={`${item.file.name}: ${Math.round(item.progress)} Prozent`} max={100} value={item.progress} />
               <span>{Math.round(item.progress)} %</span>
             </div>
+            <UploadTimingDetails item={item} now={now} />
             {item.state === "queued" && (
               <div className="upload-actions">
                 <button type="button" onClick={() => onPause(item)}>{text.pause}</button>

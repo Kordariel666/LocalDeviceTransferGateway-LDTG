@@ -8,6 +8,7 @@ import { UploadQueueView } from "./UploadQueueView";
 import { useSessionState } from "./useSession";
 import {
   abortableDelay,
+  createUploadTiming,
   initialUploadQueue,
   nextQueuedUploadId,
   uploadQueueItems,
@@ -247,13 +248,25 @@ export function App() {
           type: "progress",
           id: item.id,
           progress: Math.min(99, transferred / item.file.size * 100),
+          transferredBytes: transferred,
           message: text.transferred(formatBytes(transferred), formatBytes(item.file.size), formatBytes(Math.max(0, item.file.size - transferred))),
+          at: Date.now(),
         });
       };
       xhr.onload = () => {
         activeRequests.current.delete(item.id);
-        if (xhr.status === 200) resolve(Number(xhr.getResponseHeader("Upload-Offset") ?? offset + chunk.size));
-        else reject(parseXhrError(xhr));
+        if (xhr.status === 200) {
+          const transferred = Number(xhr.getResponseHeader("Upload-Offset") ?? offset + chunk.size);
+          updateQueue({
+            type: "progress",
+            id: item.id,
+            progress: Math.min(99, transferred / item.file.size * 100),
+            transferredBytes: transferred,
+            message: text.transferred(formatBytes(transferred), formatBytes(item.file.size), formatBytes(Math.max(0, item.file.size - transferred))),
+            at: Date.now(),
+          });
+          resolve(transferred);
+        } else reject(parseXhrError(xhr));
       };
       xhr.onerror = () => { activeRequests.current.delete(item.id); reject(new Error("Netzwerkverbindung unterbrochen")); };
       xhr.onabort = () => { activeRequests.current.delete(item.id); reject(new Error("Übertragung abgebrochen")); };
@@ -320,7 +333,7 @@ export function App() {
       const created = await getOrCreateUpload(item);
       updateQueue({ type: "set-upload-id", id: item.id, uploadId: created.uploadId });
       if (uploadQueueRef.current.items[item.id]?.state === "queued" && sessionRef.current) {
-        updateQueue({ type: "claim", id: item.id, message: text.preparing });
+        updateQueue({ type: "claim", id: item.id, message: text.preparing, at: Date.now() });
       }
       ensureUploadActive(item.id);
       let offset = created.offset;
@@ -371,7 +384,7 @@ export function App() {
         }
       }
       if (!result) throw completionError ?? new Error("Abschlussbestätigung fehlt");
-      updateQueue({ type: "complete", id: item.id, message: text.savedAs(result.name) });
+      updateQueue({ type: "complete", id: item.id, message: text.savedAs(result.name), at: Date.now() });
     } catch (error) {
       if (error instanceof HttpError && error.status === 401) handleSessionLost();
       updateQueue({
@@ -379,6 +392,7 @@ export function App() {
         id: item.id,
         message: error instanceof Error ? error.message : "Übertragung fehlgeschlagen",
         errorCode: error instanceof HttpError ? error.code : undefined,
+        at: Date.now(),
       });
     } finally {
       if (workInterrupts.current.get(item.id) === interrupt) workInterrupts.current.delete(item.id);
@@ -392,7 +406,7 @@ export function App() {
       while (sessionRef.current) {
         const id = nextQueuedUploadId(uploadQueueRef.current);
         if (!id) break;
-        updateQueue({ type: "claim", id, message: text.preparing });
+        updateQueue({ type: "claim", id, message: text.preparing, at: Date.now() });
         const item = uploadQueueRef.current.items[id];
         if (!item || item.state !== "uploading") continue;
         await processUpload(item);
@@ -407,7 +421,15 @@ export function App() {
 
   function queueFiles(files: File[]) {
     if (!files.length) return;
-    const items = files.map((file) => ({ id: localQueueId(), file, state: "queued" as const, progress: 0, message: text.waiting }));
+    const items = files.map((file) => ({
+      id: localQueueId(),
+      file,
+      state: "queued" as const,
+      progress: 0,
+      transferredBytes: 0,
+      message: text.waiting,
+      timing: createUploadTiming(),
+    }));
     updateQueue({ type: "enqueue", items });
     void drainUploadQueue();
   }
@@ -415,7 +437,7 @@ export function App() {
   async function cancelUpload(item: UploadItem) {
     const current = uploadQueueRef.current.items[item.id] ?? item;
     if (current.state === "finalizing" || current.state === "complete") return;
-    updateQueue({ type: "cancel", id: item.id, message: text.cancelled });
+    updateQueue({ type: "cancel", id: item.id, message: text.cancelled, at: Date.now() });
     abortUploadWork(item.id);
     if (current.uploadId && sessionRef.current) {
       await removeServerUpload(current.uploadId);

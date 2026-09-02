@@ -1,7 +1,14 @@
+import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { NetworkInterfaceInfo, ShareSettings, TransferInfo } from "@dmdc/shared";
 import { text } from "../i18n";
-import { formatBytes, formatDateTime } from "../presentation";
+import {
+  estimateTransferTiming,
+  formatBytes,
+  formatDateTime,
+  formatDuration,
+  formatRate,
+} from "../presentation";
 
 function transferPercentage(transfer: TransferInfo): number | null {
   if (!Number.isFinite(transfer.totalBytes) || transfer.totalBytes <= 0) return null;
@@ -35,6 +42,41 @@ function TransferProgress({ transfer }: { transfer: TransferInfo }) {
   );
 }
 
+function TransferTiming({ transfer, compact }: { transfer: TransferInfo; compact: boolean }) {
+  const active = transfer.state === "active";
+  const [now, setNow] = useState(() => Date.parse(transfer.updatedAt));
+  useEffect(() => {
+    if (!active) return undefined;
+    const timer = globalThis.setInterval(() => setNow(Date.now()), 1_000);
+    return () => globalThis.clearInterval(timer);
+  }, [active]);
+  const timing = estimateTransferTiming({
+    startedAt: transfer.startedAt,
+    lastProgressAt: transfer.lastProgressAt,
+    finishedAt: active ? null : transfer.updatedAt,
+    active,
+    transferredBytes: transfer.transferredBytes,
+    totalBytes: transfer.totalBytes,
+    bytesPerSecond: transfer.bytesPerSecond,
+    speedSampleCount: transfer.speedSampleCount,
+  }, now);
+  const eta = timing.etaQuality === "stable" && timing.remainingSeconds !== null
+    ? text.eta(formatDuration(timing.remainingSeconds))
+    : timing.etaQuality === "unstable" && timing.remainingSeconds !== null
+      ? text.etaUnstable(formatDuration(timing.remainingSeconds))
+      : text.etaPending;
+
+  return (
+    <div className="transfer-timing">
+      {timing.durationSeconds !== null && <span>{text.duration(formatDuration(timing.durationSeconds))}</span>}
+      {active && <span>{transfer.bytesPerSecond ? text.speed(formatRate(transfer.bytesPerSecond)) : text.speedPending}</span>}
+      {active && <span>{eta}</span>}
+      {!compact && <span>{text.startedAt(formatDateTime(transfer.startedAt))}</span>}
+      {!compact && transfer.lastProgressAt && <span>{text.lastProgressAt(formatDateTime(transfer.lastProgressAt))}</span>}
+    </div>
+  );
+}
+
 export function TransferRow({ transfer, compact = false }: { transfer: TransferInfo; compact?: boolean }) {
   const active = transfer.state === "active";
   return (
@@ -47,6 +89,7 @@ export function TransferRow({ transfer, compact = false }: { transfer: TransferI
         <span className={`state-label ${transfer.state}`}>{text.transferState(transfer.state)}</span>
       </div>
       {(active || !compact) && <TransferProgress transfer={transfer} />}
+      {(active || !compact) && <TransferTiming transfer={transfer} compact={compact} />}
       {!active && !compact && <time dateTime={transfer.updatedAt}>{text.updatedAt(formatDateTime(transfer.updatedAt))}</time>}
     </article>
   );

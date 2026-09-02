@@ -54,10 +54,15 @@ pub struct TransferInfo {
     pub id: String,
     pub direction: TransferDirection,
     pub name: String,
+    pub started_at: String,
+    pub last_progress_at: Option<String>,
     #[ts(type = "number")]
     pub transferred_bytes: u64,
     #[ts(type = "number")]
     pub total_bytes: u64,
+    pub bytes_per_second: Option<f64>,
+    #[ts(type = "number")]
+    pub speed_sample_count: u32,
     pub state: TransferState,
     pub updated_at: String,
 }

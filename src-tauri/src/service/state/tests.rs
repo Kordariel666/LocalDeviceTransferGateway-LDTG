@@ -1,4 +1,4 @@
-use super::journal::TRANSFER_EVENT_BYTES;
+use super::journal::{smooth_transfer_speed, TRANSFER_EVENT_BYTES};
 use super::*;
 use crate::domain::settings::ShareSettings;
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -125,6 +125,43 @@ async fn transfer_progress_notifications_are_byte_throttled_but_terminal_updates
         !state.transfer_notifications.lock().await.contains_key(&id),
         "terminal updates must emit immediately and release throttle state"
     );
+}
+
+#[tokio::test]
+async fn transfer_progress_models_monotonic_smoothed_speed_and_timestamps() {
+    let first_exact = smooth_transfer_speed(None, 1024, Duration::from_secs(1)).unwrap();
+    let second_exact =
+        smooth_transfer_speed(Some(first_exact), 2048, Duration::from_secs(1)).unwrap();
+    assert_eq!(first_exact, 1024.0);
+    assert_eq!(second_exact, 1280.0);
+
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path()).unwrap();
+    let id = state
+        .record_transfer(TransferDirection::Upload, "tempo.bin", 8 * 1024)
+        .await;
+    {
+        let mut notifications = state.transfer_notifications.lock().await;
+        notifications.get_mut(&id).unwrap().sampled_at = Instant::now() - Duration::from_secs(1);
+    }
+    state.update_transfer(&id, 1024, None).await;
+    let first = state.transfers.lock().await[0].clone();
+    let first_speed = first.bytes_per_second.unwrap();
+    assert!(first_speed.is_finite() && first_speed > 0.0);
+    assert_eq!(first.speed_sample_count, 1);
+    assert!(first.last_progress_at.is_some());
+    assert!(first.started_at <= first.last_progress_at.clone().unwrap());
+
+    {
+        let mut notifications = state.transfer_notifications.lock().await;
+        notifications.get_mut(&id).unwrap().sampled_at = Instant::now() - Duration::from_secs(1);
+    }
+    state.update_transfer(&id, 3 * 1024, None).await;
+    let second = state.transfers.lock().await[0].clone();
+    let second_speed = second.bytes_per_second.unwrap();
+    assert!(second_speed.is_finite() && second_speed > 0.0);
+    assert_eq!(second.speed_sample_count, 2);
+    assert_eq!(second.transferred_bytes, 3 * 1024);
 }
 
 #[test]

@@ -277,6 +277,10 @@ struct ActiveDownload {
 struct TransferNotification {
     transferred_bytes: u64,
     emitted_at: Instant,
+    sampled_bytes: u64,
+    sampled_at: Instant,
+    smoothed_bytes_per_second: Option<f64>,
+    speed_sample_count: u32,
 }
 
 pub struct DownloadLease {

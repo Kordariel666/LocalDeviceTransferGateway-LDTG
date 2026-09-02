@@ -273,6 +273,8 @@ select:focus-visible {
 .transfer-details { margin-top: 14px; }
 .transfer-meta { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 7px; color: var(--muted); font-size: .75rem; }
 .transfer-meta strong { color: var(--amber-strong); font-variant-numeric: tabular-nums; }
+.transfer-timing { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 9px; color: var(--faint); font-size: .7rem; line-height: 1.4; }
+.transfer-timing span { font-variant-numeric: tabular-nums; }
 .progress-track { height: 7px; overflow: hidden; border-radius: 3px; background: #2b2823; }
 .progress-track > span { display: block; height: 100%; border-radius: inherit; background: var(--amber); transition: width 180ms ease; }
 .progress-track.unknown > span { width: 32%; animation: indeterminate 1.6s ease-in-out infinite; }

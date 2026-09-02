@@ -20,8 +20,12 @@ describe("status event reducers", () => {
       id: "transfer-1",
       direction: "download" as const,
       name: "foto.jpg",
+      startedAt: "2026-09-02T10:00:00Z",
+      lastProgressAt: "2026-09-02T10:00:01Z",
       transferredBytes: 1024,
       totalBytes: 4096,
+      bytesPerSecond: 1024,
+      speedSampleCount: 1,
       state: "active" as const,
       updatedAt: "2026-09-02T10:00:01Z",
     };

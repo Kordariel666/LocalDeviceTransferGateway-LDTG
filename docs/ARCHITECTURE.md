@@ -34,6 +34,9 @@ Innerhalb der Schichten gelten folgende Modulgrenzen:
   Entwurfsregeln sowie getrennte `components`- und `pages`-Module für die
   Darstellung. `DesktopApp` koordiniert diese Bausteine und besitzt weiterhin
   die Benutzeraktionen und ihren Zustand.
+- `packages/shared/src/presentation.ts` formatiert Bytewerte, Raten und Dauern
+  und bewertet die Belastbarkeit einer Restzeitschätzung identisch für Desktop
+  und Mobile. Das Modul akzeptiert ausschließlich Zeit- und Bytewerte.
 
 Serialisierbare DTOs in `src-tauri/src/domain` bilden die einzige Quelle für die
 von Rust, Desktop und Mobile gemeinsam verwendeten Verträge. `ts-rs` erzeugt
@@ -105,6 +108,17 @@ Der Sitzungspool enthält höchstens 128 Sitzungen, davon höchstens 4 pro Clien
   30-Sekunden-Polling bleibt als Resynchronisierungsfallback. Keine Dateiinhalte
   werden über IPC übertragen.
 
+Jeder Backendtransfer hält neben dem aktuellen Bytezähler die Startzeit, den
+Zeitpunkt des letzten echten Bytefortschritts, eine mit dem Faktor 0,25
+exponentiell geglättete Rate und die Zahl der Messungen. Für Geschwindigkeiten
+wird ausschließlich monotone Prozesszeit verwendet; die serialisierten
+RFC-3339-Zeitstempel dienen Anzeige und Stabilitätsprüfung. Ein rückläufiger
+Offset verwirft die bisherige Rate. Die Restzeit wird nicht als scheinbar
+autoritatives Backenddatum gespeichert, sondern aus Restbytes und Rate
+abgeleitet und erst nach drei Messungen über zwei Sekunden als stabil bewertet.
+Nach fünf Sekunden ohne Fortschritt wird auch eine zuvor stabile Schätzung
+wieder als instabil angezeigt.
+
 ## Netzgrenze
 
 Der Server bindet nur an die ausgewählte private IPv4-Adresse. Jede Verbindung wird zusätzlich gegen deren Subnetz geprüft. Host und Origin müssen exakt zur laufenden lokalen URL passen. Ändert oder verschwindet die Schnittstelle, eine verankerte Freigabewurzel oder das bestätigte Windows-Netzwerkprofil bei gleichbleibender Adresse, wird der Dienst kontrolliert beendet. Netzwerkerkennung, Rootidentitätsprüfung und Freigabevorbereitung laufen außerhalb der Async-Worker. Der Monitor besitzt höchstens eine gemeinsame blockierende Umgebungsprüfung gleichzeitig; Accept und Shutdown bleiben währenddessen reaktionsfähig. Bei gleichzeitigem Shutdown und Prüfergebnis hat Shutdown Priorität, sodass kein verspätetes Netzwerkereignis mehr erzeugt wird. Nicht erhöhte PowerShell-Hilfsprozesse besitzen zusätzlich ein hartes Zeitlimit von 15 Sekunden und werden bei Überschreitung beendet.
@@ -112,6 +126,13 @@ Der Server bindet nur an die ausgewählte private IPv4-Adresse. Jede Verbindung 
 Der achtstellige Zugangscode wird kryptografisch zufällig erzeugt. Neben zehn Fehlversuchen pro IP gilt ein gemeinsamer dienstweiter Fehlversuchshaushalt. Erreicht dieser seinen Schwellenwert, beginnt eine globale Abkühlphase, ohne dass der Code erneuert wird. Während dieser Phase werden alle Anmeldeversuche vor dem Codevergleich blockiert, einschließlich eines korrekten Codes. Fehlversuchsdatensätze besitzen TTL und feste Kapazität.
 
 Die Mobile-App führt Uploads über eine einzige in-memory Warteschlange aus. Ein reiner Reducer ist die fachliche Quelle für Reihenfolge, ausstehende Einträge, Fortschritt, Server-ID und die Zustände `queued`, `uploading`, `paused`, `finalizing`, `complete`, `failed` und `cancelled`. Einzel- und Sammelaktionen ändern denselben Zustand atomar: Alle noch wartenden oder laufenden Einträge können pausiert, alle pausierten fortgesetzt, alle fehlgeschlagenen erneut angestellt und terminale Einträge entfernt werden. Nur wartende Dateien dürfen einzeln vollständig aus der Queue verschwinden. Der Batchfortschritt gewichtet die Einzelwerte nach Dateigröße und führt übertragene Bytes sowie terminale Dateien getrennt. Nur eine ausdrückliche Fortsetzung entfernt den Pausezustand. Statusabgleich, Chunks und sämtliche Retry-Verzögerungen sind abbrechbar, sodass Pause, Abbruch und Sitzungsverlust die nächste wartende Datei unmittelbar freigeben. Eine bereits gesendete Create-Anfrage wird auf Transportebene absichtlich nicht abgebrochen, weil der Server die Upload-ID schon angelegt haben kann; ihre Promise wird unabhängig von der aktuellen Queue-Arbeit weiterverfolgt und wiederverwendet. Dadurch kann die Queue sofort fortfahren, während eine spätere Antwort die Server-ID übernimmt oder bei bereits ausgelöstem Abbruch beziehungsweise bereits entferntem Queue-Eintrag ein Best-effort-Löschen anstößt. Nach Eintritt in den serverseitig linearisierbaren Zustand `finalizing` werden Pause und Abbruch nicht mehr angeboten. Weitere Dateiauswahlen werden während eines laufenden Uploads an dieselbe Queue angehängt.
+
+Die mobile Queue misst Start, letzten Bytefortschritt und geglättete Rate mit
+denselben Feldern wie der Desktopvertrag. Jede erfolgreiche Chunkantwort gleicht
+den exakten Bytezähler ab. Resume und Retry beginnen für die Rate mit einer
+frischen Stichprobe, ohne den bereits bestätigten Offset als neue
+Geschwindigkeit auszugeben; ein serverseitig kleinerer Offset setzt die
+Messreihe zurück.
 
 Bei Sitzungsverlust bleiben lokale Dateireferenzen und Reihenfolge erhalten, während Server-IDs und Fortschrittswerte verworfen werden. Laufende und wartende Einträge werden nach erneuter Anmeldung neu angestellt; ausdrücklich pausierte bleiben pausiert. Eine im Queue-Zustand gehaltene und ausblendbare Meldung erklärt diese Wiederherstellung nur dann, wenn tatsächlich nichtterminale Uploads betroffen waren. Ein Seitenreload verliert die in-memory Dateiauswahl weiterhin bewusst.
 

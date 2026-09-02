@@ -475,10 +475,36 @@ Umgesetzt:
 
 ### R3.2 Geschwindigkeit, Dauer und ETA
 
+Status: abgeschlossen am 3. September 2026.
+
 - Startzeit, letzte Fortschrittszeit, geglättete Geschwindigkeit und verbleibende Zeit modellieren.
 - Unbekannte oder instabile ETA ehrlich kennzeichnen.
 - Desktop und Mobile verwenden dieselbe Formatierungslogik.
 - Fortschrittswerte dürfen keine zusätzliche Dateiinhalts- oder Pfadfreigabe erzeugen.
+
+Umgesetzt:
+
+- Der Backendvertrag jedes Transfers enthält Startzeit, Zeitpunkt des letzten
+  echten Bytefortschritts, exponentiell geglättete Bytes pro Sekunde und die
+  Anzahl verwertbarer Messungen. Die Messung verwendet monotone Zeit und wird
+  bei einem rückläufigen Offset bewusst neu aufgebaut.
+- Die mobile Uploadqueue führt dieselben Zeit- und Geschwindigkeitswerte lokal.
+  Pause, Retry, Server-Neusynchronisierung und Sitzungsverlust setzen nur die
+  jeweils nicht mehr belastbaren Messwerte zurück; exakte übertragene Bytes
+  bleiben die Quelle für Einzel- und Batchfortschritt.
+- `packages/shared/src/presentation.ts` ist die gemeinsame Formatierungs- und
+  Schätzlogik für Desktop und Mobile. Dauer, Rate und Restzeit werden dadurch in
+  beiden Oberflächen gleich formatiert.
+- Eine ETA gilt erst nach mindestens drei Messungen über mindestens zwei
+  Sekunden als belastbar. Jüngere Werte oder seit mehr als fünf Sekunden
+  stehender Fortschritt werden ausdrücklich als instabil gekennzeichnet; ohne
+  verwertbare Rate wird keine Restzeit erfunden.
+- Die zusätzlichen DTO-Felder enthalten ausschließlich Zeit- und Bytewerte.
+  Weder Dateiinhalte noch neue Pfad-, Freigabe- oder Geräteinformationen werden
+  über Ereignisse oder Statusabfragen übertragen.
+- Regressionen prüfen Glättung, Offset-Neustart, Zeitstempel, gemeinsame
+  Formatierung sowie unbekannte, instabile und stabile ETA. Das vollständige
+  Qualitätsgate ist mit 108 Rust-, 21 Desktop- und 39 Mobile-Tests grün.
 
 ### R3.3 Benachrichtigungen und automatisches Ende
 

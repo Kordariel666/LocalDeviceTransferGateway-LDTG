@@ -1,15 +1,18 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { UploadQueueView } from "./UploadQueueView";
-import type { UploadItem } from "./uploadQueue";
+import { createUploadTiming, type UploadItem } from "./uploadQueue";
 
 function item(id: string, state: UploadItem["state"], progress = 0): UploadItem {
+  const file = new File([id], `${id}.bin`);
   return {
     id,
-    file: new File([id], `${id}.bin`),
+    file,
     state,
     progress,
+    transferredBytes: Math.round(file.size * progress / 100),
     message: state,
+    timing: createUploadTiming(),
   };
 }
 
@@ -84,5 +87,44 @@ describe("UploadQueueView", () => {
     expect(onRemoveQueued).toHaveBeenCalledWith(queued);
     fireEvent.click(screen.getByRole("button", { name: "Ausblenden" }));
     expect(onDismissSessionNotice).toHaveBeenCalledOnce();
+  });
+
+  it("kennzeichnet eine junge ETA trotz sichtbarer Geschwindigkeit als instabil", () => {
+    const now = Date.now();
+    const timed = {
+      ...item("timed", "uploading", 40),
+      file: new File([new Uint8Array(1_000)], "timed.bin"),
+      transferredBytes: 400,
+      timing: {
+        ...createUploadTiming(),
+        startedAt: now - 4_000,
+        lastProgressAt: now - 1_000,
+        sampledAt: now - 1_000,
+        sampledBytes: 400,
+        bytesPerSecond: 100,
+        speedSampleCount: 2,
+      },
+    };
+
+    render(<UploadQueueView
+      session={{ serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null }}
+      uploads={[timed]}
+      summary={{ totalFiles: 1, finishedFiles: 0, totalBytes: 1_000, transferredBytes: 400, progress: 40 }}
+      sessionNotice={null}
+      onFiles={vi.fn()}
+      onCancel={vi.fn()}
+      onPause={vi.fn()}
+      onResume={vi.fn()}
+      onRetry={vi.fn()}
+      onPauseAll={vi.fn()}
+      onResumeAll={vi.fn()}
+      onRetryFailed={vi.fn()}
+      onClearFinished={vi.fn()}
+      onRemoveQueued={vi.fn()}
+      onDismissSessionNotice={vi.fn()}
+    />);
+
+    expect(screen.getByText("Geschwindigkeit 100 B/s")).toBeTruthy();
+    expect(screen.getByText("Ungefähre Restzeit 6 s · noch instabil")).toBeTruthy();
   });
 });

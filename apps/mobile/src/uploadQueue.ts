@@ -12,9 +12,21 @@ export type UploadItem = {
   file: File;
   state: UploadState;
   progress: number;
+  transferredBytes: number;
   message: string;
   uploadId?: string;
   errorCode?: string;
+  timing: UploadTiming;
+};
+
+export type UploadTiming = {
+  startedAt: number | null;
+  lastProgressAt: number | null;
+  finishedAt: number | null;
+  sampledAt: number | null;
+  sampledBytes: number;
+  bytesPerSecond: number | null;
+  speedSampleCount: number;
 };
 
 export type UploadQueueState = {
@@ -34,21 +46,21 @@ export type UploadQueueSummary = {
 
 export type UploadQueueAction =
   | { type: "enqueue"; items: UploadItem[] }
-  | { type: "claim"; id: string; message: string }
+  | { type: "claim"; id: string; message: string; at: number }
   | { type: "set-upload-id"; id: string; uploadId?: string; resetProgress?: boolean }
-  | { type: "progress"; id: string; progress: number; message: string }
+  | { type: "progress"; id: string; progress: number; transferredBytes: number; message: string; at: number }
   | { type: "pause"; id: string; message: string }
   | { type: "pause-all"; message: string }
   | { type: "resume"; id: string; message: string }
   | { type: "resume-all"; message: string }
   | { type: "retry"; id: string; message: string }
   | { type: "retry-failed"; message: string }
-  | { type: "cancel"; id: string; message: string }
+  | { type: "cancel"; id: string; message: string; at: number }
   | { type: "remove"; id: string }
   | { type: "clear-finished" }
   | { type: "finalize"; id: string; message: string }
-  | { type: "complete"; id: string; message: string }
-  | { type: "fail"; id: string; message: string; errorCode?: string }
+  | { type: "complete"; id: string; message: string; at: number }
+  | { type: "fail"; id: string; message: string; errorCode?: string; at: number }
   | { type: "session-lost"; queuedMessage: string; pausedMessage: string; notice: string }
   | { type: "dismiss-session-notice" };
 
@@ -58,6 +70,59 @@ export const initialUploadQueue: UploadQueueState = {
   pending: [],
   sessionNotice: null,
 };
+
+const SPEED_SMOOTHING_ALPHA = 0.25;
+
+export function createUploadTiming(): UploadTiming {
+  return {
+    startedAt: null,
+    lastProgressAt: null,
+    finishedAt: null,
+    sampledAt: null,
+    sampledBytes: 0,
+    bytesPerSecond: null,
+    speedSampleCount: 0,
+  };
+}
+
+function claimTiming(item: UploadItem, at: number): UploadTiming {
+  return {
+    ...item.timing,
+    startedAt: item.timing.startedAt ?? at,
+    finishedAt: null,
+    sampledAt: at,
+    sampledBytes: item.transferredBytes,
+    bytesPerSecond: null,
+    speedSampleCount: 0,
+  };
+}
+
+function progressTiming(item: UploadItem, transferredBytes: number, at: number): UploadTiming {
+  if (transferredBytes < item.timing.sampledBytes) {
+    return {
+      ...item.timing,
+      sampledAt: at,
+      sampledBytes: transferredBytes,
+      bytesPerSecond: null,
+      speedSampleCount: 0,
+    };
+  }
+  const elapsedSeconds = item.timing.sampledAt === null ? 0 : Math.max(0, at - item.timing.sampledAt) / 1_000;
+  const addedBytes = Math.max(0, transferredBytes - item.timing.sampledBytes);
+  const measured = elapsedSeconds > 0 && addedBytes > 0 ? addedBytes / elapsedSeconds : null;
+  return {
+    ...item.timing,
+    lastProgressAt: transferredBytes > item.transferredBytes ? at : item.timing.lastProgressAt,
+    sampledAt: transferredBytes > item.timing.sampledBytes ? at : item.timing.sampledAt,
+    sampledBytes: Math.max(item.timing.sampledBytes, transferredBytes),
+    bytesPerSecond: measured === null
+      ? item.timing.bytesPerSecond
+      : item.timing.bytesPerSecond === null
+        ? measured
+        : item.timing.bytesPerSecond * (1 - SPEED_SMOOTHING_ALPHA) + measured * SPEED_SMOOTHING_ALPHA,
+    speedSampleCount: measured === null ? item.timing.speedSampleCount : item.timing.speedSampleCount + 1,
+  };
+}
 
 function updateItem(
   state: UploadQueueState,
@@ -102,19 +167,38 @@ export function uploadQueueReducer(
         state,
         action.id,
         (item) => item.state === "queued"
-          ? { ...item, state: "uploading", message: action.message, errorCode: undefined }
+          ? {
+              ...item,
+              state: "uploading",
+              message: action.message,
+              errorCode: undefined,
+              timing: claimTiming(item, action.at),
+            }
           : item,
         without(state.pending, action.id),
       );
     case "set-upload-id":
-      return updateItem(state, action.id, (item) => ({
-        ...item,
-        uploadId: action.uploadId,
-        progress: action.resetProgress ? 0 : item.progress,
-      }));
+      return updateItem(state, action.id, (item) => {
+        const resetTiming = createUploadTiming();
+        return {
+          ...item,
+          uploadId: action.uploadId,
+          progress: action.resetProgress ? 0 : item.progress,
+          transferredBytes: action.resetProgress ? 0 : item.transferredBytes,
+          timing: action.resetProgress
+            ? { ...resetTiming, startedAt: item.timing.startedAt }
+            : item.timing,
+        };
+      });
     case "progress":
       return updateItem(state, action.id, (item) => item.state === "uploading"
-        ? { ...item, progress: action.progress, message: action.message }
+        ? {
+            ...item,
+            progress: action.progress,
+            transferredBytes: action.transferredBytes,
+            message: action.message,
+            timing: progressTiming(item, action.transferredBytes, action.at),
+          }
         : item);
     case "pause":
       return updateItem(
@@ -147,7 +231,7 @@ export function uploadQueueReducer(
         state,
         action.id,
         (item) => item.state === "paused"
-          ? { ...item, state: "queued", message: action.message, errorCode: undefined }
+          ? { ...item, state: "queued", message: action.message, errorCode: undefined, timing: { ...item.timing, finishedAt: null } }
           : item,
         appendOnce(state.pending, action.id),
       );
@@ -157,7 +241,7 @@ export function uploadQueueReducer(
       const items = { ...state.items };
       let pending = state.pending;
       for (const id of resumable) {
-        items[id] = { ...items[id], state: "queued", message: action.message, errorCode: undefined };
+        items[id] = { ...items[id], state: "queued", message: action.message, errorCode: undefined, timing: { ...items[id].timing, finishedAt: null } };
         pending = appendOnce(pending, id);
       }
       return { ...state, items, pending };
@@ -168,7 +252,7 @@ export function uploadQueueReducer(
         state,
         action.id,
         (item) => item.state === "failed"
-          ? { ...item, state: "queued", message: action.message, errorCode: undefined }
+          ? { ...item, state: "queued", message: action.message, errorCode: undefined, timing: { ...item.timing, finishedAt: null } }
           : item,
         appendOnce(state.pending, action.id),
       );
@@ -178,7 +262,7 @@ export function uploadQueueReducer(
       const items = { ...state.items };
       let pending = state.pending;
       for (const id of retryable) {
-        items[id] = { ...items[id], state: "queued", message: action.message, errorCode: undefined };
+        items[id] = { ...items[id], state: "queued", message: action.message, errorCode: undefined, timing: { ...items[id].timing, finishedAt: null } };
         pending = appendOnce(pending, id);
       }
       return { ...state, items, pending };
@@ -188,7 +272,7 @@ export function uploadQueueReducer(
         state,
         action.id,
         (item) => item.state !== "finalizing" && item.state !== "complete" && item.state !== "cancelled"
-          ? { ...item, state: "cancelled", message: action.message }
+          ? { ...item, state: "cancelled", message: action.message, timing: { ...item.timing, finishedAt: action.at } }
           : item,
         without(state.pending, action.id),
       );
@@ -224,11 +308,25 @@ export function uploadQueueReducer(
         : item);
     case "complete":
       return updateItem(state, action.id, (item) => item.state === "finalizing"
-        ? { ...item, state: "complete", progress: 100, message: action.message, errorCode: undefined }
+        ? {
+            ...item,
+            state: "complete",
+            progress: 100,
+            transferredBytes: item.file.size,
+            message: action.message,
+            errorCode: undefined,
+            timing: { ...item.timing, finishedAt: action.at },
+          }
         : item);
     case "fail":
       return updateItem(state, action.id, (item) => item.state === "uploading" || item.state === "finalizing"
-        ? { ...item, state: "failed", message: action.message, errorCode: action.errorCode }
+        ? {
+            ...item,
+            state: "failed",
+            message: action.message,
+            errorCode: action.errorCode,
+            timing: { ...item.timing, finishedAt: action.at },
+          }
         : item);
     case "session-lost": {
       const items = { ...state.items };
@@ -243,8 +341,10 @@ export function uploadQueueReducer(
             ...item,
             uploadId: undefined,
             progress: 0,
+            transferredBytes: 0,
             message: action.pausedMessage,
             errorCode: undefined,
+            timing: createUploadTiming(),
           };
         } else {
           items[id] = {
@@ -252,8 +352,10 @@ export function uploadQueueReducer(
             uploadId: undefined,
             state: "queued",
             progress: 0,
+            transferredBytes: 0,
             message: action.queuedMessage,
             errorCode: undefined,
+            timing: createUploadTiming(),
           };
           pending.push(id);
         }
@@ -281,10 +383,9 @@ export function nextQueuedUploadId(state: UploadQueueState): string | undefined 
 export function uploadQueueSummary(state: UploadQueueState): UploadQueueSummary {
   const items = uploadQueueItems(state);
   const totalBytes = items.reduce((sum, item) => sum + item.file.size, 0);
-  const transferredBytesExact = items.reduce(
-    (sum, item) => sum + item.file.size * Math.min(100, Math.max(0, item.progress)) / 100,
-    0,
-  );
+  const transferredBytesExact = items.reduce((sum, item) => (
+    sum + Math.min(item.file.size, Math.max(0, item.transferredBytes))
+  ), 0);
   const progress = totalBytes > 0
     ? transferredBytesExact / totalBytes * 100
     : items.length > 0
