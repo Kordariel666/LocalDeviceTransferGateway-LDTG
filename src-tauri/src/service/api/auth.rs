@@ -71,8 +71,10 @@ pub(super) async fn ensure_session_active(
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(super) struct AuthRequest {
     code: String,
+    device_name: Option<String>,
 }
 
 pub(super) async fn auth(
@@ -116,14 +118,18 @@ pub(super) async fn auth(
     let user_agent = headers
         .get(header::USER_AGENT)
         .and_then(|value| value.to_str().ok())
-        .unwrap_or("Mobiler Browser")
-        .chars()
-        .take(180)
-        .collect();
+        .unwrap_or("Mobiler Browser");
     let session = state
-        .create_session(address, user_agent)
+        .create_named_session(address, user_agent, payload.device_name.as_deref())
         .await
         .map_err(|limit| match limit {
+            SessionCreateError::InvalidDeviceName => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "DEVICE_NAME_INVALID",
+                format!(
+                    "Der Gerätename darf höchstens {MAX_DEVICE_NAME_CHARS} Zeichen enthalten und keine Steuerzeichen verwenden."
+                ),
+            ),
             SessionCreateError::AddressLimit => ApiFailure::new(
                 StatusCode::TOO_MANY_REQUESTS,
                 "SESSION_CLIENT_LIMIT",

@@ -24,6 +24,7 @@ DMDC v1 nutzt HTTP im bestätigten lokalen Netzwerk und beansprucht keine Transp
 - Upload-Eingänge auf entfernten oder unbekannten Laufwerkstypen sowie effektive Windows-Startordner und bekannte Office-Autoload-Verzeichnisse werden abgewiesen. Windows-Kurznamen werden nach der kanonischen Auflösung erneut gegen die Pfadrichtlinie geprüft.
 - Abgeschlossene und aktive Uploads teilen sich endliche Byte- und Objektbudgets. Nicht abschließende Uploadblöcke sind exakt 8 MiB groß; Abschlusswiederholungen sind über eine begrenzte, ablaufende Quittung idempotent.
 - Dateinamen mit bidirektionalen oder unsichtbaren Unicode-Steuerzeichen werden beim Upload entschärft und in den Oberflächen isoliert dargestellt.
+- Optionale Gerätenamen gelten nur für die aktuelle Sitzung, sind auf 64 Zeichen begrenzt, verbieten Steuer- und bidirektionale Formatierungszeichen und werden im Desktop bidi-isoliert ausgegeben. Rohe User-Agent-Header werden nach lokaler Klassifizierung nicht im Desktopstatus offengelegt.
 
 Der `.dmdc`-Arbeitsordner ist kein öffentlicher Eigentumsnachweis. Laufende Uploads werden über ihre offenen Handles aufgeräumt; nach einem Prozessabsturz bleiben nicht mehr sicher zuordenbare Teildateien erhalten und müssen bei Bedarf manuell geprüft werden.
 

@@ -8,7 +8,7 @@ export type AppSettings = { version: number, downloadShare: ShareSettings, uploa
 
 export type NetworkInterfaceInfo = { id: string, name: string, profileName: string, address: string, prefixLength: number, networkId: string, category: string, profileResolved: boolean, preferred: boolean, };
 
-export type SessionInfo = { id: string, address: string, userAgent: string, createdAt: string, lastActivity: string, };
+export type SessionInfo = { id: string, address: string, deviceName: string | null, clientName: string, createdAt: string, lastActivity: string, };
 
 export type SessionChangedEvent = { "kind": "upsert", serviceId: string, session: SessionInfo, } | { "kind": "remove", serviceId: string, ids: Array<string>, } | { "kind": "reset", serviceId: string, };
 
@@ -16,7 +16,7 @@ export type TransferDirection = "upload" | "download";
 
 export type TransferState = "active" | "complete" | "cancelled" | "failed" | "expired";
 
-export type TransferInfo = { id: string, direction: TransferDirection, name: string, startedAt: string, lastProgressAt: string | null, finishedAt: string | null, transferredBytes: number, totalBytes: number, bytesPerSecond: number | null, speedSampleCount: number, state: TransferState, updatedAt: string, };
+export type TransferInfo = { id: string, sessionId: string, direction: TransferDirection, name: string, startedAt: string, lastProgressAt: string | null, finishedAt: string | null, transferredBytes: number, totalBytes: number, bytesPerSecond: number | null, speedSampleCount: number, state: TransferState, updatedAt: string, };
 
 export type TransferChangedEvent = { serviceId: string, transfer: TransferInfo, };
 

@@ -18,6 +18,7 @@ describe("status event reducers", () => {
   it("applies transfer progress only to the matching service instance", () => {
     const transfer = {
       id: "transfer-1",
+      sessionId: "session-1",
       direction: "download" as const,
       name: "foto.jpg",
       startedAt: "2026-09-02T10:00:00Z",
@@ -43,7 +44,8 @@ describe("status event reducers", () => {
     const session = {
       id: "session-1",
       address: "192.168.1.10",
-      userAgent: "Browser",
+      deviceName: null,
+      clientName: "Safari auf iPhone",
       createdAt: "2026-09-02T10:00:00Z",
       lastActivity: "2026-09-02T10:00:01Z",
     };

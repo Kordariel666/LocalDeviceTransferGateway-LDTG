@@ -1,7 +1,8 @@
 use super::state::{
     AuthDecision, CompletedUpload, DirectoryListing, DirectoryPage, DownloadLease,
     SessionCreateError, SessionRecord, TransferServiceState, UploadChunkLease, UploadIoPermit,
-    UploadRecord, ACCESS_CODE_DIGITS, CHUNK_SIZE, DISK_RESERVE, MAX_UPLOADS_PER_ADDRESS,
+    UploadRecord, ACCESS_CODE_DIGITS, CHUNK_SIZE, DISK_RESERVE, MAX_DEVICE_NAME_CHARS,
+    MAX_UPLOADS_PER_ADDRESS,
 };
 use super::ConnectionSecurity;
 use crate::domain::{

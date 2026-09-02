@@ -631,10 +631,35 @@ Umgesetzt:
 
 ### R4.2 Verständliche Geräteidentität
 
+Status: abgeschlossen am 3. September 2026.
+
 - User-Agent lokal in verständliche Browser-/Gerätebezeichnungen umwandeln.
 - Optionalen sitzungsbezogenen Gerätenamen beim Login erlauben.
 - IP, Erstellungszeit, letzte Aktivität und aktive Transfers nachvollziehbar darstellen.
 - Namen als nicht vertrauenswürdige Eingabe behandeln und bidi-isoliert anzeigen.
+
+Umgesetzt:
+
+- Das Rust-Backend klassifiziert verbreitete Safari-, Chrome-, Firefox-, Edge-,
+  Samsung-Internet- und Opera-User-Agents ausschließlich lokal nach Browser und
+  Plattform. Der Desktop erhält nur feste Bezeichnungen wie „Safari auf iPhone“;
+  der rohe Header wird weder über IPC ausgegeben noch persistiert.
+- Das mobile Login bietet einen optionalen Gerätenamen. Er gilt nur für die neu
+  erzeugte Sitzung, wird getrimmt und ist auf 64 Unicode-Zeichen begrenzt. Das
+  Backend lehnt Steuer- sowie bidirektionale Formatierungszeichen mit einem
+  stabilen Fehlercode ab; leere Namen bleiben ohne Sonderbehandlung optional.
+- Die Desktop-Gerätekarte zeigt den optionalen Namen mit der erkannten
+  Clientbezeichnung, IP-Adresse, Verbindungsbeginn und letzter Aktivität. Freie
+  Namen werden durch React escaped und in `bdi` isoliert; auch die Trennen-Aktion
+  besitzt nun eine eindeutige gerätebezogene Beschriftung.
+- Jeder Upload und Download trägt im kurzlebigen Desktopvertrag die zugehörige
+  Sitzungs-ID. So aktualisieren bestehende Transferereignisse die Zahl aktiver
+  Übertragungen pro Gerät unmittelbar, ohne Namen oder weitere Gerätedaten in
+  den Transferverlauf zu kopieren.
+- Backend- und Oberflächentests prüfen Browsererkennung, Ablehnung unsicherer
+  Namen, ausschließlich sitzungsbezogene Übernahme, Transferzuordnung,
+  bidi-isolierte Anzeige sowie sämtliche Gerätedetails. Das vollständige
+  Qualitätsgate ist mit 113 Rust-, 30 Desktop- und 39 Mobile-Tests grün.
 
 ### R4.3 Optionale strengere Kopplung
 

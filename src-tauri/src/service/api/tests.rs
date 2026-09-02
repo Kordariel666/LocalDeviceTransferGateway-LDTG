@@ -115,15 +115,22 @@ fn sorts_names_naturally_without_case() {
 #[tokio::test]
 async fn authenticates_and_sets_http_only_cookie() {
     let temp = tempfile::tempdir().unwrap();
-    let app = router(test_state(temp.path()));
+    let state = test_state(temp.path());
+    let app = router(state.clone());
     let mut auth = request(
         Method::POST,
         "/api/v1/auth",
-        Body::from(r#"{"code":"12345678"}"#),
+        Body::from(r#"{"code":"12345678","deviceName":"  Marias iPhone  "}"#),
     );
     auth.headers_mut().insert(
         header::CONTENT_TYPE,
         HeaderValue::from_static("application/json"),
+    );
+    auth.headers_mut().insert(
+        header::USER_AGENT,
+        HeaderValue::from_static(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1",
+        ),
     );
     let response = app.oneshot(auth).await.unwrap();
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
@@ -136,6 +143,35 @@ async fn authenticates_and_sets_http_only_cookie() {
     assert!(cookie.contains("HttpOnly"));
     assert!(cookie.contains("SameSite=Strict"));
     assert!(!cookie.contains("Secure"));
+    let sessions = state.status().await.sessions;
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0].device_name.as_deref(), Some("Marias iPhone"));
+    assert_eq!(sessions[0].client_name, "Safari auf iPhone");
+    assert_eq!(sessions[0].address, "192.168.10.50");
+    assert!(!sessions[0].created_at.is_empty());
+    assert!(!sessions[0].last_activity.is_empty());
+}
+
+#[tokio::test]
+async fn rejects_unsafe_session_device_names() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path());
+    let app = router(state.clone());
+    let mut auth = request(
+        Method::POST,
+        "/api/v1/auth",
+        Body::from("{\"code\":\"12345678\",\"deviceName\":\"Handy\\u202ePC\"}"),
+    );
+    auth.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
+
+    let response = app.oneshot(auth).await.unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(json(response).await["code"], "DEVICE_NAME_INVALID");
+    assert!(state.status().await.sessions.is_empty());
 }
 
 #[tokio::test]

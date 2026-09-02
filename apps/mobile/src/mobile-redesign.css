@@ -99,19 +99,28 @@ input:focus-visible,
 
 .login-card input {
   width: 100%;
-  min-height: 58px;
+  min-height: 50px;
   padding: 10px 14px;
   border: 1px solid #6f542f;
   border-radius: 6px;
   background: #0c0c0b;
   color: var(--text);
+  font-size: 1rem;
+  font-weight: 650;
+  caret-color: var(--amber-strong);
+}
+
+.login-card .code-input {
+  min-height: 58px;
   font-size: 1.75rem;
   font-weight: 750;
   font-variant-numeric: tabular-nums;
   text-align: center;
   letter-spacing: .2em;
-  caret-color: var(--amber-strong);
 }
+
+.login-card input::placeholder { color: #777067; font-weight: 400; }
+.login-card label small { color: var(--faint); font-size: .7rem; font-weight: 400; line-height: 1.4; }
 
 .primary-button {
   min-height: 50px;

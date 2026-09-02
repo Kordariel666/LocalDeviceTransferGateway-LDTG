@@ -15,6 +15,14 @@ Alle Pfade beginnen mit `/api/v1`. Antworten werden nicht gecacht. Schreibende A
 | `POST` | `/uploads/{id}/complete` | prüfen, synchronisieren und atomar übernehmen |
 | `DELETE` | `/uploads/{id}` | ausschließlich eigene unvollständige Übertragung abbrechen |
 
+`POST /auth` akzeptiert JSON mit dem Pflichtfeld `code` und dem optionalen Feld
+`deviceName`. Ein Gerätename gilt ausschließlich für die neu erzeugte Sitzung,
+wird nicht persistiert und darf nach dem Trimmen höchstens 64 Unicode-Zeichen
+ohne Steuer- oder bidirektionale Formatierungszeichen enthalten. Ein leerer Wert
+entspricht keinem Namen. Der HTTP-User-Agent wird lokal auf eine feste
+Browser-/Plattformbezeichnung reduziert; der rohe Header gelangt weder in den
+Desktopstatus noch in einen Diagnosebericht.
+
 Fehler, die durch Handler validiert werden, bestehen aus einem stabilen `code` und einer deutschen `message`. Die API enthält absichtlich keine Datei- oder Dienstverwaltung.
 
 Ressourcengrenzen sind Teil des Protokolls: maximal 12 laufende Downloads insgesamt, davon höchstens 4 pro Client-IP und 3 pro Sitzung, mit einer absoluten Laufzeit von 6 Stunden. Download-Pfad- und HEAD-Metadatenprüfungen laufen in einem separaten Blocking-Pool mit 4 Slots, höchstens 2 pro Client-IP. Es bestehen höchstens 64 unvollständige Uploads insgesamt und 4 pro Client-IP. Uploadanlage, Inbox-Scan, Speicherprüfung, Chunk-Persistierung und Abschluss teilen einen eigenen Blocking-Pool mit 4 globalen und 2 IP-bezogenen Slots; ausgelastete clientgetriebene Uploadarbeit liefert `UPLOAD_IO_BUSY`. Das konfigurierte Dateibudget des Upload-Eingangs zählt abgeschlossene und aktive Uploadobjekte; ein Objektplatz wird beim Anlegen reserviert. Das Bytebudget zählt abgeschlossene Dateien und tatsächlich bestätigte Uploadblöcke, nicht die bloß angekündigte Restgröße. Zusätzlich bleibt mindestens 1 GiB freier Datenträgerspeicher als Sicherheitsreserve. Überschreitungen liefern unter anderem `DOWNLOAD_LIMIT`, `FILESYSTEM_LIMIT`, `UPLOAD_IO_BUSY`, `TOO_MANY_UPLOADS`, `UPLOAD_CLIENT_LIMIT`, `INBOX_FILE_LIMIT`, `INBOX_BYTE_LIMIT` oder `DISK_FULL`; kann die Inbox-Belegung nicht sicher ermittelt werden, folgt `INBOX_USAGE_UNKNOWN`. Es bestehen maximal 128 Sitzungen und 4 Sitzungen pro Client-IP. Frische Sitzungen werden nicht verdrängt; Sitzungen laufen nach 6 Stunden 15 Minuten ohne authentifizierte Aktivität oder nach 24 Stunden absolut ab, und abgelaufene Einträge werden bei der nächsten Anmeldung atomar zurückgewonnen. TCP-Verbindungen, bearbeitete Requests und blockierende Ordnerseiten besitzen eigene Grenzen und Zeitlimits. Eine Verbindung endet auch bei Fortschritt nach spätestens 6 Stunden. Es laufen höchstens 4 blockierende Ordnerjobs, davon 2 pro Client-IP und 1 pro Sitzung. Jeder HTTP/1-Header muss unabhängig von einzelnen Fortschrittsbytes innerhalb von 15 Sekunden vollständig gelesen sein.

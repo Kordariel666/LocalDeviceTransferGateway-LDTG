@@ -18,6 +18,7 @@ import {
 function event(id: string, state: TransferState, serviceId = "service"): TransferChangedEvent {
   const transfer: TransferInfo = {
     id,
+    sessionId: "session-1",
     direction: "upload",
     name: `${id}.bin`,
     startedAt: "2026-09-03T10:00:00Z",

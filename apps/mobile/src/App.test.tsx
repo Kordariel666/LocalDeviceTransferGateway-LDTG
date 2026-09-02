@@ -24,12 +24,16 @@ describe("mobile Oberfläche", () => {
       .mockResolvedValueOnce(json({ path: "", entries: [], nextCursor: null }));
     render(<App />);
     const input = await screen.findByLabelText("Achtstelliger Zugangscode");
+    await userEvent.type(screen.getByLabelText("Gerätename (optional)"), "Marias iPhone");
     await userEvent.type(input, "12345678");
     fireEvent.submit(input.closest("form")!);
     expect(await screen.findByText("Vom PC herunterladen")).toBeTruthy();
     expect(screen.getByText("Zum PC hochladen")).toBeTruthy();
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/auth");
-    expect(String(fetchMock.mock.calls[1]?.[1]?.body)).toContain("12345678");
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({
+      code: "12345678",
+      deviceName: "Marias iPhone",
+    });
   });
 
   it("öffnet bei doppeltem Absenden höchstens eine Anmeldesitzung", async () => {

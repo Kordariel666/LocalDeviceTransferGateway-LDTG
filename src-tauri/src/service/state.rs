@@ -63,6 +63,7 @@ pub const MAX_FILESYSTEM_LOOKUPS_ACTIVE: usize = 4;
 pub const MAX_FILESYSTEM_LOOKUPS_PER_ADDRESS: usize = 2;
 pub const MAX_AUTH_ATTEMPT_RECORDS: usize = 1_024;
 pub const ACCESS_CODE_DIGITS: usize = 8;
+pub const MAX_DEVICE_NAME_CHARS: usize = 64;
 pub const UPLOAD_IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 pub const UPLOAD_MAX_LIFETIME: Duration = Duration::from_secs(24 * 60 * 60);
 pub const DOWNLOAD_MAX_DURATION: Duration = Duration::from_secs(6 * 60 * 60);
@@ -86,7 +87,8 @@ pub struct SessionRecord {
     pub token: String,
     pub csrf: String,
     pub address: IpAddr,
-    pub user_agent: String,
+    pub device_name: Option<String>,
+    pub client_name: String,
     pub created_at: String,
     pub last_activity: String,
     created_at_instant: Instant,
@@ -103,7 +105,8 @@ impl SessionRecord {
         SessionInfo {
             id: self.id.clone(),
             address: self.address.to_string(),
-            user_agent: self.user_agent.clone(),
+            device_name: self.device_name.clone(),
+            client_name: self.client_name.clone(),
             created_at: self.created_at.clone(),
             last_activity: self.last_activity.clone(),
         }
@@ -148,6 +151,78 @@ pub enum AuthDecision {
 pub enum SessionCreateError {
     AddressLimit,
     GlobalLimit,
+    InvalidDeviceName,
+}
+
+fn has_forbidden_device_name_character(value: char) -> bool {
+    value.is_control()
+        || matches!(
+            value,
+            '\u{061c}'
+                | '\u{200e}'
+                | '\u{200f}'
+                | '\u{202a}'..='\u{202e}'
+                | '\u{2066}'..='\u{2069}'
+        )
+}
+
+fn normalize_device_name(value: Option<&str>) -> Result<Option<String>, SessionCreateError> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(None);
+    }
+    if value.chars().count() > MAX_DEVICE_NAME_CHARS
+        || value.len() > MAX_DEVICE_NAME_CHARS * 4
+        || value.chars().any(has_forbidden_device_name_character)
+    {
+        return Err(SessionCreateError::InvalidDeviceName);
+    }
+    Ok(Some(value.to_string()))
+}
+
+fn describe_user_agent(user_agent: &str) -> String {
+    let browser = if user_agent.contains("EdgA/")
+        || user_agent.contains("EdgiOS/")
+        || user_agent.contains("Edg/")
+    {
+        "Microsoft Edge"
+    } else if user_agent.contains("SamsungBrowser/") {
+        "Samsung Internet"
+    } else if user_agent.contains("OPR/") || user_agent.contains("Opera/") {
+        "Opera"
+    } else if user_agent.contains("FxiOS/") || user_agent.contains("Firefox/") {
+        "Firefox"
+    } else if user_agent.contains("CriOS/") || user_agent.contains("Chrome/") {
+        "Chrome"
+    } else if user_agent.contains("Version/") && user_agent.contains("Safari/") {
+        "Safari"
+    } else {
+        "Unbekannter Browser"
+    };
+    let device = if user_agent.contains("iPhone") {
+        Some("iPhone")
+    } else if user_agent.contains("iPad") {
+        Some("iPad")
+    } else if user_agent.contains("Android") {
+        Some("Android")
+    } else if user_agent.contains("Windows") {
+        Some("Windows")
+    } else if user_agent.contains("Macintosh") || user_agent.contains("Mac OS X") {
+        Some("macOS")
+    } else if user_agent.contains("CrOS") {
+        Some("ChromeOS")
+    } else if user_agent.contains("Linux") {
+        Some("Linux")
+    } else {
+        None
+    };
+    match device {
+        Some(device) => format!("{browser} auf {device}"),
+        None => browser.to_string(),
+    }
 }
 
 pub struct RequestPermit {

@@ -49,7 +49,7 @@ impl TransferServiceState {
                 cancel,
             },
         );
-        self.record_transfer_with_id(&id, TransferDirection::Download, name, total)
+        self.record_transfer_with_id(&id, owner_session, TransferDirection::Download, name, total)
             .await;
         Ok(DownloadLease {
             id,

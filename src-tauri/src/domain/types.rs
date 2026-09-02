@@ -6,7 +6,8 @@ use ts_rs::TS;
 pub struct SessionInfo {
     pub id: String,
     pub address: String,
-    pub user_agent: String,
+    pub device_name: Option<String>,
+    pub client_name: String,
     pub created_at: String,
     pub last_activity: String,
 }
@@ -52,6 +53,7 @@ pub enum TransferState {
 #[serde(rename_all = "camelCase")]
 pub struct TransferInfo {
     pub id: String,
+    pub session_id: String,
     pub direction: TransferDirection,
     pub name: String,
     pub started_at: String,

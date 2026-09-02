@@ -101,12 +101,19 @@ export function OverviewPage({
             <div className="device-list">
               {service.sessions.map((session) => (
                 <article className="device-row" key={session.id}>
-                  <div>
-                    <strong>{session.userAgent || text.mobileBrowser}</strong>
-                    <span>{session.address}</span>
-                    <time dateTime={session.lastActivity}>{text.lastActive(formatDateTime(session.lastActivity))}</time>
+                  <div className="device-details">
+                    <div className="device-title">
+                      <strong><bdi className="untrusted-name">{session.deviceName ?? session.clientName}</bdi></strong>
+                      {session.deviceName && <span><bdi>{session.clientName}</bdi></span>}
+                    </div>
+                    <dl className="device-meta">
+                      <div><dt>{text.ipAddress}</dt><dd><bdi>{session.address}</bdi></dd></div>
+                      <div><dt>{text.connectedAt}</dt><dd><time dateTime={session.createdAt}>{formatDateTime(session.createdAt)}</time></dd></div>
+                      <div><dt>{text.lastActivity}</dt><dd><time dateTime={session.lastActivity}>{formatDateTime(session.lastActivity)}</time></dd></div>
+                      <div><dt>{text.activeTransfersShort}</dt><dd>{text.activeTransferCount(activeTransfers.filter((transfer) => transfer.sessionId === session.id).length)}</dd></div>
+                    </dl>
                   </div>
-                  <button className="button secondary small" type="button" disabled={busy} onClick={() => void onCommand("revoke_session", { sessionId: session.id })}>{text.disconnect}</button>
+                  <button className="button secondary small" type="button" disabled={busy} aria-label={text.disconnectDevice(session.deviceName ?? session.clientName)} onClick={() => void onCommand("revoke_session", { sessionId: session.id })}>{text.disconnect}</button>
                 </article>
               ))}
             </div>

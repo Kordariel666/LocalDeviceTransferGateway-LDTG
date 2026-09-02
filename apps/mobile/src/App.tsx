@@ -143,8 +143,13 @@ export function App() {
     setLoggingIn(true);
     setLoginError("");
     const data = new FormData(event.currentTarget);
+    const deviceName = String(data.get("deviceName") ?? "").trim();
     try {
-      await api("/api/v1/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: data.get("code") }) });
+      await api("/api/v1/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: data.get("code"), deviceName: deviceName || null }),
+      });
       await loadSession();
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "Anmeldung fehlgeschlagen");
@@ -498,7 +503,8 @@ export function App() {
         <p>{text.loginHint}</p>
         {loginError && <div className="error-box">{loginError}</div>}
         <form onSubmit={login}>
-          <label>{text.codeLabel}<input name="code" inputMode="numeric" pattern="[0-9]{8}" maxLength={8} autoComplete="one-time-code" enterKeyHint="go" autoFocus required /></label>
+          <label>{text.codeLabel}<input className="code-input" name="code" inputMode="numeric" pattern="[0-9]{8}" maxLength={8} autoComplete="one-time-code" enterKeyHint="next" autoFocus required /></label>
+          <label>{text.deviceNameLabel}<input className="device-name-input" name="deviceName" type="text" maxLength={64} autoComplete="off" enterKeyHint="go" placeholder={text.deviceNamePlaceholder} aria-label={text.deviceNameLabel} aria-describedby="device-name-hint" /><small id="device-name-hint">{text.deviceNameHint}</small></label>
           <button type="submit" className="primary-button" disabled={loggingIn}>{text.connect}</button>
         </form>
         <aside>{text.localWarning}</aside>

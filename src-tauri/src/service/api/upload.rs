@@ -408,9 +408,10 @@ pub(super) async fn create_upload(
 
         let transfer_id = Uuid::new_v4().to_string();
         let transfer_name = name.clone();
+        let owner_session = session.id;
         let record = UploadRecord {
             id: id.clone(),
-            owner_session: session.id,
+            owner_session: owner_session.clone(),
             owner_address: session.address,
             name,
             declared_size: payload.size,
@@ -436,6 +437,7 @@ pub(super) async fn create_upload(
         task_state
             .record_transfer_with_id(
                 &transfer_id,
+                &owner_session,
                 TransferDirection::Upload,
                 &transfer_name,
                 payload.size,

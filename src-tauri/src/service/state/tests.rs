@@ -46,8 +46,15 @@ async fn status_waits_for_complete_session_and_transfer_snapshots() {
         )
         .await
         .unwrap();
-    let transfer_id = state
-        .record_transfer(TransferDirection::Download, "status.bin", 2048)
+    let transfer_id = Uuid::new_v4().to_string();
+    state
+        .record_transfer_with_id(
+            &transfer_id,
+            &session.id,
+            TransferDirection::Download,
+            "status.bin",
+            2048,
+        )
         .await;
     let sessions = state.sessions.lock().await;
     let transfers = state.transfers.lock().await;
@@ -73,6 +80,22 @@ async fn status_waits_for_complete_session_and_transfer_snapshots() {
     assert_eq!(status.sessions[0].id, session.id);
     assert_eq!(status.transfers.len(), 1);
     assert_eq!(status.transfers[0].id, transfer_id);
+    assert_eq!(status.transfers[0].session_id, session.id);
+}
+
+#[test]
+fn describes_common_clients_without_exposing_raw_user_agents() {
+    let iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1";
+    let android = "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/128.0 Mobile Safari/537.36";
+    let edge = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36 Edg/128.0";
+
+    assert_eq!(describe_user_agent(iphone), "Safari auf iPhone");
+    assert_eq!(describe_user_agent(android), "Chrome auf Android");
+    assert_eq!(describe_user_agent(edge), "Microsoft Edge auf Windows");
+    assert_eq!(
+        describe_user_agent("komplett-unbekannter-client"),
+        "Unbekannter Browser"
+    );
 }
 
 #[tokio::test]

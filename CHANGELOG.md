@@ -46,6 +46,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Verwaltung vertrauenswürdiger Netzwerke in der Desktop-App mit Anzeigename,
   Kategorie, letzter Verwendung, sichtbaren veralteten Profilen sowie Aktionen
   zum einzelnen oder vollständigen Vergessen bei gestopptem Dienst.
+- Optionale, ausschließlich sitzungsbezogene Gerätenamen beim mobilen Login und
+  verständliche lokale Browser-/Plattformerkennung. Der Desktop zeigt je Sitzung
+  IP-Adresse, Verbindungsbeginn, letzte Aktivität und aktive Übertragungen.
 
 ### Fixed
 

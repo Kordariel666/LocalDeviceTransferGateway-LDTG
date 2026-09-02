@@ -124,10 +124,20 @@ impl TransferServiceState {
         AuthDecision::Invalid
     }
 
+    #[cfg(test)]
     pub async fn create_session(
         &self,
         address: IpAddr,
         user_agent: String,
+    ) -> Result<SessionRecord, SessionCreateError> {
+        self.create_named_session(address, &user_agent, None).await
+    }
+
+    pub async fn create_named_session(
+        &self,
+        address: IpAddr,
+        user_agent: &str,
+        device_name: Option<&str>,
     ) -> Result<SessionRecord, SessionCreateError> {
         let now_instant = Instant::now();
         let now = Utc::now().to_rfc3339();
@@ -136,7 +146,8 @@ impl TransferServiceState {
             token: random_token(32),
             csrf: random_token(24),
             address,
-            user_agent,
+            device_name: normalize_device_name(device_name)?,
+            client_name: describe_user_agent(user_agent),
             created_at: now.clone(),
             last_activity: now,
             created_at_instant: now_instant,

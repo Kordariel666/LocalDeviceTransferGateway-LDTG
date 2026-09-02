@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { AppSnapshot, TransferDirection, TransferInfo, TransferState } from "@dmdc/shared";
 
 const mocks = vi.hoisted(() => ({
@@ -45,6 +45,7 @@ function transfer(
   const active = state === "active";
   return {
     id,
+    sessionId: "session-1",
     direction,
     name,
     startedAt: "2026-09-03T10:00:00Z",
@@ -302,7 +303,8 @@ describe("Desktop-Dashboard", () => {
           session: {
             id: "session-1",
             address: "192.168.1.10",
-            userAgent: "Direkter Browser",
+            deviceName: "Mein Handy",
+            clientName: "Chrome auf Android",
             createdAt: "2026-09-02T10:00:00Z",
             lastActivity: "2026-09-02T10:00:01Z",
           },
@@ -313,6 +315,7 @@ describe("Desktop-Dashboard", () => {
           serviceId: "service-1",
           transfer: {
             id: "transfer-1",
+            sessionId: "session-1",
             direction: "upload",
             name: "direkt.txt",
             startedAt: "2026-09-02T10:00:00Z",
@@ -329,9 +332,39 @@ describe("Desktop-Dashboard", () => {
       });
     });
 
-    expect(await screen.findByText("Direkter Browser")).toBeTruthy();
+    expect((await screen.findByText("Mein Handy")).closest("bdi")).toBeTruthy();
+    expect(screen.getByText("Chrome auf Android")).toBeTruthy();
+    expect(screen.getByText("192.168.1.10")).toBeTruthy();
+    expect(screen.getByText("Verbunden seit")).toBeTruthy();
+    expect(screen.getByText("Letzte Aktivität")).toBeTruthy();
+    expect(screen.getByText("1 aktiv")).toBeTruthy();
+    const device = screen.getByRole("button", { name: "Gerät „Mein Handy“ trennen" }).closest("article")!;
     expect(screen.getByText("direkt.txt")).toBeTruthy();
     expect(mocks.invoke.mock.calls.filter(([command]) => command === "get_service_status")).toHaveLength(0);
+
+    await act(async () => {
+      mocks.listeners.get("transfer-updated")?.({
+        payload: {
+          serviceId: "service-1",
+          transfer: {
+            id: "transfer-1",
+            sessionId: "session-1",
+            direction: "upload",
+            name: "direkt.txt",
+            startedAt: "2026-09-02T10:00:00Z",
+            lastProgressAt: "2026-09-02T10:00:02Z",
+            finishedAt: "2026-09-02T10:00:02Z",
+            transferredBytes: 4096,
+            totalBytes: 4096,
+            bytesPerSecond: 1024,
+            speedSampleCount: 2,
+            state: "complete",
+            updatedAt: "2026-09-02T10:00:02Z",
+          },
+        },
+      });
+    });
+    await waitFor(() => expect(within(device).getByText("0 aktiv")).toBeTruthy());
   });
 
   it("behält eine sparsame Statusabfrage als 30-Sekunden-Fallback bei", async () => {
@@ -538,6 +571,7 @@ describe("Desktop-Dashboard", () => {
       sessions: [],
       transfers: [{
         id: "transfer",
+        sessionId: "session-1",
         direction: "upload",
         name: "Urlaub-2026.zip",
         startedAt: new Date(now - 5_000).toISOString(),
@@ -610,6 +644,7 @@ describe("Desktop-Dashboard", () => {
   it("stoppt nur nach sichtbarer einmaliger Aktivierung und niemals allein durch ein Batchende", async () => {
     const activeTransfer = {
       id: "transfer",
+      sessionId: "session-1",
       direction: "upload" as const,
       name: "Batch-Datei.bin",
       startedAt: "2026-09-03T10:00:00Z",

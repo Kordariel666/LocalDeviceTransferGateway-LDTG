@@ -28,7 +28,7 @@ impl TransferServiceState {
         total: u64,
     ) -> String {
         let id = Uuid::new_v4().to_string();
-        self.record_transfer_with_id(&id, direction, name, total)
+        self.record_transfer_with_id(&id, "test-session", direction, name, total)
             .await;
         id
     }
@@ -36,6 +36,7 @@ impl TransferServiceState {
     pub async fn record_transfer_with_id(
         &self,
         id: &str,
+        session_id: &str,
         direction: TransferDirection,
         name: &str,
         total: u64,
@@ -43,6 +44,7 @@ impl TransferServiceState {
         let now = Utc::now().to_rfc3339();
         let item = TransferInfo {
             id: id.into(),
+            session_id: session_id.into(),
             direction,
             name: name.into(),
             started_at: now.clone(),

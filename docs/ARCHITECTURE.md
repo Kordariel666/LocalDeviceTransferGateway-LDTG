@@ -96,6 +96,17 @@ Zur Ressourcenbegrenzung sind gleichzeitig höchstens 12 Downloads insgesamt, 4 
 
 Der Sitzungspool enthält höchstens 128 Sitzungen, davon höchstens 4 pro Client-IP. Eine Anmeldung oberhalb dieser Grenzen wird explizit abgewiesen; frische Sitzungen und Übertragungen werden niemals durch eine neue Anmeldung verdrängt. Sitzungen enden nach 6 Stunden 15 Minuten Inaktivität, nach 24 Stunden absolut, durch eigenen Logout, lokalen Widerruf oder Dienststopp. Monotone Zeitstempel verhindern Uhrzeitmanipulation; Prüfung, Entfernung und Neuaufnahme unterliegen demselben Mutex. Die anschließende ressourcengenaue Bereinigung läuft außerhalb dieses Mutex und kann keine inzwischen neu angelegte Sitzung erfassen. Serverseitige Ordnercursor sind an Sitzung, Client-IP, Pfad und Filter gebunden, auf 4 aktive Cursor pro Sitzung, 8 pro Client-IP und 64 global begrenzt, laufen nach kurzer Inaktivität ab und werden beim Sitzungsende entfernt. Eine gecachte Seite je Cursor macht Wiederholungen nach verlorenen HTTP-Antworten idempotent.
 
+Eine Anmeldung kann optional einen maximal 64 Zeichen langen Gerätenamen für
+genau diese Sitzung mitsenden. Das Backend trimmt ihn, lehnt Steuerzeichen und
+bidirektionale Formatierungszeichen ab und persistiert ihn nicht. Der rohe
+User-Agent wird nur lokal klassifiziert und anschließend verworfen; der
+Desktopvertrag erhält stattdessen eine feste Bezeichnung wie „Safari auf
+iPhone“. Transferdatensätze tragen intern die zugehörige Sitzungs-ID. Damit kann
+der Desktop pro Gerät aktive Uploads und Downloads aus den bestehenden
+Live-Ereignissen zählen, ohne den Gerätenamen in Transferdaten zu duplizieren.
+Frei eingegebene Gerätenamen werden von React escaped und zusätzlich in einem
+`bdi`-Element isoliert angezeigt.
+
 ## Datenwege
 
 - Download: begrenzte blockierende kanonische Pfad- und Metadatenprüfung → read-only Datei-Handle → gestreamte HTTP-Antwort mit Attachment- und Range-Headern.
@@ -109,8 +120,9 @@ Der Sitzungspool enthält höchstens 128 Sitzungen, davon höchstens 4 pro Clien
   Terminalzustand gesendet; der
   maßgebliche Backendzustand bleibt davon unabhängig bytegenau. Lifecycle- und
   Netzwerkereignisse führen zu einer gedrosselten Vollabfrage, ein
-  30-Sekunden-Polling bleibt als Resynchronisierungsfallback. Keine Dateiinhalte
-  werden über IPC übertragen.
+  30-Sekunden-Polling bleibt als Resynchronisierungsfallback. Zu jedem Transfer
+  wird nur die kurzlebige Sitzungs-ID für die gerätebezogene Zuordnung ergänzt;
+  keine Dateiinhalte oder rohen User-Agent-Header werden über IPC übertragen.
 
 Jeder Backendtransfer hält neben dem aktuellen Bytezähler die Startzeit, den
 Zeitpunkt des letzten echten Bytefortschritts, eine mit dem Faktor 0,25
