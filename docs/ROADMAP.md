@@ -591,11 +591,43 @@ Ergebnisse innerhalb des aktuellen Dienstlaufs vollständig nachvollziehbar.
 
 ### R4.1 Vertraute Netzwerke verwalten
 
+Status: abgeschlossen am 3. September 2026.
+
 - Aus `Vec<String>` ein migrierbares Modell mit stabiler ID, Anzeigename, Kategorie und letzter Verwendung entwickeln.
 - Vertrauensliste in der Desktop-App anzeigen.
 - Einzelnes Netzwerk oder alle Netzwerke vergessen können.
 - Änderungen nur bei gestopptem Dienst oder mit klar definierter Wirkung auf den aktuellen Dienst zulassen.
 - Nicht mehr auflösbare Profile sichtbar als veraltet kennzeichnen.
+
+Umgesetzt:
+
+- Konfigurationsschema 3 ersetzt reine Netzwerk-ID-Texte durch validierte und auf
+  256 Einträge begrenzte Datensätze aus stabiler ID, Anzeigename, Kategorie und
+  optionalem RFC-3339-Zeitpunkt der letzten Verwendung. Die schrittweise,
+  idempotente Migration übernimmt Schema-2-IDs verlustfrei, entfernt dabei
+  leere Einträge und Duplikate und kennzeichnet mangels früherer Metadaten den
+  migrierten Anzeigenamen und die Kategorie neutral.
+- Jeder Startvorgang nach erfolgreicher Prüfung gleicht den Datensatz der ausgewählten
+  Windows-Netzwerkprofil-ID samt aktuellem Profilnamen und Kategorie ab. Erneute
+  Verwendung aktualisiert denselben Eintrag und verschiebt ihn ans Ende der
+  begrenzten Liste, statt Duplikate anzulegen.
+- „Netzwerk & Sicherheit“ zeigt die Vertrauensliste mit Kategorie und letzter
+  Verwendung. Nur aktuell auflösbare Profile mit exakt passender stabiler ID
+  gelten als verfügbar; alle anderen bleiben sichtbar als „Nicht mehr
+  auflösbar“. Namen und Kategorien werden bidi-isoliert ausgegeben, die interne
+  stabile ID bleibt verborgen.
+- Einzelne Einträge lassen sich direkt vergessen; „Alle Netzwerke vergessen“
+  verlangt eine zusätzliche Bestätigung. Beide Aktionen persistieren sofort nur
+  die Vertrauensliste und bewahren andere ungespeicherte Desktopentwürfe.
+- Die Oberfläche sperrt diese Aktionen während eines Dienstlaufs. Der
+  Tauri-Befehl erzwingt dieselbe Regel hinter einem gemeinsamen
+  Lifecycle-Transition-Lock, sodass sie nicht über IPC umgangen oder mit einem
+  parallelen Start überholt werden kann.
+- Migrations-, Modell- und Oberflächentests prüfen stabile IDs,
+  Metadatenaktualisierung ohne Duplikate, verfügbare und veraltete Profile,
+  gezieltes sowie vollständiges Vergessen, Entwurfserhalt und die Laufzeitsperre.
+  Das vollständige Qualitätsgate ist mit 111 Rust-, 30 Desktop- und 39
+  Mobile-Tests grün.
 
 ### R4.2 Verständliche Geräteidentität
 

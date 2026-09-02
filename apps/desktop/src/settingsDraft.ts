@@ -25,7 +25,13 @@ export function settingsEqual(left: AppSettings | null, right: AppSettings | nul
     && left.maxInboxFiles === right.maxInboxFiles
     && left.idleTimeoutMinutes === right.idleTimeoutMinutes
     && left.trustedNetworks.length === right.trustedNetworks.length
-    && left.trustedNetworks.every((network, index) => network === right.trustedNetworks[index]);
+    && left.trustedNetworks.every((network, index) => {
+      const other = right.trustedNetworks[index];
+      return network.id === other.id
+        && network.name === other.name
+        && network.category === other.category
+        && network.lastUsedAt === other.lastUsedAt;
+    });
 }
 
 export function validateDraft(settings: AppSettings): DraftValidationErrors {

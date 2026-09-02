@@ -1,6 +1,6 @@
 use dmdc_lib::domain::{
     network::NetworkInterfaceInfo,
-    settings::{AppSettings, ShareSettings},
+    settings::{AppSettings, ShareSettings, TrustedNetwork},
     types::{
         AppSnapshot, CommandError, CommandErrorCode, CommandErrorContext, CompleteResponse,
         DirectoryEntry, DirectoryEntryKind, DirectoryResponse, ErrorBody, FirewallStatus,
@@ -22,6 +22,7 @@ fn declaration<T: TS>() -> String {
 fn bindings() -> String {
     let declarations = [
         declaration::<ShareSettings>(),
+        declaration::<TrustedNetwork>(),
         declaration::<AppSettings>(),
         declaration::<NetworkInterfaceInfo>(),
         declaration::<SessionInfo>(),

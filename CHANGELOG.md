@@ -22,9 +22,10 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Partial-Bereinigung laufen in einem eigenen fairen I/O-Pool außerhalb der
   Async-Worker; die periodische Rootprüfung blockiert den Accept-Loop ebenfalls
   nicht mehr.
-- Einstellungen verwenden jetzt ein eigenständiges Schema 2 mit schrittweisen,
+- Einstellungen verwenden jetzt ein eigenständiges Schema 3 mit schrittweisen,
   idempotenten Migrationen; die App-Buildversion ist davon getrennt und wird
-  nicht mehr in `settings.json` gespeichert.
+  nicht mehr in `settings.json` gespeichert. Frühere reine Netzwerk-IDs werden
+  verlustfrei in strukturierte Vertrauensprofile überführt.
 - Die Desktopkonfiguration zeigt einen expliziten Dirty-State und feldbezogene
   Port-, Größen-, Datei- und Freigabefehler. Freigabewurzeln werden bereits im
   Entwurf mit der kanonischen Backend-Pfadpolitik geprüft.
@@ -42,6 +43,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Formatierung, Clippy und Produktions-Webbuilds.
 - Wöchentliche, nicht automatisch zusammengeführte Dependabot-Updates für pnpm,
   Cargo und GitHub Actions mit dokumentierter Reviewstrategie.
+- Verwaltung vertrauenswürdiger Netzwerke in der Desktop-App mit Anzeigename,
+  Kategorie, letzter Verwendung, sichtbaren veralteten Profilen sowie Aktionen
+  zum einzelnen oder vollständigen Vergessen bei gestopptem Dienst.
 
 ### Fixed
 

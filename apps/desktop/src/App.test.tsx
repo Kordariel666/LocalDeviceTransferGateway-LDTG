@@ -18,7 +18,7 @@ const snapshot: AppSnapshot = {
   appVersion: "0.1.3",
   configurationWarning: null,
   settings: {
-    version: 2,
+    version: 3,
     downloadShare: { enabled: false, path: "" },
     uploadShare: { enabled: false, path: "" },
     preferredAdapterId: null,
@@ -74,7 +74,7 @@ beforeEach(() => {
   currentSnapshot = structuredClone(snapshot);
   mocks.listeners.clear();
   mocks.invoke.mockReset();
-  mocks.invoke.mockImplementation(async (command: string, args?: { settings?: unknown }) => {
+  mocks.invoke.mockImplementation(async (command: string, args?: { settings?: unknown; networkId?: string | null }) => {
     if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
     if (command === "get_service_status") return structuredClone(currentSnapshot.service);
     if (command === "clear_transfer_history") {
@@ -85,6 +85,12 @@ beforeEach(() => {
     if (command === "validate_share_settings") return { downloadError: null, uploadError: null, overlapError: null };
     if (command === "save_settings") {
       currentSnapshot.settings = structuredClone(args?.settings) as AppSnapshot["settings"];
+      return structuredClone(currentSnapshot.settings);
+    }
+    if (command === "forget_trusted_network") {
+      currentSnapshot.settings.trustedNetworks = args?.networkId === null
+        ? []
+        : currentSnapshot.settings.trustedNetworks.filter((network) => network.id !== args?.networkId);
       return structuredClone(currentSnapshot.settings);
     }
     return undefined;
@@ -710,5 +716,75 @@ describe("Desktop-Dashboard", () => {
       title: expect.stringContaining("Netzwerkverbindung verloren"),
     }));
     expect(currentSnapshot.settings.idleTimeoutMinutes).toBeNull();
+  });
+
+  it("zeigt verfügbare und veraltete Vertrauensprofile und kann sie gezielt oder vollständig vergessen", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.settings.trustedNetworks = [
+      {
+        id: "heim",
+        name: "Früheres Heimnetz",
+        category: "Öffentlich",
+        lastUsedAt: "2026-09-03T10:00:00Z",
+      },
+      {
+        id: "nicht-mehr-vorhanden",
+        name: "Altes WLAN",
+        category: "Privat",
+        lastUsedAt: null,
+      },
+    ];
+    mocks.ask.mockResolvedValue(true);
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Netzwerk & Sicherheit" }));
+
+    expect(await screen.findByText("Verfügbar")).toBeTruthy();
+    expect(screen.getByText("Altes WLAN")).toBeTruthy();
+    expect(screen.getByText("Nicht mehr auflösbar")).toBeTruthy();
+    expect(screen.getByText("Noch nicht erfasst")).toBeTruthy();
+
+    fireEvent.change(screen.getByRole("spinbutton", { name: /TCP-Port/ }), {
+      target: { value: "9123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Netzwerk „Altes WLAN“ vergessen" }));
+
+    await waitFor(() => expect(screen.queryByText("Altes WLAN")).toBeNull());
+    expect(mocks.invoke).toHaveBeenCalledWith("forget_trusted_network", {
+      networkId: "nicht-mehr-vorhanden",
+    });
+    expect((screen.getByRole("spinbutton", { name: /TCP-Port/ }) as HTMLInputElement).value).toBe("9123");
+
+    fireEvent.click(screen.getByRole("button", { name: "Alle Netzwerke vergessen" }));
+    await waitFor(() => expect(screen.getByText("Noch kein Netzwerk bestätigt")).toBeTruthy());
+    expect(mocks.ask).toHaveBeenCalledWith(expect.stringContaining("wirklich vergessen"), expect.objectContaining({
+      kind: "warning",
+    }));
+    expect(mocks.invoke).toHaveBeenCalledWith("forget_trusted_network", { networkId: null });
+  });
+
+  it("sperrt Änderungen an der Vertrauensliste während des laufenden Dienstes", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.settings.trustedNetworks = [{
+      id: "heim",
+      name: "Heimnetz",
+      category: "Privat",
+      lastUsedAt: "2026-09-03T10:00:00Z",
+    }];
+    currentSnapshot.service = {
+      ...currentSnapshot.service,
+      state: "running",
+      serviceId: "service",
+      url: "http://192.168.1.2:8765/",
+      accessCode: "12345678",
+      startedAt: "2026-09-03T10:00:00Z",
+    };
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Netzwerk & Sicherheit" }));
+
+    expect((screen.getByRole("button", { name: "Alle Netzwerke vergessen" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Netzwerk „Heimnetz“ vergessen" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("Stoppen Sie den Dienst, bevor Sie die Vertrauensliste ändern.")).toBeTruthy();
   });
 });

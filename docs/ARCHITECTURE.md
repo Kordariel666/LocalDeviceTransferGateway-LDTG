@@ -64,12 +64,16 @@ Konfiguration ist nur im Zustand `stopped` änderbar. Start, Stop, Quit, Status-
 `settings.json` verwendet ein von der Appversion unabhängiges Konfigurationsschema.
 Beim Laden wird zunächst nur die Schemaangabe gelesen; versionslose Daten werden
 als Schema 0 und ältere Daten anschließend Schritt für Schritt bis zum aktuellen
-Schema 2 migriert. Erst danach folgen Deserialisierung und semantische Validierung.
+Schema 3 migriert. Erst danach folgen Deserialisierung und semantische Validierung.
 Neuere Schemata, falsche Feldtypen und ungültige Grenzen werden nicht übernommen:
 Die App arbeitet mit sicheren Standardwerten, zeigt eine dauerhafte Warnung und
 lässt die Quelldatei unverändert. Vor einem späteren bewussten Ersetzen entsteht
 eine nummerierte `settings.recovery-N.json`. Speichern ist atomar, normalisiert
-ältere Entwürfe auf Schema 2 und lehnt zukünftige Schemaangaben ab. Die laufende
+ältere Entwürfe auf Schema 3 und lehnt zukünftige Schemaangaben ab. Schema 3
+ersetzt die früheren reinen Netzwerk-IDs durch begrenzte, eindeutig validierte
+Vertrauensdatensätze mit stabiler ID, Anzeigename, Kategorie und letzter
+Verwendung. Nicht mehr auflösbare IDs bleiben sichtbar und können bei gestopptem
+Dienst einzeln oder vollständig entfernt werden. Die laufende
 Buildversion gehört ausschließlich zum App-Snapshot und Diagnosebericht und wird
 nicht in Benutzereinstellungen persistiert.
 

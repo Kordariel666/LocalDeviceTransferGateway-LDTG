@@ -4,7 +4,7 @@ mod service;
 
 use crate::domain::{
     network,
-    settings::{self, AppSettings},
+    settings::{self, AppSettings, TrustedNetwork},
     shares,
     types::{
         AppSnapshot, CommandError, CommandErrorCode, CommandErrorContext, FirewallStatus,
@@ -330,6 +330,39 @@ async fn save_settings(
 }
 
 #[tauri::command]
+async fn forget_trusted_network(
+    state: State<'_, AppState>,
+    network_id: Option<String>,
+) -> Result<AppSettings, CommandError> {
+    let _transition = state.lifecycle_transition.lock().await;
+    let mut runtime = state.runtime.lock().await;
+    if runtime.service.is_some() {
+        return Err(CommandError::new(
+            CommandErrorCode::ServiceAlreadyRunning,
+            "Vertrauenswürdige Netzwerke können nur bei gestopptem Dienst geändert werden.",
+        ));
+    }
+    let mut updated = runtime.settings.clone();
+    match network_id {
+        Some(id) => updated.trusted_networks.retain(|network| network.id != id),
+        None => updated.trusted_networks.clear(),
+    }
+    if updated == runtime.settings {
+        return Ok(updated);
+    }
+    let saved = settings::save(&state.settings_path, &updated).map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::SettingsSaveFailed,
+            "Die Vertrauensliste konnte nicht gespeichert werden.",
+            "trusted network removal",
+            error,
+        )
+    })?;
+    runtime.settings = saved.clone();
+    Ok(saved)
+}
+
+#[tauri::command]
 fn set_unsaved_changes(state: State<'_, AppState>, dirty: bool) {
     state.unsaved_changes.store(dirty, Ordering::Release);
 }
@@ -390,9 +423,11 @@ async fn start_service(
             error,
         )
     })?;
-    let network_was_approved = if settings.trusted_networks.contains(&interface.network_id) {
-        false
-    } else {
+    if !settings
+        .trusted_networks
+        .iter()
+        .any(|network| network.id == interface.network_id)
+    {
         let accepted = network_approval.as_deref().is_some_and(|token| {
             state
                 .network_approval
@@ -423,8 +458,7 @@ async fn start_service(
                 },
             ));
         }
-        true
-    };
+    }
     let share_settings = settings.clone();
     if let Some(path) = shares::broad_share_warning(&share_settings) {
         let accepted = broad_share_approval.as_deref().is_some_and(|token| {
@@ -485,20 +519,22 @@ async fn start_service(
         )
     })?;
     let mut persisted = settings.clone();
-    if network_was_approved && !persisted.trusted_networks.contains(&interface.network_id) {
-        persisted
-            .trusted_networks
-            .push(interface.network_id.clone());
-        persisted = settings::save(&state.settings_path, &persisted).map_err(|error| {
-            internal_command_error(
-                CommandErrorCode::SettingsSaveFailed,
-                "Das bestätigte Netzwerk konnte nicht gespeichert werden.",
-                "trusted network save",
-                error,
-            )
-        })?;
-        state.runtime.lock().await.settings = persisted.clone();
-    }
+    let trusted_network = TrustedNetwork {
+        id: interface.network_id.clone(),
+        name: interface.profile_name.clone(),
+        category: interface.category.clone(),
+        last_used_at: Some(chrono::Utc::now().to_rfc3339()),
+    };
+    persisted.remember_trusted_network(trusted_network);
+    persisted = settings::save(&state.settings_path, &persisted).map_err(|error| {
+        internal_command_error(
+            CommandErrorCode::SettingsSaveFailed,
+            "Das bestätigte Netzwerk konnte nicht gespeichert werden.",
+            "trusted network save",
+            error,
+        )
+    })?;
+    state.runtime.lock().await.settings = persisted.clone();
     let handle = service::start(persisted, interface, roots, Some(app.clone()))
         .await
         .map_err(|error| {
@@ -865,6 +901,7 @@ pub fn run() {
             get_service_status,
             clear_transfer_history,
             save_settings,
+            forget_trusted_network,
             set_unsaved_changes,
             validate_share_settings,
             start_service,

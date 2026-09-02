@@ -298,13 +298,15 @@ type SecurityPageProps = {
   saveAvailable: boolean;
   onUpdate: (patch: Partial<AppSettings>) => void;
   onConfigureFirewall: () => Promise<void>;
+  onForgetTrustedNetwork: (networkId: string | null) => Promise<void>;
   onSave: () => Promise<void>;
 };
 
 export function SecurityPage(props: SecurityPageProps) {
   const {
     running, busy, draft, snapshot, selectedNetwork, draftErrors, persistBlocked,
-    dirty, recoveryPending, saveAvailable, onUpdate, onConfigureFirewall, onSave,
+    dirty, recoveryPending, saveAvailable, onUpdate, onConfigureFirewall,
+    onForgetTrustedNetwork, onSave,
   } = props;
   return (
     <>
@@ -355,6 +357,43 @@ export function SecurityPage(props: SecurityPageProps) {
             <small>{running ? text.restartFieldLocked : text.activeNeverStops}</small>
           </label>
         </div>
+      </section>
+      <section className="trusted-networks-section">
+        <div className="section-title-row trusted-networks-heading">
+          <div>
+            <p className="eyebrow">{text.networkSecurity}</p>
+            <h2>{text.trustedNetworks}</h2>
+            <p>{text.trustedNetworksDescription}</p>
+          </div>
+          <button className="button secondary small" type="button" disabled={running || busy || draft.trustedNetworks.length === 0} onClick={() => void onForgetTrustedNetwork(null)}>{text.forgetAllNetworks}</button>
+        </div>
+        {!draft.trustedNetworks.length ? (
+          <EmptyState title={text.noTrustedNetworks} description={text.noTrustedNetworksDescription} />
+        ) : (
+          <div className="trusted-network-list">
+            {draft.trustedNetworks.map((trusted) => {
+              const current = snapshot.networks.find((network) => (
+                network.profileResolved && network.networkId === trusted.id
+              ));
+              const name = current?.profileName ?? trusted.name;
+              const category = current?.category ?? trusted.category;
+              return (
+                <article className={`trusted-network-row${current ? "" : " stale"}`} key={trusted.id}>
+                  <div className="trusted-network-name">
+                    <strong><bdi className="untrusted-name">{name}</bdi></strong>
+                    <span className={`status-chip${current ? "" : " offline"}`}>{current ? text.networkAvailable : text.networkStale}</span>
+                  </div>
+                  <dl>
+                    <div><dt>{text.networkCategory}</dt><dd><bdi className="untrusted-name">{category}</bdi></dd></div>
+                    <div><dt>{text.networkLastUsed}</dt><dd>{trusted.lastUsedAt ? formatDateTime(trusted.lastUsedAt) : text.networkNeverUsed}</dd></div>
+                  </dl>
+                  <button className="button secondary small" type="button" disabled={running || busy} aria-label={text.forgetNetworkLabel(name)} onClick={() => void onForgetTrustedNetwork(trusted.id)}>{text.forgetNetwork}</button>
+                </article>
+              );
+            })}
+          </div>
+        )}
+        {running && <p className="field-note trusted-networks-lock">{text.trustedNetworksLocked}</p>}
       </section>
       <section className="firewall-section">
         <div>

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::{
+    collections::HashSet,
     fs,
     io::{self, Write},
     path::{Path, PathBuf},
@@ -11,13 +12,23 @@ pub const DEFAULT_PORT: u16 = 8765;
 pub const DEFAULT_MAX_UPLOAD: u64 = 20 * 1024 * 1024 * 1024;
 pub const DEFAULT_MAX_INBOX_BYTES: u64 = 100 * 1024 * 1024 * 1024;
 pub const DEFAULT_MAX_INBOX_FILES: u32 = 10_000;
-pub const CURRENT_SETTINGS_VERSION: u32 = 2;
+pub const CURRENT_SETTINGS_VERSION: u32 = 3;
+const MAX_TRUSTED_NETWORKS: usize = 256;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct ShareSettings {
     pub enabled: bool,
     pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct TrustedNetwork {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub last_used_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
@@ -34,7 +45,7 @@ pub struct AppSettings {
     pub max_inbox_bytes: u64,
     pub max_inbox_files: u32,
     pub idle_timeout_minutes: Option<u32>,
-    pub trusted_networks: Vec<String>,
+    pub trusted_networks: Vec<TrustedNetwork>,
 }
 
 impl Default for AppSettings {
@@ -55,6 +66,15 @@ impl Default for AppSettings {
 }
 
 impl AppSettings {
+    pub fn remember_trusted_network(&mut self, network: TrustedNetwork) {
+        self.trusted_networks
+            .retain(|existing| existing.id != network.id);
+        self.trusted_networks.push(network);
+        if self.trusted_networks.len() > MAX_TRUSTED_NETWORKS {
+            self.trusted_networks.remove(0);
+        }
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if !(1024..=65535).contains(&self.port) {
             return Err("Der Port muss zwischen 1024 und 65535 liegen.".into());
@@ -73,6 +93,31 @@ impl AppSettings {
             .is_some_and(|limit| limit > self.max_inbox_bytes)
         {
             return Err("Das Uploadlimit pro Datei darf das Gesamtlimit des Upload-Eingangs nicht überschreiten.".into());
+        }
+        if self.trusted_networks.len() > MAX_TRUSTED_NETWORKS {
+            return Err("Es sind zu viele vertrauenswürdige Netzwerke gespeichert.".into());
+        }
+        let mut network_ids = HashSet::new();
+        for network in &self.trusted_networks {
+            if network.id.trim().is_empty() || network.id.len() > 1_024 {
+                return Err("Eine gespeicherte Netzwerk-ID ist ungültig.".into());
+            }
+            if !network_ids.insert(network.id.as_str()) {
+                return Err("Eine Netzwerk-ID ist mehrfach gespeichert.".into());
+            }
+            if network.name.trim().is_empty() || network.name.len() > 512 {
+                return Err("Ein gespeicherter Netzwerkname ist ungültig.".into());
+            }
+            if network.category.trim().is_empty() || network.category.len() > 128 {
+                return Err("Eine gespeicherte Netzwerkkategorie ist ungültig.".into());
+            }
+            if network
+                .last_used_at
+                .as_deref()
+                .is_some_and(|value| chrono::DateTime::parse_from_rfc3339(value).is_err())
+            {
+                return Err("Der Zeitpunkt der letzten Netzwerkverwendung ist ungültig.".into());
+            }
         }
         Ok(())
     }
@@ -145,6 +190,34 @@ fn migrate_v1_to_v2(object: &mut Map<String, Value>) {
     object.insert("version".into(), Value::from(2));
 }
 
+fn migrate_v2_to_v3(object: &mut Map<String, Value>) -> Result<(), String> {
+    let legacy = object
+        .remove("trustedNetworks")
+        .unwrap_or_else(|| Value::Array(vec![]));
+    let values = legacy
+        .as_array()
+        .ok_or_else(|| "Das Feld trustedNetworks muss eine Liste sein.".to_string())?;
+    let mut seen = HashSet::new();
+    let mut migrated = Vec::new();
+    for value in values {
+        let id = value.as_str().ok_or_else(|| {
+            "Version 2 erwartet Netzwerk-IDs als Text in trustedNetworks.".to_string()
+        })?;
+        if id.trim().is_empty() || !seen.insert(id) {
+            continue;
+        }
+        migrated.push(serde_json::json!({
+            "id": id,
+            "name": format!("Migriertes Netzwerk {}", migrated.len() + 1),
+            "category": "Unbekannt",
+            "lastUsedAt": null
+        }));
+    }
+    object.insert("trustedNetworks".into(), Value::Array(migrated));
+    object.insert("version".into(), Value::from(3));
+    Ok(())
+}
+
 fn migrate_value(mut value: Value) -> Result<AppSettings, String> {
     let object = value
         .as_object_mut()
@@ -164,6 +237,10 @@ fn migrate_value(mut value: Value) -> Result<AppSettings, String> {
             1 => {
                 migrate_v1_to_v2(object);
                 2
+            }
+            2 => {
+                migrate_v2_to_v3(object)?;
+                3
             }
             _ => {
                 return Err(format!(
@@ -349,6 +426,51 @@ mod tests {
     }
 
     #[test]
+    fn migrates_v2_network_ids_without_losing_stable_identity() {
+        let v2 = serde_json::json!({
+            "version": 2,
+            "trustedNetworks": ["{guid}|192.168.1.0/24", "{guid}|192.168.1.0/24", "{other}|10.0.0.0/24"]
+        });
+
+        let migrated = migrate_value(v2).unwrap();
+        let migrated_again = migrate_value(serde_json::to_value(&migrated).unwrap()).unwrap();
+
+        assert_eq!(migrated, migrated_again);
+        assert_eq!(migrated.version, 3);
+        assert_eq!(migrated.trusted_networks.len(), 2);
+        assert_eq!(migrated.trusted_networks[0].id, "{guid}|192.168.1.0/24");
+        assert_eq!(migrated.trusted_networks[0].name, "Migriertes Netzwerk 1");
+        assert_eq!(migrated.trusted_networks[0].category, "Unbekannt");
+        assert_eq!(migrated.trusted_networks[0].last_used_at, None);
+    }
+
+    #[test]
+    fn remembers_network_metadata_by_stable_id_without_duplicates() {
+        let mut settings = AppSettings::default();
+        settings.remember_trusted_network(TrustedNetwork {
+            id: "stable-network-id".into(),
+            name: "Altes Profil".into(),
+            category: "Öffentlich".into(),
+            last_used_at: Some("2026-09-01T10:00:00Z".into()),
+        });
+        settings.remember_trusted_network(TrustedNetwork {
+            id: "stable-network-id".into(),
+            name: "Heimnetz".into(),
+            category: "Privat".into(),
+            last_used_at: Some("2026-09-03T10:00:00Z".into()),
+        });
+
+        assert_eq!(settings.trusted_networks.len(), 1);
+        assert_eq!(settings.trusted_networks[0].name, "Heimnetz");
+        assert_eq!(settings.trusted_networks[0].category, "Privat");
+        assert_eq!(
+            settings.trusted_networks[0].last_used_at.as_deref(),
+            Some("2026-09-03T10:00:00Z")
+        );
+        assert!(settings.validate().is_ok());
+    }
+
+    #[test]
     fn rejects_future_schema_without_replacing_file() {
         let temp = tempfile::tempdir().unwrap();
         let path = temp.path().join("settings.json");
@@ -357,7 +479,7 @@ mod tests {
 
         let loaded = load(&path);
 
-        assert!(loaded.warning.unwrap().contains("Schema 2"));
+        assert!(loaded.warning.unwrap().contains("Schema 3"));
         assert_eq!(loaded.settings, AppSettings::default());
         assert_eq!(fs::read(path).unwrap(), original);
     }

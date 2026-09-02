@@ -551,6 +551,41 @@ export function App() {
     }
   }
 
+  async function forgetTrustedNetwork(networkId: string | null) {
+    if (running) {
+      setNotice({ kind: "info", text: text.trustedNetworksLocked });
+      return;
+    }
+    if (networkId === null) {
+      const accepted = await ask(text.forgetAllNetworksWarning, {
+        title: text.forgetAllNetworks,
+        kind: "warning",
+        okLabel: text.forgetAll,
+        cancelLabel: text.cancel,
+      });
+      if (!accepted) return;
+    }
+    setBusyAction("command");
+    setNotice(null);
+    try {
+      const saved = await invoke<AppSettings>("forget_trusted_network", { networkId });
+      setSnapshot((current) => current ? { ...current, settings: saved } : current);
+      setDraft((current) => current ? {
+        ...current,
+        version: saved.version,
+        trustedNetworks: saved.trustedNetworks,
+      } : saved);
+      setNotice({
+        kind: "info",
+        text: networkId === null ? text.allNetworksForgotten : text.networkForgotten,
+      });
+    } catch (error) {
+      setNotice({ kind: "error", text: errorMessage(error) });
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   async function exportDiagnostics() {
     const destination = await save({
       title: text.diagnosticTitle,
@@ -719,6 +754,7 @@ export function App() {
               saveAvailable={saveAvailable}
               onUpdate={updateDraft}
               onConfigureFirewall={configureFirewall}
+              onForgetTrustedNetwork={forgetTrustedNetwork}
               onSave={saveCurrentSettings}
             />
           )}
