@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "auditedSourceRevision": "8d15035c68ab4f66912e4e1795e6e8e2944513ac",
   "p2BaseRevision": "950e4301a61bbef79d4ecca3ed81b646baa356ca",
-  "status": "p6_in_progress",
-  "scope": "P0 through P5 passed; P6 candidate 0.3.0-rc.2 is prepared and awaits its clean-commit dry run plus final manual core acceptance",
+  "status": "p6_passed",
+  "scope": "P0 through P6 passed for the unpublished, unsigned 0.3.0-rc.2 candidate; the separate publication decision is next",
   "constraints": {
     "recurringCostEur": 0,
     "licenseActivated": true,
@@ -12,6 +12,9 @@
     "licenseDecidedOn": "2026-09-04",
     "publicCopyrightIdentity": "Kordariel666",
     "contributionMode": "issues-only",
+    "betaCandidateVersion": "0.3.0-rc.2",
+    "betaCandidateSourceRevision": "a70c1612f2c673b0be7cede2676b851ae134eccd",
+    "betaCandidateInstallerSha256": "1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc",
     "published": false,
     "signPathStarted": false,
     "r5_2Paused": true,
@@ -19,6 +22,19 @@
   },
   "blockers": [],
   "resolved": [
+    {
+      "id": "PB-10",
+      "resolution": "built the complete unsigned 0.3.0-rc.2 candidate from a clean commit, verified its evidence bundle and completed the owner-operated Defender, upgrade-install, visible-version, settings-preservation, service and mobile-connection acceptance",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-04",
+      "evidence": [
+        "qa/public-beta/p6-release-candidate.md",
+        "source revision a70c1612f2c673b0be7cede2676b851ae134eccd",
+        "installer sha256 1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc",
+        "owner confirmation and Windows Installed Apps screenshot on 2026-09-04"
+      ],
+      "residualRisk": "The candidate is unsigned and has no public-download SmartScreen reputation; the explicitly accepted P4 platform, stress and accessibility evidence gaps remain disclosed in the release notes."
+    },
     {
       "id": "PB-09",
       "resolution": "replaced the invalid ExecShellWait exit-code comparison with an elevated cleanup plus separate ExecWait postcondition check, reinstalled the corrected artifact and completed uninstall without an error",

@@ -758,7 +758,7 @@ Status: erfüllt am 3. September 2026 für R5.1.
 
 ## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
 
-Status: gestartet am 3. September 2026; P0 bis P5 abgeschlossen, P6 in Arbeit.
+Status: gestartet am 3. September 2026; P0 bis P6 abgeschlossen.
 P4 wurde nach
 Owner-Freigabe `PB-06` begonnen. Der Owner hat mit `PB-04` den engen Support-
 und Wartungsrahmen für den Fall einer später freigegebenen Beta akzeptiert und
@@ -783,11 +783,11 @@ sichtbare Beta-Grenzen; unterstützt behauptet wird nur die tatsächlich geprüf
 Android-16-/Firefox-Kombination. P4 ist damit bestanden. Die P5-Lizenz-,
 Beitrags- und SignPath-Unterlagen sind abgeschlossen. Der Owner hat
 `Apache-2.0`, `Kordariel666` als vorläufiges öffentliches Copyright-Pseudonym
-und zunächst ausschließlich Issues ohne Pull Requests bestätigt. Für P6 ist
-`0.3.0-rc.2` als unveröffentlichter Kandidat mit sichtbarer Laufzeitversion,
-Release-Notes und vollständigen Drittanbieterhinweisen vorbereitet. Clean-
-Commit-Dry-Run und manuelle Kernabnahme stehen noch aus. Es gibt weiterhin
-keine Veröffentlichungsfreigabe.
+und zunächst ausschließlich Issues ohne Pull Requests bestätigt. Der
+unveröffentlichte Kandidat `0.3.0-rc.2` bestand anschließend den
+Clean-Commit-Dry-Run sowie die manuelle Defender-, Installations-, sichtbare
+Versions-, Einstellungserhalt-, Dienst- und Handyverbindungsabnahme. P6 ist
+damit abgeschlossen. Es gibt weiterhin keine Veröffentlichungsfreigabe.
 
 Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
 nicht auf Verdacht weitere Funktionen entstehen. Der detaillierte

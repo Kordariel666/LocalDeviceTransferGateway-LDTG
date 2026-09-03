@@ -1,8 +1,8 @@
 # P6 – Unveröffentlichter Beta-Releasekandidat
 
 Stand: 4. September 2026
-Status: **in Vorbereitung; automatischer Build und finale manuelle Kernabnahme
-von `0.3.0-rc.2` stehen noch aus**
+Status: **P6 bestanden; `0.3.0-rc.2` lokal gebaut und manuell abgenommen, aber
+nicht veröffentlicht, getaggt oder signiert**
 
 ## Festgelegter Kandidat
 
@@ -10,8 +10,12 @@ von `0.3.0-rc.2` stehen noch aus**
 |---|---|
 | Produkt | LDTG – Local Device Transfer Gateway |
 | Version | `0.3.0-rc.2` |
+| Quellcommit des Installers | `a70c1612f2c673b0be7cede2676b851ae134eccd` |
 | vorgesehener Tag | `v0.3.0-rc.2` – nicht angelegt |
-| Windows-Artefakt | `LDTG_0.3.0-rc.2_x64-setup.exe` – noch zu erzeugen |
+| Windows-Artefakt | `LDTG_0.3.0-rc.2_x64-setup.exe`, 3.709.565 Bytes |
+| Installer SHA-256 | `1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc` |
+| SBOM SHA-256 | `6ec63ac9513d4edac66ea77a7e42e967b88217f38b03e495088f16b64942f598` |
+| Buildmanifest SHA-256 | `308d9079add45fba9807cab124bfaeaa8c552738d6b7be926e96088994a1a2f8` |
 | Signatur | keine; unsigniert muss sichtbar kommuniziert werden |
 | Projektlizenz | `Apache-2.0` |
 | Copyright-Pseudonym | `Kordariel666` |
@@ -40,17 +44,41 @@ diese commitgebundenen Ausgabedateien sind deshalb die maßgebliche P6-Evidenz.
 - Veröffentlichungsentwurf: `docs/RELEASE_NOTES_0.3.0-rc.2.md`; kein Befehl im
   Dry-Run kann pushen, taggen, signieren oder einen Release anlegen.
 
-## Verbleibende P6-Schritte
+## Build- und Prüfergebnis
 
-1. Alle generierten Verträge, Notices, Tests, Lints und Rust-Gates bestehen.
-2. Der vorbereitete Stand wird lokal committed; es wird nichts gepusht.
-3. Der private Releasepfad erzeugt aus exakt diesem sauberen Commit den
-   unsignierten Installer und die Nachweisdateien.
-4. Der Owner prüft genau diesen Installer mit Microsoft Defender, installiert
-   ihn und bestätigt sichtbar `0.3.0-rc.2`, Einstellungserhalt, Dienststart,
-   Handyzugriff und Dienststopp.
-5. Erst danach wird P6 als bestanden markiert und die getrennte
-   Veröffentlichungsentscheidung vorbereitet.
+Der lokale Clean-Commit-Dry-Run vom 4. September 2026 bestand von Commit
+`a70c1612f2c673b0be7cede2676b851ae134eccd`:
+
+- 36 Desktop-, 39 Mobile- und 122 Rusttests sowie Typecheck, ESLint, Coverage,
+  Webbuild, Vertragsprüfung, `rustfmt` und Clippy waren grün;
+- genau ein frischer x64-NSIS-Installer wurde erzeugt;
+- `Get-AuthenticodeSignature` meldete erwartungsgemäß `NotSigned`;
+- alle sieben Einträge in `SHA256SUMS.txt` wurden erneut gegen die erzeugten
+  Dateien geprüft;
+- SBOM, Buildlog, Projektlizenz, Project-Notice und die Notices für 344
+  ausgelieferte Laufzeitkomponenten liegen als getrennte gehashte Dateien vor;
+- der Build hinterließ den eingecheckten Quellbaum unverändert;
+- auf dem Quellcommit liegt kein Tag.
+
+## Manuelle Kernabnahme
+
+Der Owner bestätigte am 4. September 2026 für genau diesen Installer:
+
+- Microsoft Defender meldete bei der gezielten Prüfung keinen Fund;
+- Installation über den vorhandenen Stand und anschließender Programmstart
+  funktionierten;
+- die Desktop-Seitenleiste zeigte die tatsächliche Version `0.3.0-rc.2`;
+- Windows „Installierte Apps“ zeigte `LDTG`, Version `0.3.0-rc.2`, Publisher
+  `Kordariel666`;
+- Freigabeordner, bestätigtes Netzwerk, Port 8876 und weitere Einstellungen
+  blieben erhalten;
+- Dienststart, Verbindung vom Handy und abschließender Dienststopp
+  funktionierten ohne Defender-Meldung.
+
+Die anschließende lesende Kontrolle bestätigte beide installierten EXE-Dateien
+mit Produktversion `0.3.0-rc.2`, genau eine aktivierte eingehende LDTG-Regel für
+TCP 8876, Programmpfad und `LocalSubnet`, erhaltene lokale Datenverzeichnisse
+und keinen Listener auf 8765 oder 8876 nach dem Stopp.
 
 ## Bereits akzeptierte Restrisiken
 
@@ -75,3 +103,5 @@ Repositorysichtbarkeit, GitHub Release, Private Vulnerability Reporting und ein
 späterer SignPath-Antrag sind externe Zustandsänderungen und erfordern jeweils
 die in `docs/PUBLIC_BETA_PLAN.md` vorgesehene ausdrückliche Entscheidung. Bis
 dahin gilt weder ein öffentliches Supportversprechen noch eine Signaturzusage.
+Die noch offene Entscheidung ist in
+[`docs/PUBLICATION_DECISION.md`](../../docs/PUBLICATION_DECISION.md) vorbereitet.

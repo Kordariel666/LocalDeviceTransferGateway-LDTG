@@ -71,6 +71,15 @@ Fehlerberichte und Funktionsvorschläge über Issues an; Pull Requests sind
 zunächst nicht geöffnet. Vertrauliche Sicherheitsmeldungen dürfen nicht in ein
 öffentliches Issue geschrieben werden.
 
-Diese Datei ist nur ein Entwurf. Downloadlink, Quellcommit, Installer-Hash und
-SBOM-Hash werden erst durch einen bestandenen privaten P6-Dry-Run festgelegt.
-Eine Veröffentlichung erfordert danach eine eigene ausdrückliche Freigabe.
+## Kandidatennachweis
+
+- Quellcommit: `a70c1612f2c673b0be7cede2676b851ae134eccd`
+- Installer SHA-256:
+  `1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc`
+- SBOM SHA-256:
+  `6ec63ac9513d4edac66ea77a7e42e967b88217f38b03e495088f16b64942f598`
+- Authenticode: `NotSigned`
+
+Diese Datei bleibt bis zu einer gesonderten Veröffentlichungsentscheidung ein
+Entwurf. Ein Downloadlink wird erst bei einer tatsächlich freigegebenen
+Veröffentlichung ergänzt.

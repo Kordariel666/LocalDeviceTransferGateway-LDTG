@@ -497,12 +497,13 @@ veröffentlicht.
   lizenzrechtliches Arbeitspaket mehr.
 - Alle verbleibenden Risiken sind sichtbar und einzeln akzeptierbar.
 
-Zwischenstand vom 4. September 2026: `0.3.0-rc.2` ist als unveröffentlichter
-Kandidat festgelegt. Die tatsächliche Backendversion wird dauerhaft in der
-Desktop-Seitenleiste angezeigt. Vollständige Laufzeit-Notices, Release-Notes
-und die [P6-Entscheidungsmappe](../qa/public-beta/p6-release-candidate.md) sind
-vorbereitet. P6 bleibt bis zum Clean-Commit-Dry-Run und der manuellen
-Defender-/Installations-/Kernfunktionsabnahme offen.
+Ergebnis vom 4. September 2026: `0.3.0-rc.2` wurde vom sauberen Commit
+`a70c1612f2c673b0be7cede2676b851ae134eccd` lokal gebaut. Qualitätsgate,
+Artefakt- und Prüfsummenprüfung sowie die manuelle Defender-, Installations-,
+Versions-, Einstellungserhalt-, Dienst- und Handyverbindungsabnahme bestanden.
+Die vollständige [P6-Entscheidungsmappe](../qa/public-beta/p6-release-candidate.md)
+enthält Hashes und Restrisiken. P6 ist bestanden; veröffentlicht, getaggt oder
+signiert wurde nichts.
 
 ## 13. PG – Veröffentlichungsentscheidung
 

@@ -131,6 +131,7 @@ Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals
 - [P5-Lizenz-, Beitrags- und SignPath-Entscheidungsmappe](qa/public-beta/p5-license-contribution-signpath.md)
 - [P6-Unveröffentlichter Releasekandidat](qa/public-beta/p6-release-candidate.md)
 - [Release-Notes für 0.3.0-rc.2](docs/RELEASE_NOTES_0.3.0-rc.2.md)
+- [Offene Veröffentlichungsentscheidung](docs/PUBLICATION_DECISION.md)
 - [Beitragsrichtlinie](CONTRIBUTING.md)
 - [Verhaltensregeln](CODE_OF_CONDUCT.md)
 - [Abnahmeplan](docs/TESTPLAN.md)
