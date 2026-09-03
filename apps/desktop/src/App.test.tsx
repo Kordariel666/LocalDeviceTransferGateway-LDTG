@@ -830,6 +830,23 @@ describe("Desktop-Dashboard", () => {
     expect(mocks.invoke).toHaveBeenCalledWith("forget_trusted_network", { networkId: null });
   });
 
+  it("markiert eine geänderte Netzwerkkategorie als erneut bestätigungspflichtig", async () => {
+    currentSnapshot = structuredClone(snapshot);
+    currentSnapshot.settings.trustedNetworks = [{
+      id: "heim",
+      name: "Heimnetz",
+      category: "Privat",
+      lastUsedAt: "2026-09-03T10:00:00Z",
+    }];
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Netzwerk & Sicherheit" }));
+
+    expect(await screen.findByText("Kategorie geändert – neue Bestätigung nötig")).toBeTruthy();
+    expect(screen.queryByText("Verfügbar")).toBeNull();
+    expect(screen.getByText("Öffentlich")).toBeTruthy();
+  });
+
   it("sperrt Änderungen an der Vertrauensliste während des laufenden Dienstes", async () => {
     currentSnapshot = structuredClone(snapshot);
     currentSnapshot.settings.trustedNetworks = [{

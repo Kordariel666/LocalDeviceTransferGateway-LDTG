@@ -80,6 +80,7 @@ pub(super) struct AuthRequest {
 pub(super) async fn auth(
     State(state): State<Arc<TransferServiceState>>,
     ConnectInfo(client): ConnectInfo<SocketAddr>,
+    security: Option<Extension<Arc<ConnectionSecurity>>>,
     headers: HeaderMap,
     payload: Result<Json<AuthRequest>, JsonRejection>,
 ) -> ApiResult<Response> {
@@ -91,7 +92,10 @@ pub(super) async fn auth(
         )
     })?;
     let address = client.ip();
-    match state.verify_access_code(address, &payload.code) {
+    let peer_key = security
+        .map(|Extension(security)| security.peer_key().to_owned())
+        .unwrap_or_else(|| format!("ip:{address}"));
+    match state.verify_access_code_for_peer(&peer_key, &payload.code) {
         AuthDecision::Accepted => {}
         AuthDecision::Invalid => {
             return Err(ApiFailure::new(

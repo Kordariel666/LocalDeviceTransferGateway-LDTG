@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "auditedSourceRevision": "8d15035c68ab4f66912e4e1795e6e8e2944513ac",
-  "status": "passed",
-  "scope": "P1 repository, provenance and dependency-license audit only",
+  "p2BaseRevision": "950e4301a61bbef79d4ecca3ed81b646baa356ca",
+  "status": "p3_dry_run_authorized",
+  "scope": "public-beta decision program through passed P2; P3 clean-commit dry run authorized",
   "constraints": {
     "recurringCostEur": 0,
     "licenseActivated": false,
@@ -51,6 +52,34 @@
         "owner confirmation on 2026-09-03"
       ],
       "residualRisk": "The attestation is owner-supplied and is not independent legal verification."
+    },
+    {
+      "id": "PB-04",
+      "resolution": "accepted Windows 11 25H2 plus only P4-tested current mobile combinations, newest beta only, no SLA, monthly best-effort dependency/security review, and an explicit archival path",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "SUPPORT.md",
+        "docs/PRIVACY.md",
+        "docs/THREAT_MODEL.md",
+        "qa/public-beta/p2-security-privacy-support.md",
+        "owner confirmation on 2026-09-03"
+      ],
+      "residualRisk": "The exact current mobile combinations still require the real P4 matrix. This policy becomes effective only after a later GO and public beta; GitHub Private Vulnerability Reporting remains intentionally inactive while the repository is private."
+    },
+    {
+      "id": "PB-05",
+      "resolution": "authorized exactly one local commit containing the reviewed P2 and P3 changes, followed by the no-cost local clean-commit private dry run",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "docs/PRIVATE_RELEASE.md",
+        "qa/public-beta/p3-release-pipeline.md",
+        "scripts/private-release.ps1",
+        "scripts/release-metadata.mjs",
+        "owner confirmation on 2026-09-03"
+      ],
+      "residualRisk": "Authorization alone does not pass P3; the clean-commit dry run must still produce and validate the private installer, checksums, SBOM, build log and manifest."
     }
   ],
   "dependencyLicenseBlockers": []

@@ -40,7 +40,7 @@ Der aktuelle Stand besitzt:
 - keine Cloud, kein Konto, keinen öffentlichen Dienst und keine Telemetrie;
 - noch keine Projektlizenz, vollständigen Drittanbieterhinweise,
   Codesignierung oder öffentliche Releasepipeline;
-- noch keine vollständige reale Abnahmematrix auf Windows 10/11 sowie aktuellem
+- noch keine vollständige reale Abnahmematrix auf Windows 11 25H2 sowie aktuellem
   iOS/Safari und Android/Chrome.
 
 LDTG wird für dieses Programm nicht als fertiges kommerzielles Produkt
@@ -96,8 +96,8 @@ Abhängigkeitsprüfung und Beiträge und würde die SignPath-Eignung gefährden.
 |---|---|---|---|---|---|
 | P0 | abgeschlossen | Umfang einfrieren und Entscheidungsregeln festhalten | Phase 5.1 | S | Plan ist verbindlich und verlinkt |
 | P1 | abgeschlossen | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | technische Prüfung und Owner-Bestätigung vollständig |
-| P2 | offen | Sicherheits-, Datenschutz- und Supportversprechen schärfen | P1 | M | öffentliche Aussagen entsprechen dem Code |
-| P3 | offen | Releasepipeline und Herkunftsnachweise härten | P1 | M–L | lokaler/privater Release-Dry-Run reproduzierbar |
+| P2 | abgeschlossen | Sicherheits-, Datenschutz- und Supportversprechen schärfen | P1 | M | öffentliche Aussagen entsprechen dem Code; Owner akzeptiert Wartungsgrenze |
+| P3 | technisch vorbereitet; Dry-Run autorisiert | Releasepipeline und Herkunftsnachweise härten | P1 | M–L | lokaler/privater Release-Dry-Run reproduzierbar |
 | P4 | offen | Reale Installations- und Geräteabnahme durchführen | P2–P3 | L | Abnahmematrix und priorisierte Befunde vollständig |
 | P5 | offen | Open-Source- und SignPath-Unterlagen als Entwurf vorbereiten | P1–P4 | M | beide Lizenzpfade entscheidungsreif |
 | P6 | offen | Veröffentlichung vollständig trocken durchspielen | P3–P5 | M | unveröffentlichte Beta-Mappe ist vollständig |
@@ -208,6 +208,11 @@ QA-Testdaten bestätigt.
 
 ## 8. P2 – Sicherheits-, Datenschutz- und Supportgrenzen
 
+Status: am 3. September 2026 abgeschlossen. Der Owner hat den engen Support-
+und Wartungsrahmen mit `PB-04` akzeptiert. Er wird erst durch ein späteres `GO`
+für eine öffentliche Beta wirksam. Es erfolgten keine Veröffentlichung,
+Lizenzaktivierung, Anmeldung oder kostenpflichtige Maßnahme.
+
 ### 8.1 Sicherheitswahrheit
 
 - README, `SECURITY.md`, Threat Model und tatsächlichen Code erneut abgleichen.
@@ -239,6 +244,18 @@ QA-Testdaten bestätigt.
   „nicht mehr gepflegt“-Hinweis, Archivierung und keine Darstellung alter
   Binärdateien als weiterhin sicher unterstützte Version.
 
+### Ergebnisse
+
+- [P2-Sicherheits-, Datenschutz- und Supportnachweis](../qa/public-beta/p2-security-privacy-support.md)
+- [aktualisiertes Bedrohungsmodell](THREAT_MODEL.md) und
+  [Sicherheitsrichtlinie](../SECURITY.md)
+- [Dateninventar und Löschwege](PRIVACY.md)
+- [akzeptierter Beta-Supportrahmen](../SUPPORT.md)
+- drei bestätigte Findings niedriger Schwere behoben: Netzwerkvertrauen bindet
+  ID und Kategorie; Uninstall entfernt aktuelle und historische Firewallregel
+  fail-closed; Auth-Fehlversuche verwenden denselben physischen Peer-Schlüssel
+  wie die Verbindungsgrenze
+
 ### Gate P2
 
 - Öffentliche Aussagen sind enger oder gleich eng wie die nachgewiesene
@@ -246,7 +263,22 @@ QA-Testdaten bestätigt.
 - Datenschutz- und Supportumfang erzeugen keine unbeabsichtigte Dauerzusage.
 - Kritische Sicherheitsmeldungen könnten vertraulich entgegengenommen werden.
 
+Gatebewertung vom 3. September 2026: **bestanden**. Code, Tests,
+Datenschutzinventar und Kanalentwurf sind vorbereitet. Der Owner hat mit
+`PB-04` den engen Rahmen „neueste Beta, Windows 11 25H2, nur in P4 bestandene
+aktuelle Mobilkombinationen, kein SLA, monatliche Best-effort-Sicherheitsprüfung,
+geordnete Archivierung“ akzeptiert. GitHub Private Vulnerability Reporting wird
+erst nach einem späteren `GO` und unmittelbar vor Sichtbarkeitswechsel aktiviert
+und getestet; solange das Repository privat ist, existiert bewusst kein externer
+Meldekanal.
+
 ## 9. P3 – Releasepipeline und Herkunftsnachweis
+
+Status: technisch vorbereitet am 3. September 2026. Der Owner hat mit `PB-05`
+genau einen lokalen Commit und den anschließenden kostenfreien
+Clean-Commit-Dry-Run autorisiert. Das Gate bleibt bis zu dessen erfolgreichem
+Nachweis offen. Es erfolgten keine Veröffentlichung, Signierung oder
+kostenpflichtige Maßnahme.
 
 ### 9.1 Privater CI-Releasepfad
 
@@ -282,13 +314,26 @@ QA-Testdaten bestätigt.
 - Für den Dry-Run werden keine dauerhaften Zugangsdaten oder bezahlten Dienste
   benötigt.
 
+Gatebewertung vom 3. September 2026: **noch nicht bestanden**. Versions-,
+Toolchain-, Lockfile-, Audit-, Berechtigungs- und Clean-Tree-Gates sind
+implementiert und ihre Vorprüfungen bestanden. Der kanonische Gesamtlauf setzt
+absichtlich einen sauberen Commit voraus. Der Owner hat diesen einen lokalen
+Commit und den anschließenden Dry-Run mit `PB-05` autorisiert; bis zu dessen
+Erfolg werden Installer, Prüfsummen, SBOM und Buildmanifest noch nicht als
+P3-Abnahme behauptet. Details
+stehen im [privaten Releasepfad](PRIVATE_RELEASE.md) und im
+[P3-Nachweis](../qa/public-beta/p3-release-pipeline.md).
+
 ## 10. P4 – Reale Abnahme
 
 ### 10.1 Windows
 
-- Windows 10 und Windows 11 jeweils mit Installation, abgebrochener UAC-Abfrage,
+- Windows 11 25H2 mit Installation, abgebrochener UAC-Abfrage,
   Start, Upgrade, Portwechsel, Firewallregel, Dienststopp und Deinstallation
   prüfen.
+- Windows 10 und ältere Windows-11-Stände dürfen optional als reine
+  Kompatibilitätsbeobachtung erfasst werden, erweitern den Supportumfang aber
+  nicht.
 - Sentinel-Dateien nach Deinstallation erhalten und Firewallregel entfernt
   nachweisen.
 - Verhalten eines unsignierten Downloads einschließlich SmartScreen-Hinweis

@@ -260,6 +260,17 @@ pub fn same_network_identity(
         && current.category == expected.category
 }
 
+pub fn trusted_network_matches(
+    approved_id: &str,
+    approved_category: &str,
+    current: &NetworkInterfaceInfo,
+) -> bool {
+    current.profile_resolved
+        && approved_category != "Unbekannt"
+        && approved_id == current.network_id
+        && approved_category == current.category
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -301,6 +312,43 @@ mod tests {
 
         assert!(!same_network_identity(&expected, &changed));
         assert!(same_network_identity(&expected, &expected));
+    }
+
+    #[test]
+    fn persisted_trust_requires_the_approved_known_category() {
+        let current = NetworkInterfaceInfo {
+            id: "lan|192.168.1.20".into(),
+            name: "lan".into(),
+            profile_name: "Heimnetz".into(),
+            address: Ipv4Addr::new(192, 168, 1, 20),
+            prefix_length: 24,
+            network_id: "{guid}|192.168.1.0/24".into(),
+            category: "Privat".into(),
+            profile_resolved: true,
+            preferred: true,
+            netmask: Ipv4Addr::new(255, 255, 255, 0),
+        };
+
+        assert!(trusted_network_matches(
+            &current.network_id,
+            "Privat",
+            &current
+        ));
+        assert!(!trusted_network_matches(
+            &current.network_id,
+            "Öffentlich",
+            &current
+        ));
+        assert!(!trusted_network_matches(
+            &current.network_id,
+            "Unbekannt",
+            &current
+        ));
+        assert!(!trusted_network_matches(
+            "{other}|192.168.1.0/24",
+            "Privat",
+            &current
+        ));
     }
 
     #[cfg(windows)]

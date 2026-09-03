@@ -16,6 +16,23 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 - Das neue Wortzeichen zeigt die Übertragung einer Datei vom `D` zum `G`; ein
   kompaktes quadratisches Zeichen wird für App, Installer und Mobilansicht
   verwendet.
+- Netzwerkvertrauen bindet gespeicherte ID und Kategorie, die Authgrenze bündelt
+  Alias-IP-Adressen desselben physischen Peers, Diagnoseexporte vermeiden
+  sensitive Netzwerkkennungen und der Uninstaller entfernt aktuelle wie
+  historische Firewallregeln fail-closed.
+- Der für eine mögliche öffentliche Beta akzeptierte Supportumfang bleibt bis
+  zu einem späteren `GO` unwirksam und ist auf die neueste Beta, Windows 11 25H2
+  sowie real in P4 bestandene aktuelle Mobilkombinationen begrenzt.
+
+### Added
+
+- Exakt fixierte Node-, pnpm- und Rust-Toolchains sowie unveränderliche
+  GitHub-Action-Revisionen.
+- Eine fail-closed private Releasepipeline mit Versions-, Lockfile-, Audit- und
+  Clean-Commit-Gates, commitgebundener CycloneDX-SBOM, Buildmanifest,
+  Buildprotokoll und SHA-256-Prüfsummen.
+- Dokumentierte Reproduzierbarkeitsgrenzen und ein unverbindlicher,
+  SignPath-kompatibel getrennter Codesignierungsentwurf.
 
 ## [0.3.0-rc.1] - 2026-09-03
 

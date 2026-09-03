@@ -122,7 +122,7 @@ pub struct AttemptRecord {
 
 #[derive(Debug)]
 pub struct AuthAttemptState {
-    pub attempts: HashMap<IpAddr, AttemptRecord>,
+    pub attempts: HashMap<String, AttemptRecord>,
     pub global_failures: u16,
     pub global_window_started: Instant,
     pub global_blocked_until: Option<Instant>,

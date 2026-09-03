@@ -8,7 +8,7 @@
 
 LDTG v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gibt keine Cloud, kein Konto, keine öffentliche Webseite, keine Portweiterleitung und keine externen Web-Ressourcen. HTTP ist jedoch keine Ende-zu-Ende-Verschlüsselung: Andere Teilnehmer oder Administratoren des lokalen Netzes könnten Verkehr grundsätzlich mitlesen oder manipulieren. LDTG darf deshalb nur in einem bewusst bestätigten Netzwerk eingesetzt werden.
 
-- Der achtstellige Code steht nie in URL oder QR-Code. Verteilte Fehlversuche besitzen zusätzlich einen dienstweiten Grenzwert. Eine aktive Abkühlphase wird vor dem Codevergleich geprüft und rotiert den Code nicht, damit fremde Geräte weder einen Codewechsel erzwingen noch den gültigen Code als Prüf-Orakel verwenden können.
+- Der achtstellige Code steht nie in URL oder QR-Code. Fehlversuche werden unter Windows nach Möglichkeit pro physischem LAN-Peer statt nur pro IP-Alias begrenzt; ohne auflösbare Nachbartabelle gilt die IP als konservativer Ersatz. Zusätzlich schützt ein dienstweiter Grenzwert gegen verteilte Versuche. Eine aktive Abkühlphase wird vor dem Codevergleich geprüft und rotiert den Code nicht, damit fremde Geräte weder einen Codewechsel erzwingen noch den gültigen Code als Prüf-Orakel verwenden können.
 - Der Code bleibt innerhalb eines Dienstlaufs absichtlich für mehrere legitime Geräte verwendbar, bis er lokal rotiert wird. Eine Rotation widerruft bestehende Sitzungen nicht; dafür stehen getrennte Geräte- und Gesamtwiderrufe bereit. Die aktive Download-/Uploadrolle gilt derzeit dienstweit und kann nicht vom Mobilgerät als eigene Berechtigung gewählt werden.
 - Sitzungen sind an Dienstinstanz und Client-IP gebunden, laufen nach 6 Stunden 15 Minuten Inaktivität beziehungsweise nach 24 Stunden absolut ab und enden spätestens beim Dienststopp. Ein optionaler Gerätename lebt nur in dieser Sitzung; der rohe User-Agent wird lokal in eine verständliche Browser-/Plattformbezeichnung übersetzt und danach nicht an die Desktopoberfläche weitergegeben.
 - Die Downloadfreigabe ist ausschließlich lesbar.
@@ -24,16 +24,21 @@ LDTG v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gi
 
 Weitere Details stehen in [SECURITY.md](SECURITY.md),
 [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) und
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Die R4.3-Entscheidung gegen eine
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Die lokale Datenverarbeitung und
+Löschung beschreibt [docs/PRIVACY.md](docs/PRIVACY.md); der für eine mögliche
+Beta akzeptierte, erst nach einem späteren `GO` wirksame Supportrahmen steht in
+[SUPPORT.md](SUPPORT.md). Die
+R4.3-Entscheidung gegen eine
 wirkungslos clientseitig gewählte Rolle ist in
 [docs/PAIRING_DESIGN.md](docs/PAIRING_DESIGN.md) begründet.
 
 ## Entwicklung
 
-Voraussetzungen unter Windows 10/11:
+Voraussetzungen für Entwicklung und den vorgesehenen Beta-Support unter Windows
+11 25H2:
 
-- Node.js LTS und pnpm
-- Rust stable mit MSVC-Ziel
+- Node.js 24.19.0 LTS und pnpm 11.19.0
+- Rust 1.98.0 mit MSVC-Ziel, rustfmt und Clippy
 - Visual Studio 2022 Build Tools mit „Desktopentwicklung mit C++“
 - WebView2 Runtime
 
@@ -63,7 +68,13 @@ noch ungefiltert in der Oberfläche angezeigt.
 
 Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und öffentliche Veröffentlichung sind nicht Bestandteil von v1.
 
-Der Uninstaller entfernt die Firewallregel, bewahrt aber Konfiguration, Logs und mögliche Nutzdaten in den LDTG-AppData-Verzeichnissen. Er löscht diese Verzeichnisse nicht rekursiv.
+Der Uninstaller entfernt nach einer UAC-Bestätigung die aktuelle Firewallregel
+`LDTG Local Transfer` und den historischen Namen `DMDC Local Transfer`. Er prüft
+die Entfernung und bricht die Deinstallation bei Abbruch oder Fehler mit einer
+sichtbaren Retry-/Cancel-Entscheidung ab. Konfiguration, bis zu 14 gerollte
+Logdateien und mögliche Nutzdaten in den LDTG-AppData- beziehungsweise
+Freigabeverzeichnissen bleiben erhalten; der Uninstaller löscht sie nicht
+rekursiv.
 
 Die Konfiguration besitzt ein eigenes versioniertes Schema. Ältere
 `settings.json`-Dateien werden beim Laden schrittweise migriert; zukünftige,
@@ -110,6 +121,12 @@ Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals
 - [Aktuelle HTTP-API](docs/API.md)
 - [Aktuelle Architektur](docs/ARCHITECTURE.md)
 - [Sicherheitsrichtlinie](SECURITY.md)
+- [Datenschutz und lokale Daten](docs/PRIVACY.md)
+- [Akzeptierter Beta-Supportrahmen](SUPPORT.md)
+- [P2-Sicherheits-, Datenschutz- und Supportnachweis](qa/public-beta/p2-security-privacy-support.md)
+- [Privater Release-Dry-Run](docs/PRIVATE_RELEASE.md)
+- [Codesignierungsentwurf](CODE_SIGNING.md)
+- [P3-Releasepipeline-Nachweis](qa/public-beta/p3-release-pipeline.md)
 - [Abnahmeplan](docs/TESTPLAN.md)
 - [Geprüfter Git-Ausgangsstand](docs/BASELINE_2026-09-02.md)
 - [Abhängigkeitsstrategie](docs/DEPENDENCIES.md)

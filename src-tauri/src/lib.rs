@@ -437,7 +437,7 @@ async fn start_service(
     if !settings
         .trusted_networks
         .iter()
-        .any(|network| network.id == interface.network_id)
+        .any(|trusted| network::trusted_network_matches(&trusted.id, &trusted.category, &interface))
     {
         let accepted = network_approval.as_deref().is_some_and(|token| {
             state
@@ -741,7 +741,7 @@ async fn export_diagnostics(
             "downloadEnabled": effective.download_share.enabled,
             "uploadEnabled": effective.upload_share.enabled,
             "sharesUseSamePath": effective.download_share.path == effective.upload_share.path,
-            "preferredAdapterId": effective.preferred_adapter_id,
+            "preferredAdapterConfigured": effective.preferred_adapter_id.is_some(),
             "port": effective.port,
             "maxUploadBytes": effective.max_upload_bytes,
             "idleTimeoutMinutes": effective.idle_timeout_minutes,
@@ -752,9 +752,9 @@ async fn export_diagnostics(
             "activeTransfers": service.as_ref().map(|value| value.active_transfers).unwrap_or(0),
             "sessionCount": service.as_ref().map(|value| value.sessions.len()).unwrap_or(0),
         },
-        "networks": networks,
-        "firewall": firewall,
-        "privacy": "Keine Dateiliste, Dateiinhalte, Zugangscodes oder Sitzungstoken enthalten.",
+        "networks": diagnostic_network_summary(&networks),
+        "firewall": diagnostic_firewall_summary(&firewall, effective.port),
+        "privacy": "Keine Pfade, Netzwerkkennungen, IP-Adressen, Dateilisten, Dateiinhalte, Zugangscodes oder Sitzungstoken enthalten.",
     });
     let bytes = serde_json::to_vec_pretty(&report).map_err(|error| {
         internal_command_error(
@@ -782,6 +782,24 @@ async fn export_diagnostics(
                 error,
             )
         })
+}
+
+fn diagnostic_network_summary(networks: &[network::NetworkInterfaceInfo]) -> serde_json::Value {
+    serde_json::json!({
+        "detectedCount": networks.len(),
+        "resolvedProfileCount": networks.iter().filter(|item| item.profile_resolved).count(),
+        "privateCount": networks.iter().filter(|item| item.category == "Privat").count(),
+        "publicCount": networks.iter().filter(|item| item.category == "Öffentlich").count(),
+        "domainCount": networks.iter().filter(|item| item.category == "Domänennetzwerk").count(),
+        "unknownCount": networks.iter().filter(|item| item.category == "Unbekannt").count(),
+    })
+}
+
+fn diagnostic_firewall_summary(firewall: &FirewallStatus, expected_port: u16) -> serde_json::Value {
+    serde_json::json!({
+        "configured": firewall.configured,
+        "matchesExpectedPort": firewall.configured && firewall.port == Some(expected_port),
+    })
 }
 
 #[tauri::command]
@@ -866,7 +884,14 @@ fn initialize_logging(log_dir: &std::path::Path) {
     if std::fs::create_dir_all(log_dir).is_err() {
         return;
     }
-    let file = tracing_appender::rolling::daily(log_dir, "ldtg.log");
+    let Ok(file) = tracing_appender::rolling::RollingFileAppender::builder()
+        .rotation(tracing_appender::rolling::Rotation::DAILY)
+        .filename_prefix("ldtg.log")
+        .max_log_files(14)
+        .build(log_dir)
+    else {
+        return;
+    };
     let (writer, guard) = tracing_appender::non_blocking(file);
     let _ = tracing_subscriber::registry()
         .with(
@@ -938,9 +963,16 @@ pub fn run() {
 
 #[cfg(test)]
 mod capability_tests {
-    use super::{internal_command_error, settings, stop_runtime, AppState};
-    use crate::domain::types::CommandErrorCode;
-    use std::sync::Arc;
+    use super::{
+        diagnostic_firewall_summary, diagnostic_network_summary, internal_command_error, settings,
+        stop_runtime, AppState,
+    };
+    use crate::domain::{
+        network::NetworkInterfaceInfo,
+        types::{CommandErrorCode, FirewallStatus},
+    };
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    use std::{net::Ipv4Addr, sync::Arc};
     use tokio::time::{timeout, Duration};
 
     #[test]
@@ -1014,5 +1046,71 @@ mod capability_tests {
         assert!(!hook.contains("RMDir /r"));
         assert!(!hook.contains("$APPDATA\\de.ldtg.desktop"));
         assert!(!hook.contains("$LOCALAPPDATA\\de.ldtg.desktop"));
+    }
+
+    #[test]
+    fn uninstaller_strictly_removes_current_and_legacy_firewall_rules() {
+        let hook = include_str!("../windows/hooks.nsh");
+        let encoded = hook
+            .split("-EncodedCommand ")
+            .nth(1)
+            .and_then(|value| value.split('\'').next())
+            .expect("uninstall hook must contain an encoded command");
+        let bytes = STANDARD
+            .decode(encoded)
+            .expect("encoded uninstall command must be base64");
+        let units = bytes
+            .chunks_exact(2)
+            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+            .collect::<Vec<_>>();
+        let script = String::from_utf16(&units).expect("encoded command must be UTF-16LE");
+
+        assert!(script.contains("$ErrorActionPreference = 'Stop'"));
+        assert!(script.contains("'LDTG Local Transfer'"));
+        assert!(script.contains("'DMDC Local Transfer'"));
+        assert!(script.contains("Remove-NetFirewallRule -ErrorAction Stop"));
+        assert!(script.contains("$remaining.Count -ne 0"));
+        assert!(hook.contains("Pop $0"));
+        assert!(hook.contains("Abort"));
+    }
+
+    #[test]
+    fn diagnostic_summaries_omit_network_and_program_identifiers() {
+        let networks = vec![NetworkInterfaceInfo {
+            id: "sensitive-adapter".into(),
+            name: "sensitive-name".into(),
+            profile_name: "sensitive-profile".into(),
+            address: Ipv4Addr::new(192, 168, 1, 20),
+            prefix_length: 24,
+            network_id: "sensitive-guid".into(),
+            category: "Privat".into(),
+            profile_resolved: true,
+            preferred: true,
+            netmask: Ipv4Addr::new(255, 255, 255, 0),
+        }];
+        let firewall = FirewallStatus {
+            configured: true,
+            program_path: Some(r"C:\Users\operator-home\ldtg.exe".into()),
+            port: Some(7812),
+            detail: "sensitive-detail".into(),
+        };
+        let serialized = serde_json::json!({
+            "networks": diagnostic_network_summary(&networks),
+            "firewall": diagnostic_firewall_summary(&firewall, 7812),
+        })
+        .to_string();
+
+        for secret in [
+            "sensitive-adapter",
+            "sensitive-name",
+            "sensitive-profile",
+            "192.168.1.20",
+            "sensitive-guid",
+            "operator-home",
+            "sensitive-detail",
+        ] {
+            assert!(!serialized.contains(secret));
+        }
+        assert!(serialized.contains("matchesExpectedPort"));
     }
 }

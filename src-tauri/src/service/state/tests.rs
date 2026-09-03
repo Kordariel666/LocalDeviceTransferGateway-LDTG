@@ -320,6 +320,37 @@ fn global_cooldown_is_checked_before_the_access_code() {
     );
 }
 
+#[test]
+fn one_physical_peer_cannot_consume_the_global_authentication_budget_with_aliases() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path()).unwrap();
+    let now = Instant::now();
+    let peer = "neighbor:7:001122334455";
+
+    for _ in 0..AUTH_FAILURES_PER_ADDRESS - 1 {
+        assert_eq!(
+            state.verify_access_code_for_peer_at(peer, "00000000", now),
+            AuthDecision::Invalid
+        );
+    }
+    assert_eq!(
+        state.verify_access_code_for_peer_at(peer, "00000000", now),
+        AuthDecision::AddressBlocked
+    );
+
+    let code = state.access_code.read().unwrap().clone();
+    assert_eq!(
+        state.verify_access_code_for_peer_at("neighbor:7:aabbccddeeff", &code, now),
+        AuthDecision::Accepted
+    );
+    let throttle = state.auth_attempts.lock().unwrap();
+    assert_eq!(
+        throttle.global_failures,
+        u16::from(AUTH_FAILURES_PER_ADDRESS)
+    );
+    assert!(throttle.global_blocked_until.is_none());
+}
+
 #[tokio::test]
 async fn manual_code_rotation_resets_throttling_without_revoking_sessions() {
     let temp = tempfile::tempdir().unwrap();
@@ -371,7 +402,7 @@ fn auth_attempt_records_expire_and_remain_capacity_bounded() {
         let mut throttle = state.auth_attempts.lock().unwrap();
         throttle
             .attempts
-            .get_mut(&expired_address)
+            .get_mut(&format!("ip:{expired_address}"))
             .unwrap()
             .last_seen = Instant::now() - AUTH_ATTEMPT_TTL - Duration::from_secs(1);
     }
@@ -384,14 +415,14 @@ fn auth_attempt_records_expire_and_remain_capacity_bounded() {
         .lock()
         .unwrap()
         .attempts
-        .contains_key(&expired_address));
+        .contains_key(&format!("ip:{expired_address}")));
 
     let now = Instant::now();
     let mut throttle = state.auth_attempts.lock().unwrap();
     throttle.attempts.clear();
     for index in 0..MAX_AUTH_ATTEMPT_RECORDS {
         throttle.attempts.insert(
-            IpAddr::V6(Ipv6Addr::from(index as u128 + 1)),
+            format!("ip:{}", Ipv6Addr::from(index as u128 + 1)),
             AttemptRecord {
                 failures: 1,
                 blocked_until: None,

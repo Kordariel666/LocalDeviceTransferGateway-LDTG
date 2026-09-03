@@ -426,16 +426,24 @@ export function SecurityPage(props: SecurityPageProps) {
         ) : (
           <div className="trusted-network-list">
             {draft.trustedNetworks.map((trusted) => {
-              const current = snapshot.networks.find((network) => (
+              const resolved = snapshot.networks.find((network) => (
                 network.profileResolved && network.networkId === trusted.id
               ));
-              const name = current?.profileName ?? trusted.name;
-              const category = current?.category ?? trusted.category;
+              const current = resolved && trusted.category !== "Unbekannt" && resolved.category === trusted.category
+                ? resolved
+                : undefined;
+              const name = resolved?.profileName ?? trusted.name;
+              const category = resolved?.category ?? trusted.category;
+              const availability = current
+                ? text.networkAvailable
+                : resolved
+                  ? text.networkReapprovalRequired
+                  : text.networkStale;
               return (
                 <article className={`trusted-network-row${current ? "" : " stale"}`} key={trusted.id}>
                   <div className="trusted-network-name">
                     <strong><bdi className="untrusted-name">{name}</bdi></strong>
-                    <span className={`status-chip${current ? "" : " offline"}`}>{current ? text.networkAvailable : text.networkStale}</span>
+                    <span className={`status-chip${current ? "" : " offline"}`}>{availability}</span>
                   </div>
                   <dl>
                     <div><dt>{text.networkCategory}</dt><dd><bdi className="untrusted-name">{category}</bdi></dd></div>

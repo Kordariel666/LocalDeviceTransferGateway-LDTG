@@ -9,5 +9,6 @@ apps/*/coverage/
 .vscode/
 *.log
 *.tmp
+artifacts/
 .DS_Store
 Thumbs.db

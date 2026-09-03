@@ -35,13 +35,28 @@ impl TransferServiceState {
         value
     }
 
+    #[cfg(test)]
     pub fn verify_access_code(&self, address: IpAddr, supplied: &str) -> AuthDecision {
         self.verify_access_code_at(address, supplied, Instant::now())
     }
 
+    #[cfg(test)]
     pub(super) fn verify_access_code_at(
         &self,
         address: IpAddr,
+        supplied: &str,
+        now: Instant,
+    ) -> AuthDecision {
+        self.verify_access_code_for_peer_at(&format!("ip:{address}"), supplied, now)
+    }
+
+    pub fn verify_access_code_for_peer(&self, peer_key: &str, supplied: &str) -> AuthDecision {
+        self.verify_access_code_for_peer_at(peer_key, supplied, Instant::now())
+    }
+
+    pub(super) fn verify_access_code_for_peer_at(
+        &self,
+        peer_key: &str,
         supplied: &str,
         now: Instant,
     ) -> AuthDecision {
@@ -71,7 +86,7 @@ impl TransferServiceState {
         }
         if throttle
             .attempts
-            .get(&address)
+            .get(peer_key)
             .and_then(|record| record.blocked_until)
             .is_some_and(|until| until > now)
         {
@@ -88,7 +103,7 @@ impl TransferServiceState {
         let correct =
             valid_shape && supplied.as_bytes().ct_eq(expected.as_bytes()).unwrap_u8() == 1;
         if correct {
-            throttle.attempts.remove(&address);
+            throttle.attempts.remove(peer_key);
             return AuthDecision::Accepted;
         }
 
@@ -99,7 +114,7 @@ impl TransferServiceState {
             return AuthDecision::GlobalBlocked;
         }
 
-        if let Some(record) = throttle.attempts.get_mut(&address) {
+        if let Some(record) = throttle.attempts.get_mut(peer_key) {
             if record.blocked_until.is_some() {
                 record.failures = 0;
                 record.blocked_until = None;
@@ -113,7 +128,7 @@ impl TransferServiceState {
             }
         } else if throttle.attempts.len() < MAX_AUTH_ATTEMPT_RECORDS {
             throttle.attempts.insert(
-                address,
+                peer_key.to_owned(),
                 AttemptRecord {
                     failures: 1,
                     blocked_until: None,

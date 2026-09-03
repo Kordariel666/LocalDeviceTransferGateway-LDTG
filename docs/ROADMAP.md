@@ -758,8 +758,12 @@ Status: erfüllt am 3. September 2026 für R5.1.
 
 ## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
 
-Status: gestartet am 3. September 2026; P0 und P1 abgeschlossen. Es gibt
-weiterhin keine Veröffentlichungsfreigabe.
+Status: gestartet am 3. September 2026; P0, P1 und P2 abgeschlossen, P3
+technisch vorbereitet. Der Owner hat mit `PB-04` den engen Support- und
+Wartungsrahmen für den Fall einer später freigegebenen Beta akzeptiert und mit
+`PB-05` genau einen lokalen Commit samt anschließendem kostenfreien
+Clean-Commit-Dry-Run autorisiert. Das P3-Gate bleibt bis zu dessen erfolgreichem
+Nachweis offen. Es gibt weiterhin keine Veröffentlichungsfreigabe.
 
 Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
 nicht auf Verdacht weitere Funktionen entstehen. Der detaillierte
@@ -785,6 +789,16 @@ in der [maschinenlesbaren Blockerliste](../qa/public-beta/blockers.json). Der
 Dependency-Teil, Herkunftsbestätigung, Namensentscheidung zu **LDTG – Local
 Device Transfer Gateway** und bereinigte Historienstrategie sind abgeschlossen.
 Die Marken- und Kollisions-Vorprüfung steht in [`docs/BRANDING.md`](BRANDING.md).
+Der abgeschlossene P2-Stand ist im
+[Sicherheits-/Datenschutz-/Supportnachweis](../qa/public-beta/p2-security-privacy-support.md),
+im [Dateninventar](PRIVACY.md), im [akzeptierten Supportrahmen](../SUPPORT.md) und im
+aktualisierten [Bedrohungsmodell](THREAT_MODEL.md) festgehalten. Drei bestätigte
+Findings niedriger Schwere wurden behoben; reale Windows-/Gerätetests bleiben P4.
+Die technisch vorbereitete private Releasepipeline und ihre bewusst begrenzte
+Reproduzierbarkeit stehen in [`docs/PRIVATE_RELEASE.md`](PRIVATE_RELEASE.md), der
+unverbindliche Signierentwurf in [`CODE_SIGNING.md`](../CODE_SIGNING.md) und der
+Prüfstand in
+[`qa/public-beta/p3-release-pipeline.md`](../qa/public-beta/p3-release-pipeline.md).
 
 ## 11. Phase 6 – Strategische Transferfunktionen
 
@@ -848,7 +862,7 @@ Vor Umsetzung festlegen:
 ### R7.3 End-to-End- und reale Abnahme
 
 - Browser-E2E für Login, Navigation, Suche, Uploadqueue und Sessionverlust ergänzen.
-- Windows 10 und 11: Installation, UAC-Abbruch, Firewallregel, Update und Deinstallation mit Sentinel-Nutzdaten testen.
+- Windows 11 25H2: Installation, UAC-Abbruch, Firewallregel, Update und Deinstallation mit Sentinel-Nutzdaten testen; ältere Windows-Stände höchstens als nicht unterstützte Kompatibilitätsbeobachtung erfassen.
 - Aktuelles iOS/Safari und Android/Chrome im Offline-WLAN prüfen.
 - Große Datei, viele kleine Dateien, Range-Download, langsamer Datenträger, voller Datenträger und Netzwerkwechsel testen.
 - Bedienbarkeit mit Tastatur, Screenreader-Basics, Reduced Motion, 200-%-Skalierung und schmalen Displays prüfen.

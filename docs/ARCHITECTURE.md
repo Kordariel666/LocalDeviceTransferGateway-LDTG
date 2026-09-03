@@ -53,9 +53,11 @@ diskriminiertem Kontext. Bestätigungstoken, Netzwerkname, breit gewählter Pfad
 Anzahl aktiver Übertragungen werden ausschließlich in den dafür vorgesehenen
 Kontextvarianten transportiert; der Desktop verzweigt nur anhand von Code und
 Kontextart. Interne Task-, Betriebssystem-, Datei- und Dienstursachen werden vor
-der IPC-Grenze auf sichere Meldungen reduziert. Lokal wird datensparsam nur Code
-und Operation protokolliert, nicht die rohe Ursache oder ein darin enthaltener
-Pfad.
+der IPC-Grenze auf sichere Meldungen reduziert. Tauri-Befehlsfehler protokollieren
+datensparsam nur Code und Operation, nicht die rohe Ursache oder einen darin
+enthaltenen Pfad; die Dienstschicht kann zusätzlich technische Socket- und
+Serverfehler protokollieren. Logs rotieren täglich und sind auf 14 Dateien
+begrenzt.
 
 ## Zustandsmodell
 
@@ -72,8 +74,10 @@ eine nummerierte `settings.recovery-N.json`. Speichern ist atomar, normalisiert
 ältere Entwürfe auf Schema 4 und lehnt zukünftige Schemaangaben ab. Schema 3
 ersetzt die früheren reinen Netzwerk-IDs durch begrenzte, eindeutig validierte
 Vertrauensdatensätze mit stabiler ID, Anzeigename, Kategorie und letzter
-Verwendung. Nicht mehr auflösbare IDs bleiben sichtbar und können bei gestopptem
-Dienst einzeln oder vollständig entfernt werden. Die laufende
+Verwendung. Ein Start vertraut nur einer vollständig aufgelösten Identität mit
+exakt derselben ID und bestätigten bekannten Kategorie; der Anzeigename ist nur
+Darstellung. Nicht mehr auflösbare oder in der Kategorie geänderte IDs bleiben
+sichtbar und können bei gestopptem Dienst einzeln oder vollständig entfernt werden. Die laufende
 Buildversion gehört ausschließlich zum App-Snapshot und Diagnosebericht und wird
 nicht in Benutzereinstellungen persistiert.
 
@@ -123,8 +127,12 @@ Der Code bleibt innerhalb einer Dienstinstanz absichtlich wiederverwendbar, dami
 mehrere legitime Geräte nacheinander eine eigene Sitzung anlegen können. Eine
 lokale Rotation ersetzt den Code und leert die Fehlversuchszähler, widerruft
 aber keine bereits erzeugte Sitzung. Gerätename und User-Agent sind keine
-Rate-Limit- oder Autorisierungsidentität; Fehlversuche, Sitzungskapazität und
-Übertragungslimits bleiben an Dienst, IP und gegebenenfalls Sitzung gebunden.
+Rate-Limit- oder Autorisierungsidentität. Fehlversuche und anonyme Verbindungen
+verwenden unter Windows nach Möglichkeit denselben aus der Nachbartabelle
+abgeleiteten physischen Peer-Schlüssel; ohne auflösbaren Eintrag gilt die IP.
+Sitzungskapazität und Übertragungslimits bleiben an Dienst, IP und gegebenenfalls
+Sitzung gebunden. Ein bereits lokal geblockter Peer erhöht den globalen
+Fehlversuchszähler mit weiteren IP-Aliasen nicht weiter.
 
 Freigaberollen sind in v1 Eigenschaften des laufenden Dienstes. Jede Sitzung
 sieht genau die global aktivierten Download- und Uploadwurzeln. Eine vom Client
@@ -182,8 +190,22 @@ Bei Sitzungsverlust bleiben lokale Dateireferenzen und Reihenfolge erhalten, wä
 
 XHR-Antworten des Chunk-Endpunkts werden wie Fetch-Antworten als strukturierte `ApiError`-Objekte ausgewertet. Nicht transiente 4xx-Antworten behalten ihren stabilen Fehlercode und schlagen ohne zusätzliche Backoff-Wartezeit fehl; Netzwerkfehler, 408, 409, 425, 429 und Serverfehler werden begrenzt wiederholt. Eine laufende Anmeldung besitzt einen lokalen Einmal-Guard. Beim Logout wird die lokale Sitzung auch dann im `finally`-Pfad entfernt, wenn der Dienst nicht mehr erreichbar ist.
 
-Der Windows-Uninstaller entfernt weiterhin die LDTG-Firewallregel, bewahrt jedoch Konfiguration, Logs und mögliche Nutzdaten in den AppData-Verzeichnissen. Er führt dort keine rekursive Löschung aus.
+Der Windows-Uninstaller entfernt mit einem strikt fehlschlagenden erhöhten
+PowerShell-Kindprozess sowohl `LDTG Local Transfer` als auch den historischen
+Namen `DMDC Local Transfer` und prüft anschließend deren Abwesenheit. UAC-Abbruch,
+PowerShellfehler oder eine Restregel führen zu einer sichtbaren Retry-/Cancel-
+Entscheidung und verhindern einen fälschlich erfolgreichen Abschluss.
+Konfiguration, Logs und mögliche Nutzdaten in AppData und Freigaben bleiben
+erhalten; dort erfolgt keine rekursive Löschung.
 
 Download- und Uploadwurzeln werden kanonisch auf vollständige Trennung geprüft. Benutzer- und systemweite Windows-Autostartpfade sind als Uploadziele gesperrt. Uploadnamen werden vor der Übertragung nach UTF-16-Komponenten- und Gesamtpfadbudget begrenzt; auch Kollisionssuffixe bleiben innerhalb dieser Grenze.
 
 Die Windows-Firewallregel ist auf Programmpfad, TCP-Port und `LocalSubnet` begrenzt, gilt aber bewusst in allen Windows-Profilkategorien. Ein als „Öffentlich“ klassifiziertes Heimnetz blockiert den Start daher nicht; die LDTG-eigene Vertrauensbestätigung bleibt maßgeblich.
+
+Der lokale Diagnoseexport projiziert Erstellungszeit, App-/Schemaversion,
+Plattform, Dienstzustand, Zähler, Boolesche Werte, Port-/Limitwerte,
+aggregierte Netzwerk-/Firewallzustände und einen konstanten Datenschutzhinweis. Freigabepfade,
+IP-Adressen, Adapter- und Netzwerkkennungen, Netzwerk- und Dateinamen,
+Programmpfade, Codes, Tokens, Dateilisten und rohe Fehlerdetails werden nicht in
+den Bericht übernommen. Der vollständige Datenlebenszyklus steht in
+[`PRIVACY.md`](PRIVACY.md).

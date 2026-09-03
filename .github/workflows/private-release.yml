@@ -1,0 +1,57 @@
+name: Private release dry run
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_revision:
+        description: Full 40-character commit SHA to build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build private unsigned Windows artifact
+    runs-on: windows-2025
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.expected_revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Install pinned pnpm and Node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          runtime: node@24.19.0
+          cache: true
+          install: false
+
+      - name: Install pinned Rust toolchain
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+          rustup default 1.98.0
+
+      - name: Run gated private build
+        shell: pwsh
+        env:
+          EXPECTED_REVISION: ${{ inputs.expected_revision }}
+        run: ./scripts/private-release.ps1 -ExpectedRevision $env:EXPECTED_REVISION -OutputDirectory "$env:RUNNER_TEMP/ldtg-private-release"
+
+      - name: Upload private dry-run bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ldtg-private-dry-run-${{ inputs.expected_revision }}
+          path: ${{ runner.temp }}/ldtg-private-release
+          if-no-files-found: error
+          retention-days: 7

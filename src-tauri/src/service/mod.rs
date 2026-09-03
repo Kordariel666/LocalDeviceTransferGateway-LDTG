@@ -51,6 +51,7 @@ struct ConnectionPermits {
 }
 
 pub(crate) struct ConnectionSecurity {
+    peer_key: String,
     authenticated: AtomicBool,
     anonymous: StdMutex<Option<OwnedSemaphorePermit>>,
     authenticated_permit: StdMutex<Option<OwnedSemaphorePermit>>,
@@ -58,13 +59,22 @@ pub(crate) struct ConnectionSecurity {
 }
 
 impl ConnectionSecurity {
-    fn new(anonymous: OwnedSemaphorePermit, authenticated_slots: Arc<Semaphore>) -> Self {
+    fn new(
+        peer_key: String,
+        anonymous: OwnedSemaphorePermit,
+        authenticated_slots: Arc<Semaphore>,
+    ) -> Self {
         Self {
+            peer_key,
             authenticated: AtomicBool::new(false),
             anonymous: StdMutex::new(Some(anonymous)),
             authenticated_permit: StdMutex::new(None),
             authenticated_slots,
         }
+    }
+
+    pub(crate) fn peer_key(&self) -> &str {
+        &self.peer_key
     }
 
     pub(crate) fn mark_authenticated(&self) -> bool {
@@ -126,6 +136,7 @@ impl ConnectionLimiter {
         &self,
         peer: String,
     ) -> Option<(ConnectionPermits, Arc<ConnectionSecurity>)> {
+        let peer_key = peer.clone();
         let global = self.global.clone().try_acquire_owned().ok()?;
         let anonymous = self.anonymous.clone().try_acquire_owned().ok()?;
         let peer_slots = {
@@ -146,6 +157,7 @@ impl ConnectionLimiter {
                 _peer: peer,
             },
             Arc::new(ConnectionSecurity::new(
+                peer_key,
                 anonymous,
                 self.authenticated.clone(),
             )),
@@ -400,6 +412,7 @@ pub async fn start(
                 }
             }
             tokio::select! {
+                biased;
                 _ = &mut shutdown_rx => break,
                 _ = monitor.tick() => {
                     monitor_state.expire_stale_sessions().await;
@@ -596,6 +609,7 @@ mod tests {
         let anonymous = anonymous_slots.clone().try_acquire_owned().unwrap();
         let authenticated_slots = Arc::new(Semaphore::new(2));
         let security = Arc::new(ConnectionSecurity::new(
+            "peer:test".into(),
             anonymous,
             authenticated_slots.clone(),
         ));
