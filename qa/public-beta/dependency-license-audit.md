@@ -2,7 +2,7 @@
 
 Stand: 4. September 2026
 
-Auditierter Quellstand: `493d20b27380d043c0a9f289862a424b09e31087`.
+Auditierter Quellstand: `4956cd3de88d6d5d5cff6c3653a71d9695a60c32`.
 
 Ergebnis: **Abhängigkeitsanteil des P1-Gates erfüllt; `Apache-2.0` wurde später
 als Projektlizenz gewählt**

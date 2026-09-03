@@ -60,6 +60,11 @@ absichtlich ignoriert. Ein bereits gefülltes Ausgabeverzeichnis wird nicht
   Runnerbild, Lockfile-Hashes, Action-Pins, Auditbasis, Dateigrößen und
   Artefakthashes.
 
+Die SHA-256-Werte werden direkt mit der .NET-Kryptografie-API berechnet. Den für
+diesen privaten Pfad erwarteten Status `NotSigned` bestätigt das Skript direkt
+anhand der PE-Zertifikatstabelle. Damit hängen diese beiden Abschlussprüfungen
+nicht vom PowerShell-Modul-Autoloading des Buildhosts ab.
+
 Die aktuelle Tauri-Konfiguration erzeugt nur NSIS. Eine portable ZIP-Datei ist
 für diesen Dry-Run bewusst **nicht** Teil des Lieferumfangs; das Manifest hält
 dies mit `portableArtifactIncluded: false` fest.

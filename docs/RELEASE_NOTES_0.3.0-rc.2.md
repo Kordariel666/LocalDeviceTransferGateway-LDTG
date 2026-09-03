@@ -73,13 +73,14 @@ zunächst nicht geöffnet. Vertrauliche Sicherheitsmeldungen dürfen nicht in ei
 
 ## Kandidatennachweis
 
-- Quellcommit: `a70c1612f2c673b0be7cede2676b851ae134eccd`
+- Quellcommit: `4956cd3de88d6d5d5cff6c3653a71d9695a60c32`
 - Installer SHA-256:
-  `1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc`
+  `7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c`
 - SBOM SHA-256:
-  `6ec63ac9513d4edac66ea77a7e42e967b88217f38b03e495088f16b64942f598`
+  `6cb9766a383b6fca5e5c3e947022f187cd8598d4fdd0fcaa61c57be00eb8fdb4`
 - Authenticode: `NotSigned`
 
 Diese Datei bleibt bis zu einer gesonderten Veröffentlichungsentscheidung ein
 Entwurf. Ein Downloadlink wird erst bei einer tatsächlich freigegebenen
-Veröffentlichung ergänzt.
+Veröffentlichung ergänzt. Vor diesem Schritt wird genau der oben gehashte
+Installer noch einmal gezielt mit Microsoft Defender geprüft.

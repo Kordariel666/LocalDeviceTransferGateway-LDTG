@@ -9,10 +9,10 @@ Owner-Entscheidung vor und löst selbst keine externe Änderung aus.
 
 ## Betrachteter Kandidat
 
-- Quellcommit: `a70c1612f2c673b0be7cede2676b851ae134eccd`
+- Quellcommit: `4956cd3de88d6d5d5cff6c3653a71d9695a60c32`
 - vorgesehener Tag: `v0.3.0-rc.2` – nicht angelegt
 - Installer SHA-256:
-  `1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc`
+  `7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c`
 - Lizenz: `Apache-2.0`
 - öffentliche Copyright-Bezeichnung: `Kordariel666`
 - Beiträge: zunächst nur Issues, keine Pull Requests
@@ -38,13 +38,15 @@ keine bloße Veröffentlichungsentscheidung.
 
 Der Owner bestätigt in einem eigenen Schritt:
 
-1. den betrachteten Commit und Installerhash;
-2. Apache-2.0 und `Kordariel666` als öffentliche Angaben;
-3. den Issues-only-Beitragsmodus;
-4. den begrenzten Support- und Wartungsumfang;
-5. die bekannte unsignierte Windows-Warnung und die dokumentierten
+1. eine gezielte Microsoft-Defender-Prüfung genau des oben gehashten finalen
+   Installers ohne Fund;
+2. den betrachteten Commit und Installerhash;
+3. Apache-2.0 und `Kordariel666` als öffentliche Angaben;
+4. den Issues-only-Beitragsmodus;
+5. den begrenzten Support- und Wartungsumfang;
+6. die bekannte unsignierte Windows-Warnung und die dokumentierten
    Plattform-, Stress- und Barrierefreiheitslücken;
-6. dass Repositorysichtbarkeit, Tag, Push und GitHub Release extern geändert
+7. dass Repositorysichtbarkeit, Tag, Push und GitHub Release extern geändert
    werden dürfen.
 
 Private Vulnerability Reporting wird bei einem späteren `GO-APACHE` unmittelbar

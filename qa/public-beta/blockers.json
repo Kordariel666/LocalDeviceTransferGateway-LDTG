@@ -13,8 +13,8 @@
     "publicCopyrightIdentity": "Kordariel666",
     "contributionMode": "issues-only",
     "betaCandidateVersion": "0.3.0-rc.2",
-    "betaCandidateSourceRevision": "a70c1612f2c673b0be7cede2676b851ae134eccd",
-    "betaCandidateInstallerSha256": "1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc",
+    "betaCandidateSourceRevision": "4956cd3de88d6d5d5cff6c3653a71d9695a60c32",
+    "betaCandidateInstallerSha256": "7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c",
     "published": false,
     "signPathStarted": false,
     "r5_2Paused": true,
@@ -24,16 +24,18 @@
   "resolved": [
     {
       "id": "PB-10",
-      "resolution": "built the complete unsigned 0.3.0-rc.2 candidate from a clean commit, verified its evidence bundle and completed the owner-operated Defender, upgrade-install, visible-version, settings-preservation, service and mobile-connection acceptance",
+      "resolution": "completed the owner-operated Defender, upgrade-install, visible-version, settings-preservation, service and mobile-connection acceptance on the original P6 artifact, then rebuilt the unchanged runtime after repository cleanup and verified the final evidence bundle",
       "decidedBy": "repository owner",
       "decidedOn": "2026-09-04",
       "evidence": [
         "qa/public-beta/p6-release-candidate.md",
-        "source revision a70c1612f2c673b0be7cede2676b851ae134eccd",
-        "installer sha256 1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc",
+        "final source revision 4956cd3de88d6d5d5cff6c3653a71d9695a60c32",
+        "final installer sha256 7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c",
+        "manual acceptance source revision a70c1612f2c673b0be7cede2676b851ae134eccd",
+        "manual acceptance installer sha256 1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc",
         "owner confirmation and Windows Installed Apps screenshot on 2026-09-04"
       ],
-      "residualRisk": "The candidate is unsigned and has no public-download SmartScreen reputation; the explicitly accepted P4 platform, stress and accessibility evidence gaps remain disclosed in the release notes."
+      "residualRisk": "The final candidate is unsigned and has no public-download SmartScreen reputation; because the non-byte-identical rebuild followed documentation and release-tool-only changes, its exact hash still requires a targeted Defender scan before a later publication GO. The explicitly accepted P4 platform, stress and accessibility evidence gaps remain disclosed in the release notes."
     },
     {
       "id": "PB-09",

@@ -2,7 +2,7 @@
 
 Stand: 4. September 2026
 
-Auditierter Quellstand: `493d20b27380d043c0a9f289862a424b09e31087`
+Auditierter Quellstand: `4956cd3de88d6d5d5cff6c3653a71d9695a60c32`
 
 Ergebnis: **ERFÜLLT – P1 abgeschlossen**
 
@@ -20,7 +20,7 @@ bleiben pausiert.
   Stand aber keinen Secret-Befund.
 - Nach dem vom Owner gewählten destruktiven Rewrite enthalten der vorgesehene
   Quellcommit und die drei Release-Tags keine persönlichen
-  Commit-/Tag-E-Mail-Adressen. Sämtliche 43 Commit-Identitäten und drei
+  Commit-/Tag-E-Mail-Adressen. Sämtliche 47 Commit-Identitäten und drei
   annotierten Tagger verwenden die konfigurierte GitHub-noreply-Adresse. Der
   einzige unterschiedliche Benutzerpfad-Mustertreffer ist eine synthetische
   Windows-Testadresse, kein realer Benutzer- oder Werkzeugpfad.
@@ -56,11 +56,11 @@ Wesentliche Kennzahlen des Ausgangsstands:
 
 | Merkmal | Ergebnis |
 |---|---:|
-| erreichbare Commits über die öffentlichen Ziel-Refs | 43 |
+| erreichbare Commits über die öffentlichen Ziel-Refs | 47 |
 | geprüfte Refs | 4 |
 | eingecheckte Dateien | 211 |
-| Größe der eingecheckten Dateien | 8.767.055 Bytes |
-| erreichbare Git-Objekte / eindeutige Blobs | 1.209 / 773 |
+| Größe der eingecheckten Dateien | 8.769.834 Bytes |
+| erreichbare Git-Objekte / eindeutige Blobs | 1.230 / 781 |
 | größter Blob | 1.117.268 Bytes |
 | Blobs ab 5 MiB | 0 |
 | geprüfte PNG/JPEG-Dateien | 51 |
@@ -89,13 +89,13 @@ Der Musterscan über den vollständigen, lokal erreichbaren Patchverlauf ergab:
 | JWT-Muster | 0 |
 | Zugangsdaten in URLs | 0 |
 | generische Secret-Zuweisungen | 0 |
-| absolute Benutzerpfad-Muster | 3 Vorkommen derselben synthetischen Testadresse |
-| E-Mail-ähnliche Zeichenfolgen | 996 Mustertreffer |
+| absolute Benutzerpfad-Muster | 5 Vorkommen derselben synthetischen Testadresse |
+| E-Mail-ähnliche Zeichenfolgen | 1.000 Mustertreffer |
 
 Die Zahlen zählen Vorkommen in wiederholten Patches und sind keine Anzahl
 eindeutiger Probleme. Die verbleibenden E-Mail-Treffer stammen aus öffentlichen
 Dependency-Metadaten, Beispielen und GitHub-noreply-Identitäten; eine persönliche
-Adresse wurde im Zielscan nicht festgestellt. Die drei Pfadtreffer sind
+Adresse wurde im Zielscan nicht festgestellt. Die fünf Pfadtreffer sind
 Vorkommen derselben offensichtlich fiktiven Adresse eines Firewall-Matcher-
 Tests und seiner Auditdokumentation. Der maschinenlesbare Nachweis speichert
 Commit- und Tagger-Adressen nur als SHA-256-Fingerabdruck und Domain.
