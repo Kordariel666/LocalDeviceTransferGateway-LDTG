@@ -99,9 +99,12 @@ Repositorys erzeugt und mit `git bundle verify` geprüft. Es umfasst 19 damalige
 Refs, ist 8.736.205 Bytes groß und besitzt SHA-256
 `a10b3ed6b1da32eeb0c46cd02321cfe14348035c54b6fdd648ad4d57b1eef7d3`.
 Anschließend wurden `main`, der Vorbereitungsbranch und alle drei Release-Tags
-kontrolliert umgeschrieben. Alte Remote-PR- und Werkzeugrefs bleiben nur private
-Altstände; bei Nutzung des bestehenden GitHub-Repositorys muss vor einer
-Öffentlichschaltung zusätzlich sichergestellt werden, dass providerseitige
+kontrolliert umgeschrieben. Der bereinigte `main`-Tip und die drei neuen
+Tagobjekte wurden am 3. September 2026 mit exakten Force-with-Lease-Altwerten auf
+das weiterhin private GitHub-Repository übertragen und dort zurückgelesen; das
+Repository wurde anschließend in `LocalDeviceTransferGateway-LDTG` umbenannt.
+Alte Remote-PR- und Werkzeugrefs bleiben private Altstände. Vor einer
+Öffentlichschaltung muss zusätzlich sichergestellt werden, dass providerseitige
 Pull-Request-/Cache-Refs nicht öffentlich erreichbar werden.
 
 ## Assets, Texte und erzeugte Dateien

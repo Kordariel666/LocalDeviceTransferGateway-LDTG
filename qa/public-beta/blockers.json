@@ -48,6 +48,7 @@
         "qa/public-beta/repository-evidence.json#taggers",
         "qa/public-beta/repository-evidence.json#historyPatternCounts",
         "qa/public-beta/repository-audit.md#git-historie-und-datenschutz",
+        "https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG",
         "verified external private bundle sha256 a10b3ed6b1da32eeb0c46cd02321cfe14348035c54b6fdd648ad4d57b1eef7d3"
       ],
       "residualRisk": "Old provider-side pull-request or cache refs are not publication refs; they must not be carried into a public repository and require a separate provider-side reachability check before visibility changes."

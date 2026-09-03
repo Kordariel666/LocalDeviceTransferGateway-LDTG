@@ -61,9 +61,10 @@ separat unter `PB-02` offen.
 
 ## Repositoryziel
 
-Der vorgesehene öffentliche Repositoryname lautet
-`LocalDeviceTransferGateway-LDTG`. Die Umbenennung des GitHub-Repositorys folgt
-erst nach einem lokal erfolgreichen Build- und Prüfstand.
+Das weiterhin private GitHub-Repository wurde nach erfolgreichem lokalem Build-
+und Prüfstand in
+[`LocalDeviceTransferGateway-LDTG`](https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG)
+umbenannt. Die lokale `origin`-URL verweist ebenfalls auf diesen Namen.
 
 Damit ist die Owner-Entscheidung aus `PB-03` dokumentiert und das Namensrisiko
 für die weitere Vorbereitung bewusst eingegrenzt.
