@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generator": "scripts/public-beta-audit.mjs",
-  "sourceRevision": "4c48058fc1b438ae1f0d5a76a2b17408a6b4b25e",
+  "sourceRevision": "2c58a4088cdd10eb352fdb49736ef7b9a230bdd8",
   "lockfiles": {
     "pnpm": {
       "path": "pnpm-lock.yaml",

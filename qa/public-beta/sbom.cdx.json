@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:4c48058f-0000-4000-8000-95af3687f770",
+  "serialNumber": "urn:uuid:2c58a408-0000-4000-8000-95af3687f770",
   "version": 1,
   "metadata": {
     "tools": {
@@ -27,7 +27,7 @@
     "properties": [
       {
         "name": "ldtg:source-revision",
-        "value": "4c48058fc1b438ae1f0d5a76a2b17408a6b4b25e"
+        "value": "2c58a4088cdd10eb352fdb49736ef7b9a230bdd8"
       },
       {
         "name": "ldtg:pnpm-lock-sha256",

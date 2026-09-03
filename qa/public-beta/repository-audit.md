@@ -1,15 +1,16 @@
 # P1-Repository-, Herkunfts- und Datenschutz-Audit
 
-Stand: 3. September 2026
+Stand: 4. September 2026
 
-Auditierter Quellstand: `a523770d8c20ae0695763acbb25c0e32fd552926`
+Auditierter Quellstand: `2c58a4088cdd10eb352fdb49736ef7b9a230bdd8`
 
 Ergebnis: **ERFÜLLT – P1 abgeschlossen**
 
 Dieses Dokument prüft ausschließlich P1 des
 [Plans bis zur Veröffentlichungsentscheidung](../../docs/archive/project-history/PUBLIC_BETA_PLAN.md).
-Es aktiviert keine Projektlizenz, veröffentlicht nichts und autorisiert weder
-SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
+Es veröffentlicht nichts und autorisiert weder SignPath noch kostenpflichtige
+Dienste. Die separat gewählte Projektlizenz ist Apache-2.0; R5.2 und Phase 6
+bleiben pausiert.
 
 ## Kurzurteil
 
@@ -17,12 +18,14 @@ SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
   wurden keine bekannten Token-, Schlüssel- oder Zugangsdatenmuster gefunden. Ein
   Regex-Audit ersetzt keine mathematische Garantie, liefert für den geprüften
   Stand aber keinen Secret-Befund.
-- Nach dem vom Owner gewählten destruktiven Rewrite enthalten `main` und die drei
-  Release-Tags weder persönliche Commit-/Tag-E-Mail-Adressen noch absolute
-  Benutzer- oder Werkzeugpfade. Sämtliche 34 Commit-Identitäten und drei
-  annotierten Tagger verwenden die konfigurierte GitHub-noreply-Adresse.
+- Nach dem vom Owner gewählten destruktiven Rewrite enthalten der vorgesehene
+  Quellcommit und die drei Release-Tags keine persönlichen
+  Commit-/Tag-E-Mail-Adressen. Sämtliche 41 Commit-Identitäten und drei
+  annotierten Tagger verwenden die konfigurierte GitHub-noreply-Adresse. Der
+  einzige absolute Benutzerpfad-Mustertreffer ist die synthetische Testadresse
+  `C:\Users\operator-home`, kein realer Benutzer- oder Werkzeugpfad.
 - Es wurden keine eingecheckten ausführbaren Fremdbinärdateien, Archive, Fonts,
-  PDFs oder WebAssembly-Dateien gefunden. Die 64 PNG/JPEG-Dateien enthalten
+  PDFs oder WebAssembly-Dateien gefunden. Die 51 PNG/JPEG-Dateien enthalten
   keine erkannten Text-, EXIF- oder Kommentarmetadatenblöcke.
 - Die Herkunft des Quellcodes, des Logos und der aus dem Logo abgeleiteten
   Icons kann aus Git allein nicht lückenlos bewiesen werden, weil der
@@ -43,23 +46,24 @@ Das P1-Gate ist erfüllt. `PB-01`, `PB-02` und `PB-03` sind in
 Der maschinenlesbare Nachweis
 [`repository-evidence.json`](repository-evidence.json) wurde mit
 [`scripts/public-beta-audit.mjs`](../../scripts/public-beta-audit.mjs) erzeugt.
-Geprüft wurden der Arbeitsbaum und genau die für eine spätere Veröffentlichung
-vorgesehenen Refs `main`, `v0.1.3`, `v0.2.0-rc.1` und `v0.2.0-rc.2`, deren
-vollständiger Patchverlauf und alle eingecheckten PNG-/JPEG-Dateien. Der lokale
-Vorbereitungsbranch besitzt denselben bereinigten Tip wie `main`.
+Geprüft wurden der Arbeitsbaum und genau der vorgesehene Quellcommit `HEAD` sowie
+die historischen Release-Tags `v0.1.3`, `v0.2.0-rc.1` und `v0.2.0-rc.2`, deren
+vollständiger Patchverlauf und alle eingecheckten PNG-/JPEG-Dateien. Lokale
+Remote-Tracking-, PR-, Rewrite- und Werkzeugrefs sind nicht Bestandteil dieses
+Veröffentlichungsscans.
 
 Wesentliche Kennzahlen des Ausgangsstands:
 
 | Merkmal | Ergebnis |
 |---|---:|
-| erreichbare Commits über die öffentlichen Ziel-Refs | 34 |
+| erreichbare Commits über die öffentlichen Ziel-Refs | 41 |
 | geprüfte Refs | 4 |
-| eingecheckte Dateien | 192 |
-| Größe der eingecheckten Dateien | 10.595.210 Bytes |
-| erreichbare Git-Objekte / eindeutige Blobs | 988 / 629 |
+| eingecheckte Dateien | 211 |
+| Größe der eingecheckten Dateien | 8.769.331 Bytes |
+| erreichbare Git-Objekte / eindeutige Blobs | 1.196 / 767 |
 | größter Blob | 1.117.268 Bytes |
 | Blobs ab 5 MiB | 0 |
-| geprüfte PNG/JPEG-Dateien | 64 |
+| geprüfte PNG/JPEG-Dateien | 51 |
 
 Remote-Tracking-, Dependabot-PR-, Codex-Werkzeug- und temporäre Rewrite-Refs sind
 bewusst nicht Teil dieses Veröffentlichungsscans. Sie sind nicht zu pushen und
@@ -68,10 +72,10 @@ werden nicht in einen neuen öffentlichen Remote übernommen.
 Ausgeführt beziehungsweise ausgewertet wurden unter anderem:
 
 ```powershell
-git rev-list --objects refs/heads/main refs/tags/v0.1.3 refs/tags/v0.2.0-rc.1 refs/tags/v0.2.0-rc.2
+git rev-list --objects HEAD refs/tags/v0.1.3 refs/tags/v0.2.0-rc.1 refs/tags/v0.2.0-rc.2
 git cat-file --batch-check="%(objectname) %(objecttype) %(objectsize)"
-git log -p --no-ext-diff --no-textconv refs/heads/main refs/tags/v0.1.3 refs/tags/v0.2.0-rc.1 refs/tags/v0.2.0-rc.2
-node scripts/public-beta-audit.mjs --public-ref=refs/heads/main --public-ref=refs/tags/v0.1.3 --public-ref=refs/tags/v0.2.0-rc.1 --public-ref=refs/tags/v0.2.0-rc.2
+git log -p --no-ext-diff --no-textconv HEAD refs/tags/v0.1.3 refs/tags/v0.2.0-rc.1 refs/tags/v0.2.0-rc.2
+node scripts/public-beta-audit.mjs --public-ref=HEAD --public-ref=refs/tags/v0.1.3 --public-ref=refs/tags/v0.2.0-rc.1 --public-ref=refs/tags/v0.2.0-rc.2
 ```
 
 ## Git-Historie und Datenschutz
@@ -85,14 +89,16 @@ Der Musterscan über den vollständigen, lokal erreichbaren Patchverlauf ergab:
 | JWT-Muster | 0 |
 | Zugangsdaten in URLs | 0 |
 | generische Secret-Zuweisungen | 0 |
-| persönliche absolute Pfade | 0 |
-| E-Mail-ähnliche Zeichenfolgen | 704 Mustertreffer |
+| absolute Benutzerpfad-Muster | 1 synthetischer Testpfad |
+| E-Mail-ähnliche Zeichenfolgen | 994 Mustertreffer |
 
 Die Zahlen zählen Vorkommen in wiederholten Patches und sind keine Anzahl
 eindeutiger Probleme. Die verbleibenden E-Mail-Treffer stammen aus öffentlichen
-Dependency-Metadaten, Beispielen und GitHub-noreply-Identitäten; die persönliche
-Adresse besitzt im Zielscan null Treffer. Der maschinenlesbare Nachweis speichert
-Commit- und Tagger-Adressen nur als SHA-256-Fingerabdruck und Domain.
+Dependency-Metadaten, Beispielen und GitHub-noreply-Identitäten; eine persönliche
+Adresse wurde im Zielscan nicht festgestellt. Der einzelne Pfadtreffer ist die
+offensichtlich fiktive Testadresse `C:\Users\operator-home` in einem
+Firewall-Matcher-Test. Der maschinenlesbare Nachweis speichert Commit- und
+Tagger-Adressen nur als SHA-256-Fingerabdruck und Domain.
 
 Vor dem Rewrite wurde ein vollständiges privates Git-Bundle außerhalb des
 Repositorys erzeugt und mit `git bundle verify` geprüft. Es umfasst 19 damalige
@@ -165,9 +171,9 @@ gemeinsam.
 |---|---|---|
 | kein ungeklärtes fremdes/proprietäres Artefakt | erfüllt | technische Prüfung ohne Fremdartefakt-Befund; Herkunft, Assets und QA-Testdaten zusätzlich vom Owner bestätigt |
 | ausgelieferte Abhängigkeiten mit bekannter kompatibler Lizenz | erfüllt | 857 Pakete inventarisiert, 0 ohne deklarierte Lizenz; siehe Lizenz-Audit |
-| erforderliche Drittanbieterhinweise ableitbar | erfüllt mit Auslieferungsauflage | Lizenz-/Notice-Dateien und Prüfsummen sind inventarisiert; das finale Notice-Bündel entsteht erst nach Lizenzentscheidung |
-| keine Secrets oder privaten Nutzdaten im vorgesehenen öffentlichen Git-Stand | erfüllt | exakter Scan von `main` und drei Tags: 0 Secret-, 0 persönliche Pfad- und 0 persönliche Identitätstreffer; privates Vollbackup verifiziert |
+| erforderliche Drittanbieterhinweise ableitbar | erfüllt | Lizenz-/Notice-Dateien, Prüfsummen und `THIRD_PARTY_NOTICES.md` sind vorhanden und werden automatisch gegengeprüft |
+| keine Secrets oder privaten Nutzdaten im vorgesehenen öffentlichen Git-Stand | erfüllt | exakter Scan von vorgesehenem Quellcommit und drei Tags: 0 Secret- und 0 persönliche Identitätstreffer; der einzige Pfadtreffer ist eine dokumentierte synthetische Testadresse; privates Vollbackup verifiziert |
 
-P1 ist damit **abgeschlossen**. P2 und P3 können nach Plan beginnen. R5.2,
-Phase 6, Lizenzaktivierung, SignPath und Veröffentlichung werden durch dieses
-Audit weder begonnen noch freigegeben.
+P1 bleibt damit **abgeschlossen**. Die nachfolgenden Vorbereitungspakete P2 bis
+P6 sind ebenfalls abgeschlossen. R5.2, Phase 6, SignPath und Veröffentlichung
+werden durch dieses Audit weder begonnen noch freigegeben.

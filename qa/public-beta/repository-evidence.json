@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "a523770d8c20ae0695763acbb25c0e32fd552926",
+  "sourceRevision": "2c58a4088cdd10eb352fdb49736ef7b9a230bdd8",
   "refScope": "explicit-publication-refs",
   "refs": [
-    "refs/heads/main\ta523770d8c20ae0695763acbb25c0e32fd552926",
+    "HEAD\t2c58a4088cdd10eb352fdb49736ef7b9a230bdd8",
     "refs/tags/v0.1.3\t60f58d76029d4ea9b75c680d381db3f31fa4c91c",
     "refs/tags/v0.2.0-rc.1\t0d4a5cd63fbe6f81835dae937f1bd886c4098847",
     "refs/tags/v0.2.0-rc.2\t7d27a173aefea7a6fab3129d08070007a1b40e81"
   ],
-  "commitCount": 34,
-  "trackedFiles": 192,
-  "trackedBytes": 10595210,
-  "reachableObjects": 988,
-  "uniqueBlobs": 629,
+  "commitCount": 41,
+  "trackedFiles": 211,
+  "trackedBytes": 8769331,
+  "reachableObjects": 1196,
+  "uniqueBlobs": 767,
   "largestBlobBytes": 1117268,
   "blobsAtLeastFiveMiB": 0,
   "identities": [
@@ -21,14 +21,14 @@
       "name": "Kordariel666",
       "emailSha256": "58c392e9ace4cd728694394096059d84054975ddd87261e93bfea0d42e2a6e4b",
       "domain": "users.noreply.github.com",
-      "commits": 34
+      "commits": 41
     },
     {
       "role": "committer",
       "name": "Kordariel666",
       "emailSha256": "58c392e9ace4cd728694394096059d84054975ddd87261e93bfea0d42e2a6e4b",
       "domain": "users.noreply.github.com",
-      "commits": 34
+      "commits": 41
     }
   ],
   "taggers": [
@@ -60,8 +60,8 @@
     "jwt": 0,
     "credentialUrl": 0,
     "genericSecretAssignment": 0,
-    "personalPath": 0,
-    "emailLike": 704
+    "personalPath": 1,
+    "emailLike": 994
   },
   "images": [
     {
@@ -86,110 +86,6 @@
       "sha256": "e85a9ea1ed474967595253480f820cb3200c5485e49a0cea7ad05f4fc270423a",
       "width": 128,
       "height": 128,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/desktop-network-running-1182x852.png",
-      "bytes": 397594,
-      "sha256": "6374e37988a07e71e35d8b20ccd3ffef11601dd0ef394682150479e68cdb830f",
-      "width": 1182,
-      "height": 852,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/desktop-profile-overrides.png",
-      "bytes": 121616,
-      "sha256": "2bcd7512c2524418cac93b638551379fd276ed69e99f94d501f08b9075fda473",
-      "width": null,
-      "height": null,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/desktop-profile-shares.png",
-      "bytes": 75809,
-      "sha256": "afe155bb123346d0f2add434bbb5b537d0e436d9dffee00d9d63411e0dcd7307",
-      "width": null,
-      "height": null,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/desktop-running-1182x852.png",
-      "bytes": 422834,
-      "sha256": "c954965bdcc663a3a0a85507b640c8298d3a9b4596c2c8149d8efc8a5d57f5ac",
-      "width": 1182,
-      "height": 852,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/desktop-running-overlap-reference-1184x849.png",
-      "bytes": 75299,
-      "sha256": "2a073d442282d76d3f7faa3d92958f027ca308891e90be6f86eeeb5bdf5d361a",
-      "width": 1184,
-      "height": 849,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/desktop-running-responsive-1182x852.jpg",
-      "bytes": 103979,
-      "sha256": "a765bb6c52a0c8a3b92513a29fa917a43174723c5a255b0da19c1add35db7530",
-      "width": 1182,
-      "height": 852,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/desktop-stopped-1182x852.png",
-      "bytes": 380299,
-      "sha256": "bbe597f99daa19e7be913f4d564c26a55c1d02b94962acdf80150de2a7d86fa8",
-      "width": 1182,
-      "height": 852,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/ldtg-branding-comparison.png",
-      "bytes": 269139,
-      "sha256": "309582efe6f1c71c25a653ace2dbfee232ef296aa589153397ee6e221f089d48",
-      "width": 1360,
-      "height": 900,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/ldtg-branding-desktop.png",
-      "bytes": 101806,
-      "sha256": "3e5773dd384138a6f63e2622a93840c28d287fca121d047691ed7b2dfd0134e1",
-      "width": null,
-      "height": null,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/ldtg-branding-focused.png",
-      "bytes": 178161,
-      "sha256": "90d41bd69ded132757c92272d73f1e9c780018984f5a5ba7aca02b3a5b3ee592",
-      "width": 1200,
-      "height": 430,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/mobile-login-390x844.png",
-      "bytes": 109754,
-      "sha256": "6abd0273c3f7a28e28162cce124c0337767b7fe7eb1f392b2638c92d12e3a0e6",
-      "width": 390,
-      "height": 844,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/responsive-code-comparison.png",
-      "bytes": 368358,
-      "sha256": "2c7fcd0127d283a356089a49eb7b5a61a38766e7854bbbbbee5893001cbc45ab",
-      "width": 2040,
-      "height": 900,
-      "metadataMarkers": []
-    },
-    {
-      "path": "qa/style-comparison.png",
-      "bytes": 280423,
-      "sha256": "1ef83dd664344d36f52a4f0605b3cbb884d305227398efc177e6e6c921e71586",
-      "width": 1360,
-      "height": 900,
       "metadataMarkers": []
     },
     {
