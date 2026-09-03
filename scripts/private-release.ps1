@@ -13,6 +13,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+Import-Module Microsoft.PowerShell.Security -ErrorAction Stop
 $script:ReleaseUtf8NoBom = New-Object Text.UTF8Encoding($false)
 
 function Invoke-Captured {
