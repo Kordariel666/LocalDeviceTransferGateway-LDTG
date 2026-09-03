@@ -107,7 +107,7 @@ Aktiv vorbereitet sind:
 - [Verhaltensregeln](../../CODE_OF_CONDUCT.md)
 - strukturierte GitHub-Vorlagen für Fehlerberichte und Funktionsvorschläge.
 
-Die [Pull-Request-Vorlage](p5-pull-request-template-draft.md) bleibt bewusst ein
+Die [Pull-Request-Vorlage](../../docs/archive/project-history/PULL_REQUEST_TEMPLATE_DRAFT.md) bleibt bewusst ein
 nicht aktiver Entwurf für eine mögliche spätere Beitragsphase.
 
 ## SignPath-Vorprüfung

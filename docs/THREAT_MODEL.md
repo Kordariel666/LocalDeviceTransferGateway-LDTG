@@ -3,7 +3,7 @@
 Status: quellgestütztes Repository-Modell, aktualisiert am 3. September 2026
 
 Dieses Dokument beschreibt den aktuellen Sicherheitsrahmen des Produkts. Das
-ältere [`THREAT_MODEL_2026-08-30.md`](THREAT_MODEL_2026-08-30.md) bleibt als
+ältere [`THREAT_MODEL_2026-08-30.md`](archive/security-hardening-2026-08/THREAT_MODEL_2026-08-30.md) bleibt als
 historischer Audit-Ausgangsstand erhalten. P2 wurde mit einem vollständigen
 Standard-Sicherheitsscan und getrennten, frischen Grenz- und Fix-Reviews gegen
 den Arbeitsbaum geprüft; der dauerhafte Nachweis steht unter

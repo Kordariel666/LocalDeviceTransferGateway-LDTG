@@ -1,11 +1,13 @@
-# Design QA – LDTG-Branding
+# Archiv: Design-QA zum LDTG-Branding
 
 **Vergleichsziel**
 
 - Source visual truth: `assets/ldtg-logo-lockup.png`, die ins Repository übernommene Kopie der vom Owner ausgewählten Variante 3.
-- Implementation screenshot: `qa/ldtg-branding-desktop.png`.
-- Full-view comparison evidence: `qa/ldtg-branding-comparison.png`.
-- Focused brand comparison: `qa/ldtg-branding-focused.png`.
+- Die damaligen Umsetzungs- und Vergleichsaufnahmen wurden vor der
+  Public-Beta-Vorbereitung aus dem aktuellen Arbeitsbaum entfernt, weil die
+  historische QA-Sammlung noch die frühere DMDC-Bezeichnung enthielt. Dieses
+  Protokoll bewahrt das Ergebnis; die Binärdateien bleiben über die lokale
+  Git-Historie wiederherstellbar.
 - Viewport: natives Tauri-Fenster mit einer Windows-Aufnahme von 1182 × 852 Pixeln.
 - Density normalization: Die 1536 × 1024 Pixel große Vorlage und die 1182 × 852 Pixel große App-Aufnahme wurden für den Vollvergleich proportional eingepasst; der Fokusvergleich vergrößert ausschließlich den sichtbaren Markenbereich ohne inhaltliche Retusche.
 - State: Desktop, Dark Theme, Übersicht, Dienst gestoppt, Ethernet, keine verbundenen Geräte oder aktiven Übertragungen.
@@ -28,7 +30,9 @@
 1. Ausgangspunkt: Die bisherige Produktidentität wurde verworfen; ein einzelnes `L` war nicht aussagekräftig genug.
 2. Auswahl: Variante 3 wurde wegen der klaren Verbindung aus LDTG-Schriftzug und Datei-zu-Datei-Transfer gewählt.
 3. Umsetzung: Lockup und kompaktes App-Zeichen wurden als echte Bildassets eingebunden, alle Tauri-Plattformicons neu erzeugt und die Produktbezeichnung im Code auf LDTG umgestellt.
-4. Post-fix evidence: `qa/ldtg-branding-comparison.png` zeigt die ausgewählte Richtung und die vollständige Desktop-App gemeinsam; `qa/ldtg-branding-focused.png` stellt den Markenbereich direkt gegenüber.
+4. Post-fix evidence: Der damalige Voll- und Fokusvergleich bestätigte die
+   ausgewählte Richtung sowie die Umsetzung im Desktopprogramm. Die Aufnahmen
+   wurden bei der späteren Repository-Bereinigung entfernt.
 
 **Focused Region Comparison**
 
@@ -41,7 +45,8 @@
 - [x] Tauri-Icons für alle Zielplattformen neu generieren.
 - [x] Name, Langname, interne Bezeichner und sichtbare Texte auf LDTG umstellen.
 - [x] Native Windows-App aufnehmen und primäre Navigation prüfen.
-- [x] Vollansicht und fokussierten Markenvergleich erzeugen und visuell prüfen.
+- [x] Vollansicht und fokussierten Markenvergleich erzeugen und visuell prüfen
+  (historische Bilddateien anschließend aus dem aktuellen Arbeitsbaum entfernt).
 
 **Follow-up Polish**
 

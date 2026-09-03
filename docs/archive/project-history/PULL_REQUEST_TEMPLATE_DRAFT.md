@@ -1,4 +1,4 @@
-<!-- Nicht aktiver P5-Entwurf. Erst bei geöffneten Codebeiträgen nach .github/pull_request_template.md übernehmen. -->
+<!-- Archivierter Entwurf. Erst bei geöffneten Codebeiträgen als Pull-Request-Vorlage aktivieren. -->
 
 ## Änderung
 

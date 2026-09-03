@@ -1,4 +1,4 @@
-# Design-QA – Freigabeprofile
+# Archiv: Design-QA der Freigabeprofile
 
 Stand: 3. September 2026
 
@@ -8,8 +8,10 @@ Stand: 3. September 2026
 - Zustand: gestoppter Dienst, zwei gespeicherte Testprofile, aktives Profil
   „Fotos unterwegs“, zwei aktive Freigaben und explizite Netzwerk-, Port- und
   Limitüberschreibungen.
-- Nachweise: `desktop-profile-shares.png` und
-  `desktop-profile-overrides.png`.
+- Die damaligen Bildnachweise wurden vor der Public-Beta-Vorbereitung aus dem
+  aktuellen Arbeitsbaum entfernt, weil die historische QA-Sammlung noch die
+  frühere DMDC-Bezeichnung enthielt. Dieses Protokoll bewahrt das Ergebnis; die
+  Dateien bleiben über die lokale Git-Historie wiederherstellbar.
 
 ## Ergebnis
 

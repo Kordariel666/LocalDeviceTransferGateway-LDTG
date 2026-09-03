@@ -7,7 +7,7 @@ Auditierter Quellstand: `a523770d8c20ae0695763acbb25c0e32fd552926`
 Ergebnis: **ERFÜLLT – P1 abgeschlossen**
 
 Dieses Dokument prüft ausschließlich P1 des
-[Plans bis zur Veröffentlichungsentscheidung](../../docs/PUBLIC_BETA_PLAN.md).
+[Plans bis zur Veröffentlichungsentscheidung](../../docs/archive/project-history/PUBLIC_BETA_PLAN.md).
 Es aktiviert keine Projektlizenz, veröffentlicht nichts und autorisiert weder
 SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
 
@@ -114,14 +114,16 @@ Pull-Request-/Cache-Refs nicht öffentlich erreichbar werden.
 | Quellcode, Projektdokumentation und UI-Texte | keine vendorten Fremdquellen erkannt; nahezu vollständig im Wurzelcommit importiert | vom Owner bestätigt |
 | `assets/ldtg-logo-lockup.png`, `assets/ldtg-app-icon.png`, `assets/ldtg-ui-icon.png` | ausgewählte und abgeleitete LDTG-Markenassets, mit KI-Unterstützung erzeugt | vom Owner zur späteren Veröffentlichung freigegeben |
 | `src-tauri/icons/**` | mit der Tauri-CLI aus `assets/ldtg-app-icon.png` erzeugte PNG/ICO/ICNS- sowie Android-/iOS-Varianten | reproduzierbar; Quellicon vom Owner bestätigt |
-| `qa/*.png`, `qa/*.jpg` | Aufnahmen der LDTG-Oberflächen und zwei per `qa/make_comparison.py` erzeugte Vergleiche | Rechte und Freigabefähigkeit der Testdaten vom Owner bestätigt |
+| historische QA-Aufnahmen | Aufnahmen der damaligen LDTG-Oberflächen und daraus erzeugte Vergleiche; vor der Public-Beta-Vorbereitung aus dem aktuellen Arbeitsbaum entfernt | Rechte und Freigabefähigkeit der damaligen Testdaten vom Owner bestätigt; Ergebnis bleibt als Textprotokoll archiviert |
 | `packages/shared/src/index.ts` | laut Dateikopf aus Rust-Verträgen erzeugt | im Repository reproduzierbar |
 | `src-tauri/gen/schemas/*.json` | Tauri-generierte Konfigurations-/Berechtigungsschemata | Fremdherkunft über Tauri; Notices aus Lizenzinventur ableitbar |
 | `pnpm-lock.yaml`, `src-tauri/Cargo.lock` | von pnpm beziehungsweise Cargo erzeugte Auflösung | reproduzierbare Paketmetadaten |
 | Fonts | nur lokale Systemfont-Fallbacks, kein `@font-face`, keine Fontdatei | nichts wird gebündelt |
 | mobile Webassets | aus eigenem Workspace gebaut und mit `rust-embed` in den Dienst eingebettet; keine externen Laufzeitressourcen | Projektquellen vom Owner bestätigt |
 
-Alle 13 QA-Oberflächen-/Vergleichsbilder wurden zusätzlich visuell geprüft.
+Alle 13 damaligen QA-Oberflächen-/Vergleichsbilder wurden zusätzlich visuell
+geprüft und vor der Public-Beta-Vorbereitung aus dem aktuellen Arbeitsbaum
+entfernt, weil sie noch die frühere DMDC-Bezeichnung zeigten.
 Erkennbar sind nur LDTG-Oberflächen, private LAN-Adressen, generische
 `C:\LDTG\...`-Testordner, ein Testprofil sowie Zugangscodes/QR-Codes. Namen,
 Benutzerprofile oder Dateiinhalte sind nicht sichtbar. Laut `qa/README.md`

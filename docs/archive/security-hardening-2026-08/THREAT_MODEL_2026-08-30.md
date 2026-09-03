@@ -1,4 +1,4 @@
-# Bedrohungsmodell zum Audit vom 30. August 2026
+# Archiv: Bedrohungsmodell vom 30. August 2026
 
 **Status:** Quellgestützt erfasst; keine Behebung durchgeführt
 

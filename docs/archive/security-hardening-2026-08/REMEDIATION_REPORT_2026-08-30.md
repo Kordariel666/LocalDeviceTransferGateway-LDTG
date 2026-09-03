@@ -1,4 +1,4 @@
-# Remediation- und Verifikationsbericht vom 30. August 2026
+# Archiv: Remediation- und Verifikationsbericht vom 30. August 2026
 
 > **Historischer Zwischenstand:** Dieser Bericht dokumentiert die erste Behebungsrunde. Spätere Re-Audits und Härtungen haben einzelne hier beschriebene Mechanismen verändert. Maßgeblich für den aktuellen Stand ist `qa/security-fix-report-2026-09-02.md` zusammen mit der aktuellen API-, Architektur-, Sicherheits- und Testdokumentation.
 

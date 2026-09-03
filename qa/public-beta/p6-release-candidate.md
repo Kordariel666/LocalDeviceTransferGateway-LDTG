@@ -101,7 +101,8 @@ Fehler im Kerntransfer blockiert P6 dagegen unmittelbar.
 Nach bestandenem P6 bleibt der Zustand unveröffentlicht. Tag, Push,
 Repositorysichtbarkeit, GitHub Release, Private Vulnerability Reporting und ein
 späterer SignPath-Antrag sind externe Zustandsänderungen und erfordern jeweils
-die in `docs/PUBLIC_BETA_PLAN.md` vorgesehene ausdrückliche Entscheidung. Bis
+die im archivierten `docs/archive/project-history/PUBLIC_BETA_PLAN.md`
+vorgesehene ausdrückliche Entscheidung. Bis
 dahin gilt weder ein öffentliches Supportversprechen noch eine Signaturzusage.
 Die noch offene Entscheidung ist in
 [`docs/PUBLICATION_DECISION.md`](../../docs/PUBLICATION_DECISION.md) vorbereitet.

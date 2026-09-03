@@ -2,162 +2,108 @@
 
 <img src="assets/ldtg-logo-lockup.png" alt="LDTG – Local Device Transfer Gateway" width="760">
 
-**Local Device Transfer Gateway** ist eine lokale Desktopanwendung für kontrollierte Dateiübertragungen zwischen einem PC und Mobilgeräten im selben Netzwerk. Die Desktop-App verwaltet schnell wechselbare Freigabeprofile und startet jeweils eines davon; Uploads und Downloads werden ausschließlich im Browser des Handys ausgelöst.
+**Local Device Transfer Gateway** überträgt Dateien direkt zwischen einem
+Windows-PC und Mobilgeräten im selben lokalen Netzwerk. Die Desktop-App stellt
+ausgewählte Ordner bereit; auf dem Handy genügt ein Browser. Es gibt kein
+Cloudkonto und keinen externen Datei-Upload.
 
-## Sicherheitsmodell
+Aktueller Stand: `0.3.0-rc.2` ist als unsignierter Public-Beta-Kandidat geprüft,
+aber noch nicht öffentlich freigegeben. Deshalb gibt es derzeit keinen
+offiziellen öffentlichen Download.
 
-LDTG v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gibt keine Cloud, kein Konto, keine öffentliche Webseite, keine Portweiterleitung und keine externen Web-Ressourcen. HTTP ist jedoch keine Ende-zu-Ende-Verschlüsselung: Andere Teilnehmer oder Administratoren des lokalen Netzes könnten Verkehr grundsätzlich mitlesen oder manipulieren. LDTG darf deshalb nur in einem bewusst bestätigten Netzwerk eingesetzt werden.
+## Funktionen
 
-- Der achtstellige Code steht nie in URL oder QR-Code. Fehlversuche werden unter Windows nach Möglichkeit pro physischem LAN-Peer statt nur pro IP-Alias begrenzt; ohne auflösbare Nachbartabelle gilt die IP als konservativer Ersatz. Zusätzlich schützt ein dienstweiter Grenzwert gegen verteilte Versuche. Eine aktive Abkühlphase wird vor dem Codevergleich geprüft und rotiert den Code nicht, damit fremde Geräte weder einen Codewechsel erzwingen noch den gültigen Code als Prüf-Orakel verwenden können.
-- Der Code bleibt innerhalb eines Dienstlaufs absichtlich für mehrere legitime Geräte verwendbar, bis er lokal rotiert wird. Eine Rotation widerruft bestehende Sitzungen nicht; dafür stehen getrennte Geräte- und Gesamtwiderrufe bereit. Die aktive Download-/Uploadrolle gilt derzeit dienstweit und kann nicht vom Mobilgerät als eigene Berechtigung gewählt werden.
-- Sitzungen sind an Dienstinstanz und Client-IP gebunden, laufen nach 6 Stunden 15 Minuten Inaktivität beziehungsweise nach 24 Stunden absolut ab und enden spätestens beim Dienststopp. Ein optionaler Gerätename lebt nur in dieser Sitzung; der rohe User-Agent wird lokal in eine verständliche Browser-/Plattformbezeichnung übersetzt und danach nicht an die Desktopoberfläche weitergegeben.
-- Die Downloadfreigabe ist ausschließlich lesbar.
-- Der Upload-Eingang erlaubt nur neue Dateien und zeigt seinen vorhandenen Inhalt nicht an. Das Backend weist gleiche oder verschachtelte Download-/Uploadwurzeln ab, damit diese Zusage auch bei abweichenden Pfadschreibweisen gilt.
-- Gleichzeitig sind höchstens 12 Downloads insgesamt, 4 pro Client-IP und 3 pro Handysitzung aktiv; pro Client-IP sind höchstens 4 unvollständige Uploads reserviert. Zusätzlich begrenzen standardmäßig 100 GiB und 10.000 Dateien den gesamten Upload-Eingang einschließlich bereits abgeschlossener Dateien. Diese beiden Werte sind in den Sicherheitseinstellungen anpassbar.
-- Verbindungen, gleichzeitig bearbeitete HTTP-Anfragen, Dateisystemprüfungen, Ordnerlistings und Sitzungen besitzen globale, klassenspezifische, Geräte-/IP- und soweit passend sitzungsbezogene Kapazitätsgrenzen sowie Zeitlimits. Windows gruppiert mehrere IP-Aliase nach Möglichkeit anhand der lokalen Nachbartabelle zu einem physischen Peer; fehlt diese Information, gilt die IP als konservativer Ersatzschlüssel. Nicht angemeldete Verbindungen haben eine eigene kleine Kapazität und enden nach spätestens 30 Sekunden; angemeldete Verbindungen können diese Klasse nicht verdrängen. Neue Sitzungen verdrängen niemals frische Geräte oder deren Übertragungen.
-- Unvollständige Uploads laufen nach 30 Minuten ohne übertragenen Block oder spätestens nach 24 Stunden ab. Live-Uploads werden ausschließlich über bereits geöffnete, stabile Dateihandles verwaltet und gelöscht. Nach einem Absturz bleiben nicht mehr zweifelsfrei zuordenbare `.part`-Dateien zur manuellen Prüfung erhalten.
-- Pro Upload-ID wird höchstens ein Datenblock gleichzeitig angenommen; insgesamt werden höchstens 8 Uploadblöcke vor dem Body-Puffern zugelassen. Uploadanlage, Inbox-Prüfung, Schreiben, Synchronisation und Abschluss laufen zusätzlich in einem fairen Blocking-Pool mit 4 globalen und 2 Slots pro Client-IP. Jeder nicht abschließende Block ist exakt 8 MiB groß, damit ein Client keine beliebige Zahl winziger dauerhafter Schreib- und Fortschrittsvorgänge auslösen kann. Ein neuer Offset wird erst nach erfolgreichem `sync_data` bestätigt; verliert der Client die Antwort, schließt der Dienst die konsistente Buchhaltung trotzdem ab.
-- Mobile Uploads verwenden eine kryptografisch zufällige 128-Bit-Wiederaufnahme-ID. Eine begrenzte, ablaufende Abschlussquittung verhindert auch nach verlorener Antwort, neuer Anmeldung oder IP-Wechsel eine zweite Veröffentlichung derselben Datei.
-- Es existiert keine LAN-API zum Starten, Stoppen oder Umkonfigurieren des Dienstes.
-- Löschen, Überschreiben, Umbenennen, Verschieben und Ausführen von Dateien sind nicht implementiert.
-- Eingehende Dateien erhalten immer einen unvorhersagbaren serverseitigen Namenszusatz. Die atomare No-Replace-Übernahme bleibt erhalten, ohne durch den Antwortnamen die Existenz gleichnamiger Inbox-Dateien offenzulegen.
+- Dateien aus einem ausgewählten PC-Ordner auf das Handy laden;
+- neue Dateien vom Handy in einen getrennten PC-Eingangsordner hochladen;
+- mehrere Freigabeprofile speichern und schnell wechseln;
+- aktive Geräte und Übertragungen am PC sehen und trennen;
+- Uploads pausieren, fortsetzen, abbrechen oder erneut versuchen;
+- Zugang über einen kurzlebigen achtstelligen Code;
+- Netzwerk, Port, Größen- und Dateigrenzen kontrolliert konfigurieren;
+- tatsächliche installierte App-Version dauerhaft in der Seitenleiste sehen.
 
-Weitere Details stehen in [SECURITY.md](SECURITY.md),
-[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) und
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Die lokale Datenverarbeitung und
-Löschung beschreibt [docs/PRIVACY.md](docs/PRIVACY.md); der für eine mögliche
-Beta akzeptierte, erst nach einem späteren `GO` wirksame Supportrahmen steht in
-[SUPPORT.md](SUPPORT.md). Die
-R4.3-Entscheidung gegen eine
-wirkungslos clientseitig gewählte Rolle ist in
-[docs/PAIRING_DESIGN.md](docs/PAIRING_DESIGN.md) begründet.
+## Unterstützter Beta-Umfang
+
+- Windows 11 25H2 auf x64 mit aktuellen Sicherheitsupdates und WebView2;
+- real geprüfter Mobilclient: Android 16 mit Firefox;
+- direkte Verbindung im ausdrücklich vertrauten privaten LAN.
+
+Andere Browser und mobile Systeme können funktionieren, sind für die erste Beta
+aber nicht als getestet zugesichert. Windows 10, andere Desktopbetriebssysteme,
+NAS-Freigaben, Internetexposition, Portweiterleitung und nicht vertrauenswürdige
+Netze werden nicht unterstützt. Einzelheiten stehen in [SUPPORT.md](SUPPORT.md).
+
+## Verwendung
+
+1. Downloadordner und/oder Upload-Eingang auswählen.
+2. Netzwerk, Port und Grenzen prüfen und die Firewallregel einmalig einrichten.
+3. Den Dienst nur in einem vertrauten Netzwerk starten.
+4. Angezeigte Adresse oder QR-Code am Handy öffnen und den separat angezeigten
+   Zugangscode eingeben.
+5. Dateien übertragen und den Dienst danach wieder stoppen.
+
+Der Uninstaller entfernt nach bestätigter Administratorabfrage die
+LDTG-Firewallregel. Einstellungen, Logs und ausgewählte Freigabeordner bleiben
+bewusst erhalten und werden nicht rekursiv gelöscht.
+
+## Wichtige Sicherheitshinweise
+
+LDTG v1 verwendet gehärtetes **HTTP im vertrauenswürdigen LAN**, aber keine
+Transportverschlüsselung. Andere Teilnehmer oder Administratoren des lokalen
+Netzes könnten Datenverkehr grundsätzlich mitlesen oder manipulieren. LDTG
+darf deshalb nicht über das Internet freigegeben und nur in einem bewusst
+bestätigten Netzwerk gestartet werden.
+
+- Downloadfreigaben sind ausschließlich lesbar.
+- Uploads legen nur neue Dateien an und überschreiben keine vorhandenen Dateien.
+- Der Inhalt des Upload-Eingangs wird Mobilgeräten nicht aufgelistet.
+- Start, Stopp, Konfiguration, Firewall und Diagnose sind nicht über die LAN-API
+  erreichbar.
+- Zugangscodes und Sitzungstoken erscheinen weder in URL/QR-Code noch in Logs.
+- LDTG führt empfangene Dateien nicht aus, enthält aber keinen Virenscanner.
+
+Das vollständige Modell, Meldewege und die lokale Datenverarbeitung beschreiben
+[SECURITY.md](SECURITY.md), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) und
+[docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Entwicklung
 
-Voraussetzungen für Entwicklung und den vorgesehenen Beta-Support unter Windows
-11 25H2:
-
-- Node.js 24.19.0 LTS und pnpm 11.19.0
-- Rust 1.98.0 mit MSVC-Ziel, rustfmt und Clippy
-- Visual Studio 2022 Build Tools mit „Desktopentwicklung mit C++“
-- WebView2 Runtime
+Benötigt werden Node.js `24.19.0`, pnpm `11.19.0`, Rust `1.98.0` mit MSVC,
+Visual Studio 2022 Build Tools und WebView2.
 
 ```powershell
-pnpm install
+pnpm install --frozen-lockfile
 pnpm check
 pnpm dev
 ```
 
-`pnpm check` prüft zuerst, dass die aus Rust erzeugten TypeScript-Verträge aktuell
-sind, und führt danach Typprüfung, ESLint mit React-Hooks-Regeln, Frontendtests samt
-Coverage-Bericht, Rust-Tests, Formatierung, Clippy und beide Webbuilds aus. Die
-Einzelbefehle wie `pnpm test`, `pnpm test:coverage`, `pnpm test:rust` und
-`pnpm build:web` bleiben für gezielte lokale Prüfungen verfügbar. Dasselbe
-Qualitätsgate läuft auf GitHub Actions unter Windows; HTML-Coverage-Berichte werden
-dort 14 Tage als Buildartefakt aufbewahrt.
-
-Rust-DTOs unter `src-tauri/src/domain` sind die maßgebliche Quelle der gemeinsam
-genutzten Datenverträge. Nach einer DTO-Änderung aktualisiert
-`pnpm contracts:generate` das Paket `@ldtg/shared`; `pnpm contracts:check` meldet
-vergessene Exporte, ohne Dateien zu verändern.
-
-Fallible Tauri-Aufrufe lehnen Promises mit einem typisierten `CommandError` ab.
-Stabile Codes und diskriminierte Kontextobjekte steuern Bestätigungsdialoge;
-interne System- oder Dateifehler werden weder als Delimiter-Strings ausgewertet
-noch ungefiltert in der Oberfläche angezeigt.
-
-Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und öffentliche Veröffentlichung sind nicht Bestandteil von v1.
-
-Der Uninstaller entfernt nach einer UAC-Bestätigung die aktuelle Firewallregel
-`LDTG Local Transfer` und den historischen Namen `DMDC Local Transfer`. Er prüft
-die Entfernung und bricht die Deinstallation bei Abbruch oder Fehler mit einer
-sichtbaren Retry-/Cancel-Entscheidung ab. Konfiguration, bis zu 14 gerollte
-Logdateien und mögliche Nutzdaten in den LDTG-AppData- beziehungsweise
-Freigabeverzeichnissen bleiben erhalten; der Uninstaller löscht sie nicht
-rekursiv.
-
-Die Konfiguration besitzt ein eigenes versioniertes Schema. Ältere
-`settings.json`-Dateien werden beim Laden schrittweise migriert; zukünftige,
-beschädigte oder semantisch ungültige Dateien bleiben unverändert und führen zu
-sicheren Standardwerten mit sichtbarer Warnung. Vor einem bewussten Ersetzen legt
-LDTG eine nummerierte Recovery-Kopie an. Die App-Buildversion wird nicht als
-Benutzereinstellung gespeichert.
-
-Jedes Freigabeprofil enthält genau einen optionalen Downloadordner und einen
-optionalen Upload-Eingang. Nur ein Profil ist pro Dienstlauf aktiv. Netzwerk,
-Port und Limits können die gemeinsamen Standards erben oder profilspezifisch
-überschrieben werden; laufende Dienste behalten ihre beim Start aufgelösten
-Werte bis zum Stoppen.
-
-Die Desktopoberfläche markiert ungespeicherte Änderungen, ordnet
-Validierungsfehler direkt den betroffenen Feldern zu und prüft Freigabeordner
-kanonisch im Backend, bevor Konfiguration oder Dienststart fortfahren. Entwürfe
-bleiben beim Seitenwechsel erhalten; Fensterschließen und Tray-Beenden verlangen
-vor dem Verwerfen eine ausdrückliche Bestätigung.
-
-`pnpm test:rust` bettet ausschließlich in den Windows-Test-Runner das Common-Controls-v6-Manifest ein, das Tauri beim normalen App-Build ohnehin erhält. Dadurch laufen die Rust-Unit- und Integrationstests ohne den Windows-Ladefehler `TaskDialogIndirect`; Produktions- und Installer-Manifeste werden nicht verändert.
-
-Auf Rechnern mit einer strikten Windows-Anwendungssteuerungsrichtlinie müssen lokal von Cargo erzeugte Build-Helfer für Entwicklungsbuilds zugelassen sein. Diese Einschränkung betrifft nur die Entwicklung, nicht die Architektur von LDTG.
-
-## Projektstruktur
+`pnpm check` prüft generierte Verträge und Drittanbieterhinweise, TypeScript,
+ESLint, Frontendtests mit Coverage, beide Webbuilds, Rusttests, Formatierung und
+Clippy. Der unsignierte Windows-Installer wird lokal mit `pnpm build` erzeugt.
+Releasebuild, SBOM und Prüfsummen sind in
+[docs/PRIVATE_RELEASE.md](docs/PRIVATE_RELEASE.md) beschrieben.
 
 ```text
-apps/desktop       Tauri-Desktopoberfläche (React/Vite)
-apps/mobile        eingebettete responsive Handyoberfläche (React/Vite)
+apps/desktop       Tauri-Desktopoberfläche
+apps/mobile        eingebettete responsive Handyoberfläche
 packages/shared    aus Rust generierte TypeScript-Verträge
 src-tauri/domain   Einstellungen, Netzwerk- und Dateisystemgrenzen
-src-tauri/service  Axum-Server, Sitzungen und Übertragungsprotokoll
-src-tauri/platform plattformspezifische Firewallintegration
+src-tauri/service  LAN-Server, Sitzungen und Übertragungsprotokoll
+src-tauri/platform Windows-Firewall- und Netzwerkcode
 ```
 
-Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals Tauri-IPC, sondern werden vom Rust-Server direkt gestreamt.
+## Dokumentation
 
-## Dokumentation und Projektstatus
+Der [Dokumentationsindex](docs/README.md) trennt Bedienung, technische Referenz,
+Release-Unterlagen und historische Nachweise. Der aktuelle Release-Entwurf steht
+in [docs/RELEASE_NOTES_0.3.0-rc.2.md](docs/RELEASE_NOTES_0.3.0-rc.2.md).
 
-- [Entwicklungsroadmap](docs/ROADMAP.md)
-- [Plan bis zur Veröffentlichungsentscheidung](docs/PUBLIC_BETA_PLAN.md)
-- [P1-Repository- und Lizenz-Audit](qa/public-beta/repository-audit.md)
-- [Changelog](CHANGELOG.md)
-- [Aktuelle HTTP-API](docs/API.md)
-- [Aktuelle Architektur](docs/ARCHITECTURE.md)
-- [Sicherheitsrichtlinie](SECURITY.md)
-- [Datenschutz und lokale Daten](docs/PRIVACY.md)
-- [Akzeptierter Beta-Supportrahmen](SUPPORT.md)
-- [P2-Sicherheits-, Datenschutz- und Supportnachweis](qa/public-beta/p2-security-privacy-support.md)
-- [Privater Release-Dry-Run](docs/PRIVATE_RELEASE.md)
-- [Codesignierungsentwurf](CODE_SIGNING.md)
-- [P3-Releasepipeline-Nachweis](qa/public-beta/p3-release-pipeline.md)
-- [P4-Realsystem- und Gerätematrix](qa/public-beta/p4-real-device-matrix.md)
-- [P5-Lizenz-, Beitrags- und SignPath-Entscheidungsmappe](qa/public-beta/p5-license-contribution-signpath.md)
-- [P6-Unveröffentlichter Releasekandidat](qa/public-beta/p6-release-candidate.md)
-- [Release-Notes für 0.3.0-rc.2](docs/RELEASE_NOTES_0.3.0-rc.2.md)
-- [Offene Veröffentlichungsentscheidung](docs/PUBLICATION_DECISION.md)
-- [Beitragsrichtlinie](CONTRIBUTING.md)
-- [Verhaltensregeln](CODE_OF_CONDUCT.md)
-- [Abnahmeplan](docs/TESTPLAN.md)
-- [Geprüfter Git-Ausgangsstand](docs/BASELINE_2026-09-02.md)
-- [Abhängigkeitsstrategie](docs/DEPENDENCIES.md)
-- [Letzter Sicherheits- und Fehlerbehebungsbericht](qa/security-fix-report-2026-09-02.md)
-
-## Bedienung
-
-1. Downloadordner und/oder Upload-Eingang wählen.
-2. Netzwerk, Port und Grenzen prüfen und die Firewallregel einmalig einrichten.
-3. Nur in einem vertrauten Netz den Dienst starten.
-4. Die angezeigte URL oder den QR-Code am Handy öffnen und den separat angezeigten Code eingeben.
-5. Nach der Übertragung den Dienst manuell stoppen. Solange er läuft, minimiert das Schließen des Fensters LDTG in den System-Tray.
-
-LDTG führt empfangene Dateien nicht aus und enthält keinen Virenscanner. Empfangene Dateien sollten wie jeder andere externe Inhalt behandelt werden.
-Windows-Autostartverzeichnisse dürfen nicht als Upload-Eingang verwendet werden. Download- und Uploadwurzel müssen vollständig getrennt sein.
-LDTG akzeptiert Upload-Eingänge nur auf lokalen festen, entfernbaren oder RAM-Laufwerken. Effektive Windows-Startordner, bekannte Office-Autoload-Verzeichnisse und nachträglich umgebogene beziehungsweise ausgetauschte Freigabewurzeln werden abgewiesen. Nicht auflösbare Windows-Netzwerkprofile gelten als nicht vertrauenswürdig und benötigen nach jeder Identitätsänderung eine neue Bestätigung.
+Fehlerberichte und Funktionsvorschläge sind nach einer Veröffentlichung über
+Issues willkommen. Pull Requests sind zunächst nicht geöffnet; siehe
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Lizenz
 
-LDTG steht unter der [Apache License 2.0](LICENSE). Copyright © 2026
-Kordariel666. Drittanbieterkomponenten bleiben unter ihren jeweiligen Lizenzen;
-die aktuelle maschinenlesbare Inventur steht unter
-[`qa/public-beta/dependency-licenses.json`](qa/public-beta/dependency-licenses.json).
-Die aus dem tatsächlich ausgelieferten Laufzeitgraphen erzeugten Lizenz- und
-Attributionshinweise stehen in
-[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) und werden dem Installer
-sowie jedem Releasepaket beigefügt.
+LDTG steht unter der [Apache License 2.0](LICENSE), Copyright © 2026
+Kordariel666. Drittanbieterkomponenten behalten ihre jeweiligen Lizenzen. Die
+vollständigen Hinweise stehen in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

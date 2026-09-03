@@ -1,4 +1,4 @@
-# Plan bis zur Veröffentlichungsentscheidung für LDTG
+# Archiv: Plan bis zur Veröffentlichungsentscheidung für LDTG
 
 Stand: 4. September 2026
 Status: beschlossenes Entscheidungsprogramm, noch keine Veröffentlichungsfreigabe
@@ -133,7 +133,7 @@ wurde nach verifiziertem privatem Vollbackup mit einem Rewrite von `main`, dem
 Vorbereitungsbranch und den drei Release-Tags umgesetzt. Die Namensentscheidung
 `PB-03` ist mit der
 Umbenennung in **LDTG – Local Device Transfer Gateway** und der dokumentierten
-[Kollisions-Vorprüfung](BRANDING.md) abgeschlossen. Die Herkunft und Rechte vor
+[Kollisions-Vorprüfung](../../BRANDING.md) abgeschlossen. Die Herkunft und Rechte vor
 dem Wurzelcommit sowie die Freigabefähigkeit der QA-Testdaten wurden mit `PB-02`
 vom Repositoryinhaber bestätigt. Es erfolgten keine Veröffentlichung,
 Lizenzaktivierung oder Anmeldung.
@@ -147,7 +147,7 @@ Lizenzaktivierung oder Anmeldung.
 - Unklare oder nicht benötigte Fremdassets ersetzen oder entfernen.
 - Name und Abkürzung `LDTG` wurden auf offensichtliche Konflikte in
   Softwarekatalogen, Paketregistern und Markenregistern geprüft und in
-  [`docs/BRANDING.md`](BRANDING.md) dokumentiert; daraus folgt keine formale
+  [`docs/BRANDING.md`](../../BRANDING.md) dokumentiert; daraus folgt keine formale
   Markenfreigabe.
 
 ### 7.2 Git- und Datenschutzprüfung
@@ -176,14 +176,14 @@ Lizenzaktivierung oder Anmeldung.
 
 ### Ergebnisse
 
-- [Repository-, Herkunfts- und Datenschutz-Audit](../qa/public-beta/repository-audit.md)
-- [Abhängigkeits- und Lizenz-Audit](../qa/public-beta/dependency-license-audit.md)
-- [maschinenlesbare Lizenzinventur](../qa/public-beta/dependency-licenses.json)
-  und [CycloneDX-1.6-SBOM-Entwurf](../qa/public-beta/sbom.cdx.json)
-- [maschinenlesbarer Repositorynachweis](../qa/public-beta/repository-evidence.json)
-- [Blockerliste](../qa/public-beta/blockers.json) mit Eigentümer, Schweregrad,
+- [Repository-, Herkunfts- und Datenschutz-Audit](../../../qa/public-beta/repository-audit.md)
+- [Abhängigkeits- und Lizenz-Audit](../../../qa/public-beta/dependency-license-audit.md)
+- [maschinenlesbare Lizenzinventur](../../../qa/public-beta/dependency-licenses.json)
+  und [CycloneDX-1.6-SBOM-Entwurf](../../../qa/public-beta/sbom.cdx.json)
+- [maschinenlesbarer Repositorynachweis](../../../qa/public-beta/repository-evidence.json)
+- [Blockerliste](../../../qa/public-beta/blockers.json) mit Eigentümer, Schweregrad,
   Entscheidungsmöglichkeiten und Erledigungsnachweis
-- [bestätigte Herkunftserklärung](../qa/public-beta/provenance-attestation.md)
+- [bestätigte Herkunftserklärung](../../../qa/public-beta/provenance-attestation.md)
 
 ### Gate P1
 
@@ -244,11 +244,11 @@ Lizenzaktivierung, Anmeldung oder kostenpflichtige Maßnahme.
 
 ### Ergebnisse
 
-- [P2-Sicherheits-, Datenschutz- und Supportnachweis](../qa/public-beta/p2-security-privacy-support.md)
-- [aktualisiertes Bedrohungsmodell](THREAT_MODEL.md) und
-  [Sicherheitsrichtlinie](../SECURITY.md)
-- [Dateninventar und Löschwege](PRIVACY.md)
-- [akzeptierter Beta-Supportrahmen](../SUPPORT.md)
+- [P2-Sicherheits-, Datenschutz- und Supportnachweis](../../../qa/public-beta/p2-security-privacy-support.md)
+- [aktualisiertes Bedrohungsmodell](../../THREAT_MODEL.md) und
+  [Sicherheitsrichtlinie](../../../SECURITY.md)
+- [Dateninventar und Löschwege](../../PRIVACY.md)
+- [akzeptierter Beta-Supportrahmen](../../../SUPPORT.md)
 - drei bestätigte Findings niedriger Schwere behoben: Netzwerkvertrauen bindet
   ID und Kategorie; Uninstall entfernt aktuelle und historische Firewallregel
   fail-closed; Auth-Fehlversuche verwenden denselben physischen Peer-Schlüssel
@@ -316,8 +316,8 @@ Gatebewertung vom 3. September 2026: **bestanden**. Der lokale Dry-Run aus Commi
 Qualitätsgate einen frischen unsignierten NSIS-Installer, vier unabhängig
 bestätigte SHA-256-Einträge, eine commitgebundene CycloneDX-SBOM mit 857
 Komponenten, Buildlog und Manifest. Der Quellbaum blieb sauber. Details und
-exakte Hashes stehen im [privaten Releasepfad](PRIVATE_RELEASE.md) und im
-[P3-Nachweis](../qa/public-beta/p3-release-pipeline.md).
+exakte Hashes stehen im [privaten Releasepfad](../../PRIVATE_RELEASE.md) und im
+[P3-Nachweis](../../../qa/public-beta/p3-release-pipeline.md).
 
 ## 10. P4 – Reale Abnahme
 
@@ -453,7 +453,7 @@ nicht als Urheber, Rechteinhaber oder Herausgeber eingetragen.
   oder mit einer konkreten Restmaßnahme versehen.
 
 Zwischenstand vom 4. September 2026: Die
-[P5-Entscheidungsmappe](../qa/public-beta/p5-license-contribution-signpath.md)
+[P5-Entscheidungsmappe](../../../qa/public-beta/p5-license-contribution-signpath.md)
 vergleicht beide Lizenzwege, enthält nicht aktive Beitragsentwürfe und bewertet
 die aktuellen SignPath-Bedingungen. `Apache-2.0` wurde mit ausdrücklicher
 Owner-Freigabe aktiviert. `Kordariel666` wurde als vorläufiges öffentliches
@@ -501,7 +501,7 @@ Ergebnis vom 4. September 2026: `0.3.0-rc.2` wurde vom sauberen Commit
 `a70c1612f2c673b0be7cede2676b851ae134eccd` lokal gebaut. Qualitätsgate,
 Artefakt- und Prüfsummenprüfung sowie die manuelle Defender-, Installations-,
 Versions-, Einstellungserhalt-, Dienst- und Handyverbindungsabnahme bestanden.
-Die vollständige [P6-Entscheidungsmappe](../qa/public-beta/p6-release-candidate.md)
+Die vollständige [P6-Entscheidungsmappe](../../../qa/public-beta/p6-release-candidate.md)
 enthält Hashes und Restrisiken. P6 ist bestanden; veröffentlicht, getaggt oder
 signiert wurde nichts.
 

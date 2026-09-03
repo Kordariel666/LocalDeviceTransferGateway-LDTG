@@ -1,4 +1,4 @@
-# Re-Audit nach Remediation vom 30. August 2026
+# Archiv: Re-Audit nach Remediation vom 30. August 2026
 
 > **Historischer Befundstand vor dieser Behebung:** Der umgesetzte Status, die zusätzliche Bypass-Prüfung und die erneute vollständige Verifikation stehen in `RE_AUDIT_REMEDIATION_2026-08-30.md`.
 

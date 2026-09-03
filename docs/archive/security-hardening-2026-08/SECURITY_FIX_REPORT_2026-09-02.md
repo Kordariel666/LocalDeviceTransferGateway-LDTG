@@ -1,4 +1,4 @@
-# LDTG – Sicherheits- und Fehlerbehebungsbericht
+# Archiv: LDTG-Sicherheits- und Fehlerbehebungsbericht
 
 Datum: 2026-09-02  
 Scan-ID: `86fe353e-43db-4564-99a6-3eddfc5b4844`  

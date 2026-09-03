@@ -1,4 +1,4 @@
-# Behebung und Verifikation des Re-Audits vom 30. August 2026
+# Archiv: Behebung und Verifikation des Re-Audits vom 30. August 2026
 
 > **Historischer Zwischenstand:** Dieser Bericht hält die zweite Behebungsrunde fest. Eine spätere Härtungsrunde hat insbesondere Restgrößenreservierung, Code-Abkühlung und Absturz-Partials erneut verändert. Maßgeblich für den aktuellen Stand ist `qa/security-fix-report-2026-09-02.md` zusammen mit der aktuellen API-, Architektur-, Sicherheits- und Testdokumentation.
 

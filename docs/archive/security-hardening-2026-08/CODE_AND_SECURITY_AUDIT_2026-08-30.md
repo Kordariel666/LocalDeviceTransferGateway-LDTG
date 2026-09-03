@@ -1,4 +1,4 @@
-# Vollständiger Code- und Sicherheits-Audit
+# Archiv: vollständiger Code- und Sicherheits-Audit
 
 **Projekt:** Local Device Transfer Gateway (LDTG) v0.1.3
 **Stichtag:** 30. August 2026  
