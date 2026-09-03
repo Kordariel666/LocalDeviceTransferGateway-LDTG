@@ -756,6 +756,28 @@ Status: erfüllt am 3. September 2026 für R5.1.
   Rolle und Überlappung gelten unverändert; R5.2 würde vor jeder Aktivierung
   zusätzliche Root-spezifische Tests erfordern.
 
+## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
+
+Status: gestartet am 3. September 2026; P0 abgeschlossen, P1 als nächstes und
+noch keine Veröffentlichungsfreigabe.
+
+Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
+nicht auf Verdacht weitere Funktionen entstehen. Der detaillierte
+[Plan bis zur Veröffentlichungsentscheidung](PUBLIC_BETA_PLAN.md) umfasst:
+
+- Repository-, Herkunfts- und vollständigen Drittanbieter-Lizenzaudit;
+- Sicherheits-, Datenschutz-, Support- und Wartungsgrenzen;
+- nachvollziehbare private Releasepipeline mit Prüfsummen und SBOM;
+- reale Windows-, iOS- und Android-Abnahme;
+- entscheidungsreife Entwürfe für `GPL-3.0-only` und `Apache-2.0`;
+- SignPath-Gapanalyse und einen vollständig unveröffentlichten Beta-Dry-Run;
+- ein abschließendes Gate mit `GO-GPL`, `GO-APACHE`, `HOLD`, `ARCHIVE` oder
+  `COMMERCIAL-DISCOVERY`.
+
+Bis zu diesem Gate bleibt das Repository privat, die Projektlizenz ungesetzt,
+das Kostenlimit bei null Euro und jede externe Veröffentlichung oder Anmeldung
+gesondert zustimmungspflichtig. R5.2 und Phase 6 sind solange pausiert.
+
 ## 11. Phase 6 – Strategische Transferfunktionen
 
 ### R6.1 Wiederaufnahme nach Seitenreload oder erneuter Auswahl
@@ -846,8 +868,10 @@ Die konkrete Abarbeitung erfolgt in dieser Reihenfolge:
 11. R3 Transferkomfort.
 12. R4 Vertrauens- und Geräteverwaltung.
 13. R5 Profile; gleichzeitige Mehrfachfreigaben nur nach Nutzungsentscheidung.
-14. R6 Wiederaufnahme und Sammeltransfer jeweils nach eigenem Design-Gate.
-15. R7 vollständige Release-Härtung.
+14. Entscheidungsprogramm P bis zum bewussten Public-Beta-Gate.
+15. R6 Wiederaufnahme und Sammeltransfer nur bei einer danach bestätigten
+    Produktentscheidung und jeweils nach eigenem Design-Gate.
+16. Verbleibende R7-Release-Härtung passend zur Veröffentlichungsentscheidung.
 
 R3 und R4 können nach Abschluss von Phase 2 teilweise parallel geplant werden, sollen aber in getrennten Commits und Abnahmezyklen bleiben.
 

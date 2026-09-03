@@ -102,6 +102,7 @@ Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals
 ## Dokumentation und Projektstatus
 
 - [Entwicklungsroadmap](docs/ROADMAP.md)
+- [Plan bis zur Veröffentlichungsentscheidung](docs/PUBLIC_BETA_PLAN.md)
 - [Changelog](CHANGELOG.md)
 - [Aktuelle HTTP-API](docs/API.md)
 - [Aktuelle Architektur](docs/ARCHITECTURE.md)
