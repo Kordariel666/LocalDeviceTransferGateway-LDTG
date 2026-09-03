@@ -1,7 +1,7 @@
 use super::*;
 use crate::domain::{
     network::NetworkInterfaceInfo,
-    settings::{AppSettings, ShareSettings},
+    settings::{RuntimeSettings, ShareSettings},
     shares::ShareRoots,
 };
 use crate::service::state::{UploadIoTestGate, MAX_SESSIONS_PER_ADDRESS};
@@ -14,7 +14,7 @@ fn test_state(root: &Path) -> Arc<TransferServiceState> {
     // invariant here as Windows may otherwise compare a `\\?\` path with
     // the non-canonical temporary-directory spelling.
     let root = fs::canonicalize(root).unwrap();
-    let settings = AppSettings {
+    let settings = RuntimeSettings {
         download_share: ShareSettings {
             enabled: true,
             path: root.display().to_string(),
@@ -23,7 +23,7 @@ fn test_state(root: &Path) -> Arc<TransferServiceState> {
             enabled: true,
             path: root.display().to_string(),
         },
-        ..AppSettings::default()
+        ..RuntimeSettings::default()
     };
     let interface = NetworkInterfaceInfo {
         id: "lan|192.168.10.2".into(),

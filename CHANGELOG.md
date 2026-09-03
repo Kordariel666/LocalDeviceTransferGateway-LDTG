@@ -8,6 +8,22 @@ die Versionsnummern folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
+## [0.3.0-rc.1] - 2026-09-03
+
+### Added
+
+- Gespeicherte Freigabeprofile mit stabilem Namen und eigener Download-/Upload-
+  Konfiguration. Profile können bei gestopptem Dienst ausgewählt, dupliziert,
+  umbenannt und gelöscht werden.
+- Optionale profilspezifische Überschreibungen für Netzwerk, Port und den
+  zusammengehörigen Limitsatz; ohne Überschreibung gelten gemeinsame Standards.
+
+### Changed
+
+- Konfigurationsschema 4 migriert die bisherigen Einzel-Freigaben verlustfrei in
+  ein „Standard“-Profil. Pro Dienstlauf wird weiterhin genau ein Profil aufgelöst,
+  sodass HTTP-API und bestehende Sicherheitsgrenzen unverändert bleiben.
+
 ## [0.2.0-rc.2] - 2026-09-03
 
 ### Fixed

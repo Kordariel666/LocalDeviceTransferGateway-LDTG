@@ -1,6 +1,6 @@
 use crate::domain::{
     network::NetworkInterfaceInfo,
-    settings::AppSettings,
+    settings::RuntimeSettings,
     shares::{delete_open_upload, is_reparse_point, RootAnchor, ShareRoots},
     types::{
         DirectoryEntry, ServiceState, ServiceStatus, SessionChangedEvent, SessionInfo,
@@ -381,7 +381,7 @@ impl DownloadLease {
 
 pub struct TransferServiceState {
     pub service_id: String,
-    pub settings: AppSettings,
+    pub settings: RuntimeSettings,
     pub interface: NetworkInterfaceInfo,
     pub roots: ShareRoots,
     pub partial_dir: Option<PathBuf>,
@@ -545,7 +545,7 @@ fn prepare_partial_dir(root: &Path) -> Result<PathBuf, String> {
 
 impl TransferServiceState {
     pub fn new(
-        settings: AppSettings,
+        settings: RuntimeSettings,
         interface: NetworkInterfaceInfo,
         roots: ShareRoots,
         app: Option<AppHandle>,

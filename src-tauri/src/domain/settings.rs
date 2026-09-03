@@ -12,14 +12,74 @@ pub const DEFAULT_PORT: u16 = 8765;
 pub const DEFAULT_MAX_UPLOAD: u64 = 20 * 1024 * 1024 * 1024;
 pub const DEFAULT_MAX_INBOX_BYTES: u64 = 100 * 1024 * 1024 * 1024;
 pub const DEFAULT_MAX_INBOX_FILES: u32 = 10_000;
-pub const CURRENT_SETTINGS_VERSION: u32 = 3;
+pub const CURRENT_SETTINGS_VERSION: u32 = 4;
+pub const DEFAULT_PROFILE_ID: &str = "00000000-0000-4000-8000-000000000001";
 const MAX_TRUSTED_NETWORKS: usize = 256;
+const MAX_PROFILES: usize = 32;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct ShareSettings {
     pub enabled: bool,
     pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LimitSettings {
+    #[ts(type = "number | null")]
+    pub max_upload_bytes: Option<u64>,
+    #[ts(type = "number")]
+    pub max_inbox_bytes: u64,
+    pub max_inbox_files: u32,
+    pub idle_timeout_minutes: Option<u32>,
+}
+
+impl Default for LimitSettings {
+    fn default() -> Self {
+        Self {
+            max_upload_bytes: Some(DEFAULT_MAX_UPLOAD),
+            max_inbox_bytes: DEFAULT_MAX_INBOX_BYTES,
+            max_inbox_files: DEFAULT_MAX_INBOX_FILES,
+            idle_timeout_minutes: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NetworkSettings {
+    pub preferred_adapter_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ProfileOverrides {
+    pub network: Option<NetworkSettings>,
+    pub port: Option<u16>,
+    pub limits: Option<LimitSettings>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ShareProfile {
+    pub id: String,
+    pub name: String,
+    pub download_share: ShareSettings,
+    pub upload_share: ShareSettings,
+    pub overrides: ProfileOverrides,
+}
+
+impl Default for ShareProfile {
+    fn default() -> Self {
+        Self {
+            id: DEFAULT_PROFILE_ID.into(),
+            name: "Standard".into(),
+            download_share: ShareSettings::default(),
+            upload_share: ShareSettings::default(),
+            overrides: ProfileOverrides::default(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
@@ -35,8 +95,8 @@ pub struct TrustedNetwork {
 #[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
     pub version: u32,
-    pub download_share: ShareSettings,
-    pub upload_share: ShareSettings,
+    pub profiles: Vec<ShareProfile>,
+    pub active_profile_id: String,
     pub preferred_adapter_id: Option<String>,
     pub port: u16,
     #[ts(type = "number | null")]
@@ -52,8 +112,8 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             version: CURRENT_SETTINGS_VERSION,
-            download_share: ShareSettings::default(),
-            upload_share: ShareSettings::default(),
+            profiles: vec![ShareProfile::default()],
+            active_profile_id: DEFAULT_PROFILE_ID.into(),
             preferred_adapter_id: None,
             port: DEFAULT_PORT,
             max_upload_bytes: Some(DEFAULT_MAX_UPLOAD),
@@ -66,6 +126,41 @@ impl Default for AppSettings {
 }
 
 impl AppSettings {
+    pub fn active_profile(&self) -> Result<&ShareProfile, String> {
+        self.profiles
+            .iter()
+            .find(|profile| profile.id == self.active_profile_id)
+            .ok_or_else(|| "Das aktive Freigabeprofil existiert nicht.".into())
+    }
+
+    pub fn runtime_settings(&self) -> Result<RuntimeSettings, String> {
+        let profile = self.active_profile()?;
+        let limits = profile.overrides.limits.as_ref();
+        Ok(RuntimeSettings {
+            download_share: profile.download_share.clone(),
+            upload_share: profile.upload_share.clone(),
+            preferred_adapter_id: profile
+                .overrides
+                .network
+                .as_ref()
+                .map(|settings| settings.preferred_adapter_id.clone())
+                .unwrap_or_else(|| self.preferred_adapter_id.clone()),
+            port: profile.overrides.port.unwrap_or(self.port),
+            max_upload_bytes: limits
+                .map(|settings| settings.max_upload_bytes)
+                .unwrap_or(self.max_upload_bytes),
+            max_inbox_bytes: limits
+                .map(|settings| settings.max_inbox_bytes)
+                .unwrap_or(self.max_inbox_bytes),
+            max_inbox_files: limits
+                .map(|settings| settings.max_inbox_files)
+                .unwrap_or(self.max_inbox_files),
+            idle_timeout_minutes: limits
+                .map(|settings| settings.idle_timeout_minutes)
+                .unwrap_or(self.idle_timeout_minutes),
+        })
+    }
+
     pub fn remember_trusted_network(&mut self, network: TrustedNetwork) {
         self.trusted_networks
             .retain(|existing| existing.id != network.id);
@@ -76,24 +171,52 @@ impl AppSettings {
     }
 
     pub fn validate(&self) -> Result<(), String> {
-        if !(1024..=65535).contains(&self.port) {
-            return Err("Der Port muss zwischen 1024 und 65535 liegen.".into());
+        validate_port(self.port)?;
+        validate_limits(
+            self.max_upload_bytes,
+            self.max_inbox_bytes,
+            self.max_inbox_files,
+        )?;
+        if self.profiles.is_empty() || self.profiles.len() > MAX_PROFILES {
+            return Err("Es muss zwischen einem und 32 Freigabeprofilen geben.".into());
         }
-        if matches!(self.max_upload_bytes, Some(0)) {
-            return Err("Das Uploadlimit muss größer als null sein.".into());
+        let mut profile_ids = HashSet::new();
+        let mut profile_names = HashSet::new();
+        for profile in &self.profiles {
+            if uuid::Uuid::parse_str(&profile.id).is_err() || !profile_ids.insert(&profile.id) {
+                return Err("Eine Profil-ID ist ungültig oder mehrfach gespeichert.".into());
+            }
+            let name = profile.name.trim();
+            if name.is_empty()
+                || name.chars().count() > 64
+                || name.chars().any(profile_name_character_is_unsafe)
+            {
+                return Err("Ein Profilname ist ungültig.".into());
+            }
+            if !profile_names.insert(name.to_lowercase()) {
+                return Err("Ein Profilname ist mehrfach gespeichert.".into());
+            }
+            if let Some(port) = profile.overrides.port {
+                validate_port(port)?;
+            }
+            if let Some(limits) = &profile.overrides.limits {
+                validate_limits(
+                    limits.max_upload_bytes,
+                    limits.max_inbox_bytes,
+                    limits.max_inbox_files,
+                )?;
+            }
+            if profile
+                .overrides
+                .network
+                .as_ref()
+                .and_then(|network| network.preferred_adapter_id.as_deref())
+                .is_some_and(|id| id.trim().is_empty() || id.len() > 1_024)
+            {
+                return Err("Eine Netzwerkschnittstellen-ID im Profil ist ungültig.".into());
+            }
         }
-        if self.max_inbox_bytes == 0 {
-            return Err("Das Gesamtlimit des Upload-Eingangs muss größer als null sein.".into());
-        }
-        if self.max_inbox_files == 0 {
-            return Err("Das Dateilimit des Upload-Eingangs muss größer als null sein.".into());
-        }
-        if self
-            .max_upload_bytes
-            .is_some_and(|limit| limit > self.max_inbox_bytes)
-        {
-            return Err("Das Uploadlimit pro Datei darf das Gesamtlimit des Upload-Eingangs nicht überschreiten.".into());
-        }
+        self.active_profile()?;
         if self.trusted_networks.len() > MAX_TRUSTED_NETWORKS {
             return Err("Es sind zu viele vertrauenswürdige Netzwerke gespeichert.".into());
         }
@@ -124,17 +247,77 @@ impl AppSettings {
 
     pub fn validate_for_start(&self) -> Result<(), String> {
         self.validate()?;
-        if !self.download_share.enabled && !self.upload_share.enabled {
+        let runtime = self.runtime_settings()?;
+        if !runtime.download_share.enabled && !runtime.upload_share.enabled {
             return Err("Mindestens eine Freigabe muss aktiviert sein.".into());
         }
-        if self.download_share.enabled && self.download_share.path.trim().is_empty() {
+        if runtime.download_share.enabled && runtime.download_share.path.trim().is_empty() {
             return Err("Für Downloads fehlt ein Ordner.".into());
         }
-        if self.upload_share.enabled && self.upload_share.path.trim().is_empty() {
+        if runtime.upload_share.enabled && runtime.upload_share.path.trim().is_empty() {
             return Err("Für Uploads fehlt ein Eingangsordner.".into());
         }
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RuntimeSettings {
+    pub download_share: ShareSettings,
+    pub upload_share: ShareSettings,
+    pub preferred_adapter_id: Option<String>,
+    pub port: u16,
+    pub max_upload_bytes: Option<u64>,
+    pub max_inbox_bytes: u64,
+    pub max_inbox_files: u32,
+    pub idle_timeout_minutes: Option<u32>,
+}
+
+impl Default for RuntimeSettings {
+    fn default() -> Self {
+        AppSettings::default()
+            .runtime_settings()
+            .expect("default settings contain the default profile")
+    }
+}
+
+fn validate_port(port: u16) -> Result<(), String> {
+    if !(1024..=65535).contains(&port) {
+        return Err("Der Port muss zwischen 1024 und 65535 liegen.".into());
+    }
+    Ok(())
+}
+
+fn validate_limits(
+    max_upload_bytes: Option<u64>,
+    max_inbox_bytes: u64,
+    max_inbox_files: u32,
+) -> Result<(), String> {
+    if matches!(max_upload_bytes, Some(0)) {
+        return Err("Das Uploadlimit muss größer als null sein.".into());
+    }
+    if max_inbox_bytes == 0 {
+        return Err("Das Gesamtlimit des Upload-Eingangs muss größer als null sein.".into());
+    }
+    if max_inbox_files == 0 {
+        return Err("Das Dateilimit des Upload-Eingangs muss größer als null sein.".into());
+    }
+    if max_upload_bytes.is_some_and(|limit| limit > max_inbox_bytes) {
+        return Err("Das Uploadlimit pro Datei darf das Gesamtlimit des Upload-Eingangs nicht überschreiten.".into());
+    }
+    Ok(())
+}
+
+fn profile_name_character_is_unsafe(character: char) -> bool {
+    character.is_control()
+        || matches!(
+            character,
+            '\u{061c}'
+                | '\u{200e}'
+                | '\u{200f}'
+                | '\u{202a}'..='\u{202e}'
+                | '\u{2066}'..='\u{2069}'
+        )
 }
 
 pub struct LoadedSettings {
@@ -218,6 +401,30 @@ fn migrate_v2_to_v3(object: &mut Map<String, Value>) -> Result<(), String> {
     Ok(())
 }
 
+fn migrate_v3_to_v4(object: &mut Map<String, Value>) {
+    let download_share = object
+        .remove("downloadShare")
+        .unwrap_or_else(|| serde_json::json!({ "enabled": false, "path": "" }));
+    let upload_share = object
+        .remove("uploadShare")
+        .unwrap_or_else(|| serde_json::json!({ "enabled": false, "path": "" }));
+    object.insert(
+        "profiles".into(),
+        serde_json::json!([{
+            "id": DEFAULT_PROFILE_ID,
+            "name": "Standard",
+            "downloadShare": download_share,
+            "uploadShare": upload_share,
+            "overrides": {}
+        }]),
+    );
+    object.insert(
+        "activeProfileId".into(),
+        Value::String(DEFAULT_PROFILE_ID.into()),
+    );
+    object.insert("version".into(), Value::from(4));
+}
+
 fn migrate_value(mut value: Value) -> Result<AppSettings, String> {
     let object = value
         .as_object_mut()
@@ -241,6 +448,10 @@ fn migrate_value(mut value: Value) -> Result<AppSettings, String> {
             2 => {
                 migrate_v2_to_v3(object)?;
                 3
+            }
+            3 => {
+                migrate_v3_to_v4(object);
+                4
             }
             _ => {
                 return Err(format!(
@@ -436,7 +647,7 @@ mod tests {
         let migrated_again = migrate_value(serde_json::to_value(&migrated).unwrap()).unwrap();
 
         assert_eq!(migrated, migrated_again);
-        assert_eq!(migrated.version, 3);
+        assert_eq!(migrated.version, CURRENT_SETTINGS_VERSION);
         assert_eq!(migrated.trusted_networks.len(), 2);
         assert_eq!(migrated.trusted_networks[0].id, "{guid}|192.168.1.0/24");
         assert_eq!(migrated.trusted_networks[0].name, "Migriertes Netzwerk 1");
@@ -479,7 +690,7 @@ mod tests {
 
         let loaded = load(&path);
 
-        assert!(loaded.warning.unwrap().contains("Schema 3"));
+        assert!(loaded.warning.unwrap().contains("Schema 4"));
         assert_eq!(loaded.settings, AppSettings::default());
         assert_eq!(fs::read(path).unwrap(), original);
     }
@@ -572,5 +783,93 @@ mod tests {
         let loaded = load(&path);
         assert!(loaded.warning.is_some());
         assert!(path.is_dir());
+    }
+
+    #[test]
+    fn migrates_v3_shares_into_a_default_profile_without_changing_values() {
+        let v3 = serde_json::json!({
+            "version": 3,
+            "downloadShare": { "enabled": true, "path": "C:\\Freigabe" },
+            "uploadShare": { "enabled": true, "path": "D:\\Eingang" },
+            "preferredAdapterId": "lan-id",
+            "port": 9123,
+            "maxUploadBytes": 5_000,
+            "maxInboxBytes": 10_000,
+            "maxInboxFiles": 200,
+            "idleTimeoutMinutes": 30,
+            "trustedNetworks": []
+        });
+
+        let migrated = migrate_value(v3).unwrap();
+        let effective = migrated.runtime_settings().unwrap();
+
+        assert_eq!(migrated.version, CURRENT_SETTINGS_VERSION);
+        assert_eq!(migrated.active_profile_id, DEFAULT_PROFILE_ID);
+        assert_eq!(migrated.profiles.len(), 1);
+        assert_eq!(migrated.profiles[0].name, "Standard");
+        assert!(effective.download_share.enabled);
+        assert_eq!(effective.download_share.path, "C:\\Freigabe");
+        assert_eq!(effective.upload_share.path, "D:\\Eingang");
+        assert_eq!(effective.preferred_adapter_id.as_deref(), Some("lan-id"));
+        assert_eq!(effective.port, 9123);
+        assert_eq!(effective.max_upload_bytes, Some(5_000));
+        assert_eq!(effective.max_inbox_bytes, 10_000);
+        assert_eq!(effective.max_inbox_files, 200);
+        assert_eq!(effective.idle_timeout_minutes, Some(30));
+    }
+
+    #[test]
+    fn resolves_profile_overrides_without_mutating_global_defaults() {
+        let mut settings = AppSettings {
+            preferred_adapter_id: Some("global-lan".into()),
+            port: 8765,
+            max_upload_bytes: Some(100),
+            max_inbox_bytes: 200,
+            max_inbox_files: 20,
+            idle_timeout_minutes: None,
+            ..Default::default()
+        };
+        settings.profiles[0].overrides = ProfileOverrides {
+            network: Some(NetworkSettings {
+                preferred_adapter_id: None,
+            }),
+            port: Some(9123),
+            limits: Some(LimitSettings {
+                max_upload_bytes: None,
+                max_inbox_bytes: 400,
+                max_inbox_files: 40,
+                idle_timeout_minutes: Some(60),
+            }),
+        };
+
+        let effective = settings.runtime_settings().unwrap();
+
+        assert_eq!(effective.preferred_adapter_id, None);
+        assert_eq!(effective.port, 9123);
+        assert_eq!(effective.max_upload_bytes, None);
+        assert_eq!(effective.max_inbox_bytes, 400);
+        assert_eq!(effective.max_inbox_files, 40);
+        assert_eq!(effective.idle_timeout_minutes, Some(60));
+        assert_eq!(settings.preferred_adapter_id.as_deref(), Some("global-lan"));
+        assert_eq!(settings.port, 8765);
+    }
+
+    #[test]
+    fn rejects_missing_active_profile_and_duplicate_profile_names() {
+        let missing = AppSettings {
+            active_profile_id: uuid::Uuid::new_v4().to_string(),
+            ..Default::default()
+        };
+        assert!(missing
+            .validate()
+            .unwrap_err()
+            .contains("aktive Freigabeprofil"));
+
+        let mut duplicate = AppSettings::default();
+        let mut second = duplicate.profiles[0].clone();
+        second.id = uuid::Uuid::new_v4().to_string();
+        second.name = "standard".into();
+        duplicate.profiles.push(second);
+        assert!(duplicate.validate().unwrap_err().contains("Profilname"));
     }
 }

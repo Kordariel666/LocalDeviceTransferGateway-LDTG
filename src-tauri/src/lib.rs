@@ -84,7 +84,11 @@ pub struct AppState {
 
 impl AppState {
     fn new(settings_path: PathBuf, loaded: settings::LoadedSettings) -> Self {
-        let port = loaded.settings.port;
+        let port = loaded
+            .settings
+            .runtime_settings()
+            .map(|settings| settings.port)
+            .unwrap_or(settings::DEFAULT_PORT);
         Self {
             settings_path,
             runtime: Mutex::new(RuntimeData {
@@ -278,7 +282,11 @@ async fn get_app_snapshot(
             runtime.configuration_warning.clone(),
         )
     };
-    let firewall = cached_firewall(app, &state, settings.port).await;
+    let port = settings
+        .runtime_settings()
+        .map_err(|message| CommandError::new(CommandErrorCode::SettingsInvalid, message))?
+        .port;
+    let firewall = cached_firewall(app, &state, port).await;
     let networks = cached_networks(&state).await;
     Ok(AppSnapshot {
         app_version: env!("CARGO_PKG_VERSION").into(),
@@ -402,7 +410,10 @@ async fn start_service(
     settings
         .validate_for_start()
         .map_err(|message| CommandError::new(CommandErrorCode::SettingsInvalid, message))?;
-    let preferred_adapter = settings.preferred_adapter_id.clone();
+    let runtime_settings = settings
+        .runtime_settings()
+        .map_err(|message| CommandError::new(CommandErrorCode::SettingsInvalid, message))?;
+    let preferred_adapter = runtime_settings.preferred_adapter_id.clone();
     let interface = tauri::async_runtime::spawn_blocking(move || {
         network::select_interface(preferred_adapter.as_deref())
     })
@@ -459,7 +470,7 @@ async fn start_service(
             ));
         }
     }
-    let share_settings = settings.clone();
+    let share_settings = runtime_settings.clone();
     if let Some(path) = shares::broad_share_warning(&share_settings) {
         let accepted = broad_share_approval.as_deref().is_some_and(|token| {
             state
@@ -535,7 +546,7 @@ async fn start_service(
         )
     })?;
     state.runtime.lock().await.settings = persisted.clone();
-    let handle = service::start(persisted, interface, roots, Some(app.clone()))
+    let handle = service::start(runtime_settings, interface, roots, Some(app.clone()))
         .await
         .map_err(|error| {
             internal_command_error(
@@ -638,7 +649,11 @@ async fn configure_firewall(
                 "Die Firewallregel kann nur bei gestopptem Dienst geändert werden.",
             ));
         }
-        runtime.settings.port
+        runtime
+            .settings
+            .runtime_settings()
+            .map_err(|message| CommandError::new(CommandErrorCode::SettingsInvalid, message))?
+            .port
     };
     if !(1024..=65535).contains(&port) {
         return Err(CommandError::new(
@@ -712,20 +727,24 @@ async fn export_diagnostics(
         None => None,
     };
     let networks = cached_networks(&state).await;
-    let firewall = cached_firewall(app, &state, settings.port).await;
+    let effective = settings
+        .runtime_settings()
+        .map_err(|message| CommandError::new(CommandErrorCode::SettingsInvalid, message))?;
+    let firewall = cached_firewall(app, &state, effective.port).await;
     let report = serde_json::json!({
         "createdAt": chrono::Utc::now().to_rfc3339(),
         "appVersion": env!("CARGO_PKG_VERSION"),
         "configSchema": settings::CURRENT_SETTINGS_VERSION,
         "platform": std::env::consts::OS,
         "settings": {
-            "downloadEnabled": settings.download_share.enabled,
-            "uploadEnabled": settings.upload_share.enabled,
-            "sharesUseSamePath": settings.download_share.path == settings.upload_share.path,
-            "preferredAdapterId": settings.preferred_adapter_id,
-            "port": settings.port,
-            "maxUploadBytes": settings.max_upload_bytes,
-            "idleTimeoutMinutes": settings.idle_timeout_minutes,
+            "profileCount": settings.profiles.len(),
+            "downloadEnabled": effective.download_share.enabled,
+            "uploadEnabled": effective.upload_share.enabled,
+            "sharesUseSamePath": effective.download_share.path == effective.upload_share.path,
+            "preferredAdapterId": effective.preferred_adapter_id,
+            "port": effective.port,
+            "maxUploadBytes": effective.max_upload_bytes,
+            "idleTimeoutMinutes": effective.idle_timeout_minutes,
             "trustedNetworkCount": settings.trusted_networks.len(),
         },
         "service": {

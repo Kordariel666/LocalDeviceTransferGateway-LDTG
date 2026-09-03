@@ -4,8 +4,10 @@ import type {
   AppSettings,
   AppSnapshot,
   FirewallStatus,
+  LimitSettings,
   ServiceStatus,
   SessionChangedEvent,
+  ShareProfile,
   ShareValidation,
   TransferChangedEvent,
 } from "@dmdc/shared";
@@ -27,6 +29,14 @@ import {
 import { applySessionsChanged, applyTransferChanged } from "./statusEvents";
 import { commandError, errorMessage, invoke } from "./tauriClient";
 import { useLifecycle } from "./useLifecycle";
+import {
+  activeProfile,
+  deleteActiveProfile,
+  duplicateActiveProfile,
+  effectiveProfileSettings,
+  setProfileOverride,
+  updateActiveProfile,
+} from "./profileSettings";
 
 type View = "overview" | "shares" | "transfers" | "security" | "diagnostics";
 type BusyAction = "start" | "stop" | "save" | "firewall" | "diagnostics" | "command" | null;
@@ -211,13 +221,14 @@ export function App() {
   const recoveryPending = snapshot?.configurationWarning !== null && snapshot?.configurationWarning !== undefined;
   const saveAvailable = dirty || recoveryPending;
   const draftErrors = useMemo(() => draft ? validateDraft(draft) : {}, [draft]);
+  const effectiveDraft = useMemo(() => draft ? effectiveProfileSettings(draft) : null, [draft]);
   const currentShareSignature = useMemo(() => draft ? shareSignature(draft) : "", [draft]);
   const activeShareValidation = shareCheck.signature === currentShareSignature
     ? shareCheck.result
     : emptyShareValidation;
   const sharesNeedBackendValidation = Boolean(draft && (
-    (draft.downloadShare.enabled && draft.downloadShare.path.trim())
-    || (draft.uploadShare.enabled && draft.uploadShare.path.trim())
+    (effectiveDraft?.downloadShare.enabled && effectiveDraft.downloadShare.path.trim())
+    || (effectiveDraft?.uploadShare.enabled && effectiveDraft.uploadShare.path.trim())
   ));
   const shareValidationPending = sharesNeedBackendValidation
     && (shareCheck.signature !== currentShareSignature || shareCheck.pending);
@@ -330,13 +341,13 @@ export function App() {
   ]);
 
   const selectedNetwork = useMemo(() => {
-    if (!snapshot || !draft) return undefined;
+    if (!snapshot || !draft || !effectiveDraft) return undefined;
     const activeAddress = serviceHostname(service.url);
     return snapshot.networks.find((item) => activeAddress === item.address)
-      ?? snapshot.networks.find((item) => item.id === draft.preferredAdapterId)
+      ?? snapshot.networks.find((item) => item.id === effectiveDraft.preferredAdapterId)
       ?? snapshot.networks.find((item) => item.preferred)
       ?? snapshot.networks[0];
-  }, [snapshot, draft, service.url]);
+  }, [snapshot, draft, effectiveDraft, service.url]);
 
   const transferHistory = useMemo(() => service.transfers.filter((transfer) => transfer.state !== "active").slice().reverse(), [service.transfers]);
 
@@ -360,7 +371,7 @@ export function App() {
     }
     const localErrors = validateDraft(next);
     if (hasErrors(localErrors)) {
-      setView(localErrors.downloadShare || localErrors.uploadShare || localErrors.shareOverlap ? "shares" : "security");
+      setView(localErrors.profileName || localErrors.downloadShare || localErrors.uploadShare || localErrors.shareOverlap ? "shares" : "security");
       setNotice({ kind: "error", text: text.correctInvalidFields });
       return null;
     }
@@ -377,8 +388,83 @@ export function App() {
     return saved;
   }
 
-  function updateDraft(patch: Partial<AppSettings>) {
-    setDraft((current) => (current ? { ...current, ...patch } : current));
+  function updateProfile(patch: Partial<ShareProfile>) {
+    setDraft((current) => current
+      ? updateActiveProfile(current, (profile) => ({ ...profile, ...patch }))
+      : current);
+  }
+
+  function updateProfileOverride(
+    kind: "network" | "port" | "limits",
+    enabled: boolean,
+  ) {
+    setDraft((current) => current ? setProfileOverride(current, kind, enabled) : current);
+  }
+
+  function updateEffectiveNetwork(preferredAdapterId: string | null) {
+    setDraft((current) => {
+      if (!current) return current;
+      const profile = activeProfile(current);
+      if (!profile.overrides.network) return { ...current, preferredAdapterId };
+      return updateActiveProfile(current, (entry) => ({
+        ...entry,
+        overrides: {
+          ...entry.overrides,
+          network: { preferredAdapterId },
+        },
+      }));
+    });
+  }
+
+  function updateEffectivePort(port: number) {
+    setDraft((current) => {
+      if (!current) return current;
+      const profile = activeProfile(current);
+      if (profile.overrides.port === null) return { ...current, port };
+      return updateActiveProfile(current, (entry) => ({
+        ...entry,
+        overrides: { ...entry.overrides, port },
+      }));
+    });
+  }
+
+  function updateEffectiveLimits(patch: Partial<LimitSettings>) {
+    setDraft((current) => {
+      if (!current) return current;
+      const profile = activeProfile(current);
+      if (!profile.overrides.limits) return { ...current, ...patch };
+      return updateActiveProfile(current, (entry) => ({
+        ...entry,
+        overrides: {
+          ...entry.overrides,
+          limits: { ...entry.overrides.limits!, ...patch },
+        },
+      }));
+    });
+  }
+
+  function selectProfile(profileId: string) {
+    if (draftErrors.profileName) {
+      setNotice({ kind: "error", text: text.correctProfileNameBeforeSwitch });
+      return;
+    }
+    setDraft((current) => current ? { ...current, activeProfileId: profileId } : current);
+  }
+
+  function duplicateProfile() {
+    setDraft((current) => current ? duplicateActiveProfile(current) : current);
+  }
+
+  async function deleteProfile() {
+    if (!draft || draft.profiles.length <= 1) return;
+    const profile = activeProfile(draft);
+    const accepted = await ask(text.deleteProfileWarning(profile.name), {
+      title: text.deleteProfile,
+      kind: "warning",
+      okLabel: text.deleteProfile,
+      cancelLabel: text.cancel,
+    });
+    if (accepted) setDraft((current) => current ? deleteActiveProfile(current) : current);
   }
 
   function updateStopAfterBatch(enabled: boolean) {
@@ -414,8 +500,8 @@ export function App() {
   }
 
   async function start() {
-    if (!draft) return;
-    if (!draft.downloadShare.enabled && !draft.uploadShare.enabled) {
+    if (!draft || !effectiveDraft) return;
+    if (!effectiveDraft.downloadShare.enabled && !effectiveDraft.uploadShare.enabled) {
       setView("shares");
       setNotice({ kind: "error", text: text.oneShareRequired });
       return;
@@ -653,11 +739,13 @@ export function App() {
 
   const currentSnapshot: AppSnapshot = snapshot;
   const currentDraft: AppSettings = draft;
+  const currentEffective = effectiveProfileSettings(currentDraft);
+  const currentProfile = activeProfile(currentDraft);
   const downloadShareError = draftErrors.downloadShare ?? activeShareValidation.downloadError;
   const uploadShareError = draftErrors.uploadShare ?? activeShareValidation.uploadError;
   const shareOverlapError = draftErrors.shareOverlap ?? activeShareValidation.overlapError;
-  const noEnabledShares = !currentDraft.downloadShare.enabled && !currentDraft.uploadShare.enabled;
-  const enabledShares = Number(currentDraft.downloadShare.enabled) + Number(currentDraft.uploadShare.enabled);
+  const noEnabledShares = !currentEffective.downloadShare.enabled && !currentEffective.uploadShare.enabled;
+  const enabledShares = Number(currentEffective.downloadShare.enabled) + Number(currentEffective.uploadShare.enabled);
   const statusLabel = running ? text.serviceOnline : service.state === "error" ? text.serviceError : text.serviceOffline;
 
   return (
@@ -703,7 +791,8 @@ export function App() {
               busy={busy}
               activeTransfers={activeTransfers}
               enabledShares={enabledShares}
-              draft={currentDraft}
+              profile={currentProfile}
+              effectiveSettings={currentEffective}
               snapshot={currentSnapshot}
               selectedNetwork={selectedNetwork}
               onCommand={simpleCommand}
@@ -719,13 +808,18 @@ export function App() {
               shareOverlapError={shareOverlapError}
               shareValidationPending={shareValidationPending}
               draft={currentDraft}
+              profile={currentProfile}
               downloadShareError={downloadShareError}
               uploadShareError={uploadShareError}
+              profileNameError={draftErrors.profileName}
               dirty={dirty}
               recoveryPending={recoveryPending}
               saveAvailable={saveAvailable}
               persistBlocked={persistBlocked}
-              onUpdate={updateDraft}
+              onUpdateProfile={updateProfile}
+              onSelectProfile={selectProfile}
+              onDuplicateProfile={duplicateProfile}
+              onDeleteProfile={deleteProfile}
               onSave={saveCurrentSettings}
             />
           )}
@@ -745,6 +839,8 @@ export function App() {
               running={running}
               busy={busy}
               draft={currentDraft}
+              profile={currentProfile}
+              effectiveSettings={currentEffective}
               snapshot={currentSnapshot}
               selectedNetwork={selectedNetwork}
               draftErrors={draftErrors}
@@ -752,7 +848,10 @@ export function App() {
               dirty={dirty}
               recoveryPending={recoveryPending}
               saveAvailable={saveAvailable}
-              onUpdate={updateDraft}
+              onUpdateNetwork={updateEffectiveNetwork}
+              onUpdatePort={updateEffectivePort}
+              onUpdateLimits={updateEffectiveLimits}
+              onSetOverride={updateProfileOverride}
               onConfigureFirewall={configureFirewall}
               onForgetTrustedNetwork={forgetTrustedNetwork}
               onSave={saveCurrentSettings}

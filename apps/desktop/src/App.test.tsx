@@ -18,9 +18,15 @@ const snapshot: AppSnapshot = {
   appVersion: "0.2.0-rc.1",
   configurationWarning: null,
   settings: {
-    version: 3,
-    downloadShare: { enabled: false, path: "" },
-    uploadShare: { enabled: false, path: "" },
+    version: 4,
+    profiles: [{
+      id: "00000000-0000-4000-8000-000000000001",
+      name: "Standard",
+      downloadShare: { enabled: false, path: "" },
+      uploadShare: { enabled: false, path: "" },
+      overrides: { network: null, port: null, limits: null },
+    }],
+    activeProfileId: "00000000-0000-4000-8000-000000000001",
     preferredAdapterId: null,
     port: 8765,
     maxUploadBytes: 20 * 1024 ** 3,
@@ -126,6 +132,32 @@ describe("Desktop-Dashboard", () => {
     expect(await screen.findByText(/Öffentlich/)).toBeTruthy();
   });
 
+  it("dupliziert, benennt und löscht gespeicherte Freigabeprofile", async () => {
+    mocks.ask.mockResolvedValue(true);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Freigaben" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Profil duplizieren" }));
+    const selector = screen.getByRole("combobox", { name: "Aktives Profil" }) as HTMLSelectElement;
+    expect(selector.options).toHaveLength(2);
+    expect(selector.selectedOptions[0].textContent).toBe("Standard Kopie");
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Profilname" }), {
+      target: { value: "Fotos" },
+    });
+    expect(selector.selectedOptions[0].textContent).toBe("Fotos");
+
+    fireEvent.click(screen.getByRole("button", { name: "Freigaben speichern" }));
+    await waitFor(() => expect(currentSnapshot.settings.profiles).toHaveLength(2));
+    expect(currentSnapshot.settings.profiles[1].name).toBe("Fotos");
+
+    fireEvent.click(screen.getByRole("button", { name: "Profil löschen" }));
+    await waitFor(() => expect(selector.options).toHaveLength(1));
+    expect(mocks.ask).toHaveBeenCalledWith(expect.stringContaining("Fotos"), expect.objectContaining({
+      kind: "warning",
+    }));
+  });
+
   it("zeigt beschädigte Einstellungen als persistente Warnung", async () => {
     currentSnapshot = structuredClone(snapshot);
     currentSnapshot.configurationWarning = "Die gespeicherten Einstellungen sind beschädigt; die vorhandene settings.json wurde unverändert behalten.";
@@ -191,8 +223,8 @@ describe("Desktop-Dashboard", () => {
 
   it("zeigt kanonische Freigabeüberschneidungen aus der Backendprüfung", async () => {
     currentSnapshot = structuredClone(snapshot);
-    currentSnapshot.settings.downloadShare = { enabled: true, path: "C:\\Daten" };
-    currentSnapshot.settings.uploadShare = { enabled: true, path: "C:\\Daten\\Eingang" };
+    currentSnapshot.settings.profiles[0].downloadShare = { enabled: true, path: "C:\\Daten" };
+    currentSnapshot.settings.profiles[0].uploadShare = { enabled: true, path: "C:\\Daten\\Eingang" };
     mocks.invoke.mockImplementation(async (command: string) => {
       if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
       if (command === "get_service_status") return structuredClone(currentSnapshot.service);
@@ -432,7 +464,7 @@ describe("Desktop-Dashboard", () => {
       port: 8765,
       detail: "Firewallregel eingerichtet.",
     };
-    currentSnapshot.settings.downloadShare = { enabled: true, path: "C:\\Freigabe" };
+    currentSnapshot.settings.profiles[0].downloadShare = { enabled: true, path: "C:\\Freigabe" };
     mocks.ask.mockResolvedValue(true);
     mocks.invoke.mockImplementation(async (command: string, args?: Record<string, unknown>) => {
       if (command === "get_app_snapshot") return structuredClone(currentSnapshot);

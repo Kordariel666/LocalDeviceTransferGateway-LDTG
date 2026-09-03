@@ -1,4 +1,4 @@
-use super::settings::AppSettings;
+use super::settings::{AppSettings, RuntimeSettings};
 use super::types::ShareValidation;
 use same_file::Handle as FileHandle;
 use std::{
@@ -104,7 +104,7 @@ impl RootAnchor {
     }
 }
 
-pub fn broad_share_warning(settings: &AppSettings) -> Option<String> {
+pub fn broad_share_warning(settings: &RuntimeSettings) -> Option<String> {
     let profile = std::env::var_os("USERPROFILE")
         .map(PathBuf::from)
         .and_then(|path| fs::canonicalize(path).ok());
@@ -161,6 +161,12 @@ fn validate_configured_root(
 }
 
 pub fn validate_share_settings(settings: &AppSettings) -> ShareValidation {
+    let Ok(settings) = settings.runtime_settings() else {
+        return ShareValidation {
+            overlap_error: Some("Das aktive Freigabeprofil ist ungültig.".into()),
+            ..Default::default()
+        };
+    };
     let download = validate_configured_root(
         settings.download_share.enabled,
         &settings.download_share.path,
@@ -977,16 +983,15 @@ mod tests {
     fn reports_share_errors_for_the_responsible_fields() {
         let temp = tempfile::tempdir().unwrap();
         let missing = temp.path().join("missing");
-        let settings = AppSettings {
-            download_share: super::super::settings::ShareSettings {
-                enabled: true,
-                path: String::new(),
-            },
-            upload_share: super::super::settings::ShareSettings {
-                enabled: true,
-                path: missing.display().to_string(),
-            },
-            ..Default::default()
+        let mut settings = AppSettings::default();
+        let profile = &mut settings.profiles[0];
+        profile.download_share = super::super::settings::ShareSettings {
+            enabled: true,
+            path: String::new(),
+        };
+        profile.upload_share = super::super::settings::ShareSettings {
+            enabled: true,
+            path: missing.display().to_string(),
         };
 
         let validation = validate_share_settings(&settings);
@@ -1001,16 +1006,15 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let nested = temp.path().join("nested");
         fs::create_dir(&nested).unwrap();
-        let settings = AppSettings {
-            download_share: super::super::settings::ShareSettings {
-                enabled: true,
-                path: temp.path().join(".").display().to_string(),
-            },
-            upload_share: super::super::settings::ShareSettings {
-                enabled: true,
-                path: nested.display().to_string(),
-            },
-            ..Default::default()
+        let mut settings = AppSettings::default();
+        let profile = &mut settings.profiles[0];
+        profile.download_share = super::super::settings::ShareSettings {
+            enabled: true,
+            path: temp.path().join(".").display().to_string(),
+        };
+        profile.upload_share = super::super::settings::ShareSettings {
+            enabled: true,
+            path: nested.display().to_string(),
         };
 
         let validation = validate_share_settings(&settings);

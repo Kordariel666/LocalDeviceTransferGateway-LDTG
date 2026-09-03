@@ -64,18 +64,30 @@ Konfiguration ist nur im Zustand `stopped` änderbar. Start, Stop, Quit, Status-
 `settings.json` verwendet ein von der Appversion unabhängiges Konfigurationsschema.
 Beim Laden wird zunächst nur die Schemaangabe gelesen; versionslose Daten werden
 als Schema 0 und ältere Daten anschließend Schritt für Schritt bis zum aktuellen
-Schema 3 migriert. Erst danach folgen Deserialisierung und semantische Validierung.
+Schema 4 migriert. Erst danach folgen Deserialisierung und semantische Validierung.
 Neuere Schemata, falsche Feldtypen und ungültige Grenzen werden nicht übernommen:
 Die App arbeitet mit sicheren Standardwerten, zeigt eine dauerhafte Warnung und
 lässt die Quelldatei unverändert. Vor einem späteren bewussten Ersetzen entsteht
 eine nummerierte `settings.recovery-N.json`. Speichern ist atomar, normalisiert
-ältere Entwürfe auf Schema 3 und lehnt zukünftige Schemaangaben ab. Schema 3
+ältere Entwürfe auf Schema 4 und lehnt zukünftige Schemaangaben ab. Schema 3
 ersetzt die früheren reinen Netzwerk-IDs durch begrenzte, eindeutig validierte
 Vertrauensdatensätze mit stabiler ID, Anzeigename, Kategorie und letzter
 Verwendung. Nicht mehr auflösbare IDs bleiben sichtbar und können bei gestopptem
 Dienst einzeln oder vollständig entfernt werden. Die laufende
 Buildversion gehört ausschließlich zum App-Snapshot und Diagnosebericht und wird
 nicht in Benutzereinstellungen persistiert.
+
+Schema 4 überführt die bisherigen beiden Einzel-Freigaben verlustfrei in ein
+Profil namens „Standard“. Bis zu 32 lokal gespeicherte Profile besitzen jeweils
+eine Download- und Uploadfreigabe sowie eine stabile zufällige ID. Netzwerk,
+Port und der zusammengehörige Limitsatz erben standardmäßig die gemeinsamen
+Werte; ein Profil kann jede dieser drei Gruppen explizit überschreiben. Vor dem
+Start wird ausschließlich das aktive Profil in einen eigenständigen, unveränderlichen
+`RuntimeSettings`-Wert aufgelöst. Dadurch sieht der HTTP-Dienst weiterhin genau
+eine Download- und eine Uploadwurzel, und weder API v1 noch Pfad-, Rollen- oder
+Ressourcengrenzen werden durch die Profilverwaltung aufgeweitet. Profilwechsel,
+Duplizieren, Umbenennen und Löschen bleiben wie alle Konfigurationsänderungen auf
+den gestoppten Zustand begrenzt.
 
 Der Desktop hält gespeicherten Snapshot und bearbeiteten Entwurf getrennt. Ein
 struktureller Vergleich erzeugt den sichtbaren Dirty-State; Hintergrundstatus und

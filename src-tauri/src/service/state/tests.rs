@@ -1,16 +1,16 @@
 use super::journal::{smooth_transfer_speed, TRANSFER_EVENT_BYTES};
 use super::*;
-use crate::domain::settings::ShareSettings;
+use crate::domain::settings::{RuntimeSettings, ShareSettings};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::sync::Condvar;
 
 fn test_state(root: &Path) -> Result<TransferServiceState, String> {
-    let settings = AppSettings {
+    let settings = RuntimeSettings {
         upload_share: ShareSettings {
             enabled: true,
             path: root.display().to_string(),
         },
-        ..AppSettings::default()
+        ..RuntimeSettings::default()
     };
     let interface = NetworkInterfaceInfo {
         id: "lan|192.168.10.2".into(),
@@ -257,7 +257,7 @@ fn preserves_untracked_uuid_partials_even_with_public_marker() {
 fn inbox_limits_include_files_that_existed_before_service_start() {
     let temp = tempfile::tempdir().unwrap();
     fs::write(temp.path().join("existing.bin"), b"1234").unwrap();
-    let settings = AppSettings {
+    let settings = RuntimeSettings {
         upload_share: ShareSettings {
             enabled: true,
             path: temp.path().display().to_string(),
@@ -265,7 +265,7 @@ fn inbox_limits_include_files_that_existed_before_service_start() {
         max_upload_bytes: Some(5),
         max_inbox_bytes: 5,
         max_inbox_files: 1,
-        ..AppSettings::default()
+        ..RuntimeSettings::default()
     };
     let interface = NetworkInterfaceInfo {
         id: "lan|192.168.10.2".into(),

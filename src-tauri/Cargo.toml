@@ -1,6 +1,6 @@
 [package]
 name = "dmdc"
-version = "0.2.0-rc.2"
+version = "0.3.0-rc.1"
 default-run = "dmdc"
 description = "Lokaler Dateitransfer zwischen Desktop und Mobilgerät"
 authors = ["DMDC"]

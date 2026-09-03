@@ -1,6 +1,6 @@
 # DMDC
 
-**Desktop Mobile Data Center** ist eine lokale Desktopanwendung für kontrollierte Dateiübertragungen zwischen einem PC und Mobilgeräten im selben Netzwerk. Die Desktop-App startet den Dienst und legt die zwei möglichen Freigaben fest; Uploads und Downloads werden ausschließlich im Browser des Handys ausgelöst.
+**Desktop Mobile Data Center** ist eine lokale Desktopanwendung für kontrollierte Dateiübertragungen zwischen einem PC und Mobilgeräten im selben Netzwerk. Die Desktop-App verwaltet schnell wechselbare Freigabeprofile und startet jeweils eines davon; Uploads und Downloads werden ausschließlich im Browser des Handys ausgelöst.
 
 ## Sicherheitsmodell
 
@@ -69,6 +69,12 @@ beschädigte oder semantisch ungültige Dateien bleiben unverändert und führen
 sicheren Standardwerten mit sichtbarer Warnung. Vor einem bewussten Ersetzen legt
 DMDC eine nummerierte Recovery-Kopie an. Die App-Buildversion wird nicht als
 Benutzereinstellung gespeichert.
+
+Jedes Freigabeprofil enthält genau einen optionalen Downloadordner und einen
+optionalen Upload-Eingang. Nur ein Profil ist pro Dienstlauf aktiv. Netzwerk,
+Port und Limits können die gemeinsamen Standards erben oder profilspezifisch
+überschrieben werden; laufende Dienste behalten ihre beim Start aufgelösten
+Werte bis zum Stoppen.
 
 Die Desktopoberfläche markiert ungespeicherte Änderungen, ordnet
 Validierungsfehler direkt den betroffenen Feldern zu und prüft Freigabeordner

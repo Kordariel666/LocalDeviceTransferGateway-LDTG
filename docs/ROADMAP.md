@@ -29,6 +29,8 @@ Diese Eigenschaften gelten für alle Phasen als unveränderliche Abnahmekriterie
 - Der abgeschlossene Stand der Phasen 1 bis 4 wird als `0.2.0-rc.1` für die
   manuelle Installations- und Bedienprüfung gebaut. Der finale Tag `v0.2.0`
   folgt erst nach dieser Abnahme und gegebenenfalls notwendigen Korrekturen.
+- Das abgeschlossene Profil-Gate aus Phase 5 wird als `0.3.0-rc.1` geprüft;
+  gleichzeitige Mehrfachfreigaben sind darin bewusst nicht aktiviert.
 - Die Windows-Netzwerkprofilerkennung sowie der echte Start-/Stopp-Ablauf wurden
   am 2. September 2026 auf `Ethernet` mit einem öffentlichen Windows-Profil geprüft.
 - Ein Online-Abhängigkeitsaudit und die physische Windows-/Browser-Abnahmematrix sind noch nicht Bestandteil dieses Nachweises.
@@ -716,12 +718,26 @@ Status: erfüllt am 3. September 2026.
 
 ### R5.1 Freigabeprofile zuerst
 
-- Mehrere gespeicherte Profile mit jeweils einem Download- und einem Uploadordner ermöglichen.
-- Jeweils nur ein Profil pro Dienstlauf aktivieren; damit bleiben API und Sicherheitsgrenzen zunächst unverändert.
-- Profile duplizieren, umbenennen und löschen können.
-- Pro Profil Netzwerk, Port und Limits entweder erben oder explizit überschreiben.
+Status: abgeschlossen am 3. September 2026.
+
+- Konfigurationsschema 4 migriert die bisherigen Freigaben verlustfrei in ein
+  „Standard“-Profil und erlaubt bis zu 32 gespeicherte Profile mit stabilen IDs.
+- Jedes Profil besitzt genau einen Download- und einen Uploadordner. Nur das
+  aktive Profil wird beim Start in einen unveränderlichen Laufzeitwert aufgelöst;
+  API v1 und sämtliche bisherigen Sicherheitsgrenzen bleiben dadurch unverändert.
+- Profile lassen sich bei gestopptem Dienst auswählen, duplizieren, inline
+  umbenennen und nach ausdrücklicher Bestätigung löschen. Das letzte Profil kann
+  nicht gelöscht werden.
+- Netzwerk, Port und Limits erben gemeinsame Standardwerte oder erhalten pro
+  Profil eine explizite, vollständig sichtbare Überschreibung. Beim Aktivieren
+  einer Überschreibung wird der bisher wirksame Wert übernommen.
+- Backend- und Oberflächentests prüfen Migration, eindeutige Identitäten und
+  Namen, Override-Auflösung, Kopie, Wechsel und Löschung.
 
 ### R5.2 Mehrere gleichzeitig benannte Freigaben nur bei belegtem Bedarf
+
+Status: nicht priorisiert; für den aktuellen Bedarf genügen schnell wechselbare
+Profile. Es wird keine API v2 und keine gleichzeitige zusätzliche Root aktiviert.
 
 - API v2 mit stabilen, nicht pfadbasierten Share-IDs entwerfen.
 - Mobile Auswahlseite für benannte Downloadfreigaben und Uploadziele erstellen.
@@ -731,8 +747,14 @@ Status: erfüllt am 3. September 2026.
 
 Phasen-Gate 5:
 
-- Profile beschädigen keine bestehenden v1-Einstellungen und können vollständig migriert werden.
-- Jede gleichzeitig aktive Root besitzt eigene Tests für Traversal, Austausch, Rolle und Überlappung.
+Status: erfüllt am 3. September 2026 für R5.1.
+
+- Bestehende v1-Einstellungen werden vollständig in Schema 4 migriert; die
+  effektiven Werte bleiben nachweislich identisch.
+- Weiterhin sind höchstens die eine Download- und eine Uploadwurzel des aktiven
+  Profils gleichzeitig aktiv. Die bestehenden Tests für Traversal, Austausch,
+  Rolle und Überlappung gelten unverändert; R5.2 würde vor jeder Aktivierung
+  zusätzliche Root-spezifische Tests erfordern.
 
 ## 11. Phase 6 – Strategische Transferfunktionen
 

@@ -2,9 +2,17 @@
 
 export type ShareSettings = { enabled: boolean, path: string, };
 
+export type LimitSettings = { maxUploadBytes: number | null, maxInboxBytes: number, maxInboxFiles: number, idleTimeoutMinutes: number | null, };
+
+export type NetworkSettings = { preferredAdapterId: string | null, };
+
+export type ProfileOverrides = { network: NetworkSettings | null, port: number | null, limits: LimitSettings | null, };
+
+export type ShareProfile = { id: string, name: string, downloadShare: ShareSettings, uploadShare: ShareSettings, overrides: ProfileOverrides, };
+
 export type TrustedNetwork = { id: string, name: string, category: string, lastUsedAt: string | null, };
 
-export type AppSettings = { version: number, downloadShare: ShareSettings, uploadShare: ShareSettings, preferredAdapterId: string | null, port: number, maxUploadBytes: number | null, maxInboxBytes: number, maxInboxFiles: number, idleTimeoutMinutes: number | null, trustedNetworks: Array<TrustedNetwork>, };
+export type AppSettings = { version: number, profiles: Array<ShareProfile>, activeProfileId: string, preferredAdapterId: string | null, port: number, maxUploadBytes: number | null, maxInboxBytes: number, maxInboxFiles: number, idleTimeoutMinutes: number | null, trustedNetworks: Array<TrustedNetwork>, };
 
 export type NetworkInterfaceInfo = { id: string, name: string, profileName: string, address: string, prefixLength: number, networkId: string, category: string, profileResolved: boolean, preferred: boolean, };
 

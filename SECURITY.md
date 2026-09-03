@@ -19,6 +19,10 @@ DMDC v1 nutzt HTTP im bestätigten lokalen Netzwerk und beansprucht keine Transp
 
 ## Durchgesetzte Sicherheitsgrenzen
 
+- Gespeicherte Profile sind ausschließlich lokale Konfiguration. Vor jedem
+  Dienststart wird genau ein aktives Profil aufgelöst und unveränderlich an den
+  Dienst übergeben; ein LAN-Client kann weder Profile auswählen noch zusätzliche
+  Freigabewurzeln aktivieren.
 - Eine Netzwerkfreigabe ist kurzlebig und an die vollständig neu ermittelte Windows-Netzwerkidentität gebunden. Fehlende Profilmetadaten gelten nicht als vertrauenswürdig.
 - Freigabewurzeln werden beim Start verankert und während des Betriebs erneut geprüft. Downloads und Uploads verwenden stabile geöffnete Handles, sodass ein nachträglicher Austausch durch Junctions, Symlinks oder Umbenennungen nicht auf ein anderes Ziel umleitet.
 - Upload-Eingänge auf entfernten oder unbekannten Laufwerkstypen sowie effektive Windows-Startordner und bekannte Office-Autoload-Verzeichnisse werden abgewiesen. Windows-Kurznamen werden nach der kanonischen Auflösung erneut gegen die Pfadrichtlinie geprüft.

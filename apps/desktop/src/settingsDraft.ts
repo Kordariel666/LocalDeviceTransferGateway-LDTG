@@ -1,5 +1,6 @@
 import type { AppSettings, ShareValidation } from "@dmdc/shared";
 import { text } from "./i18n";
+import { activeProfile, effectiveProfileSettings } from "./profileSettings";
 
 export type DraftValidationErrors = {
   port?: string;
@@ -9,64 +10,71 @@ export type DraftValidationErrors = {
   downloadShare?: string;
   uploadShare?: string;
   shareOverlap?: string;
+  profileName?: string;
 };
+
+function profileNameCharacterIsUnsafe(character: string): boolean {
+  const code = character.codePointAt(0) ?? 0;
+  return code <= 0x1f
+    || (code >= 0x7f && code <= 0x9f)
+    || code === 0x061c
+    || code === 0x200e
+    || code === 0x200f
+    || (code >= 0x202a && code <= 0x202e)
+    || (code >= 0x2066 && code <= 0x2069);
+}
 
 export function settingsEqual(left: AppSettings | null, right: AppSettings | null): boolean {
   if (!left || !right) return left === right;
-  return left.version === right.version
-    && left.downloadShare.enabled === right.downloadShare.enabled
-    && left.downloadShare.path === right.downloadShare.path
-    && left.uploadShare.enabled === right.uploadShare.enabled
-    && left.uploadShare.path === right.uploadShare.path
-    && left.preferredAdapterId === right.preferredAdapterId
-    && left.port === right.port
-    && left.maxUploadBytes === right.maxUploadBytes
-    && left.maxInboxBytes === right.maxInboxBytes
-    && left.maxInboxFiles === right.maxInboxFiles
-    && left.idleTimeoutMinutes === right.idleTimeoutMinutes
-    && left.trustedNetworks.length === right.trustedNetworks.length
-    && left.trustedNetworks.every((network, index) => {
-      const other = right.trustedNetworks[index];
-      return network.id === other.id
-        && network.name === other.name
-        && network.category === other.category
-        && network.lastUsedAt === other.lastUsedAt;
-    });
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 export function validateDraft(settings: AppSettings): DraftValidationErrors {
   const errors: DraftValidationErrors = {};
-  if (!Number.isSafeInteger(settings.port) || settings.port < 1024 || settings.port > 65535) {
+  const profile = activeProfile(settings);
+  const effective = effectiveProfileSettings(settings);
+  const profileName = profile.name.trim();
+  const duplicateName = settings.profiles.some((candidate) => (
+    candidate.id !== profile.id
+    && candidate.name.trim().localeCompare(profileName, "de", { sensitivity: "base" }) === 0
+  ));
+  if (!profileName
+    || [...profileName].length > 64
+    || [...profileName].some(profileNameCharacterIsUnsafe)
+    || duplicateName) {
+    errors.profileName = duplicateName ? text.profileNameDuplicate : text.profileNameValidation;
+  }
+  if (!Number.isSafeInteger(effective.port) || effective.port < 1024 || effective.port > 65535) {
     errors.port = text.portValidation;
   }
-  if (settings.maxUploadBytes !== null
-    && (!Number.isSafeInteger(settings.maxUploadBytes) || settings.maxUploadBytes <= 0)) {
+  if (effective.maxUploadBytes !== null
+    && (!Number.isSafeInteger(effective.maxUploadBytes) || effective.maxUploadBytes <= 0)) {
     errors.maxUploadBytes = text.positiveUploadLimit;
   }
-  if (!Number.isSafeInteger(settings.maxInboxBytes) || settings.maxInboxBytes <= 0) {
+  if (!Number.isSafeInteger(effective.maxInboxBytes) || effective.maxInboxBytes <= 0) {
     errors.maxInboxBytes = text.positiveInboxLimit;
   }
-  if (!Number.isSafeInteger(settings.maxInboxFiles)
-    || settings.maxInboxFiles <= 0
-    || settings.maxInboxFiles > 4_294_967_295) {
+  if (!Number.isSafeInteger(effective.maxInboxFiles)
+    || effective.maxInboxFiles <= 0
+    || effective.maxInboxFiles > 4_294_967_295) {
     errors.maxInboxFiles = text.fileLimitValidation;
   }
-  if (settings.maxUploadBytes !== null
-    && settings.maxUploadBytes > settings.maxInboxBytes) {
+  if (effective.maxUploadBytes !== null
+    && effective.maxUploadBytes > effective.maxInboxBytes) {
     errors.maxUploadBytes = text.uploadExceedsInbox;
     errors.maxInboxBytes = text.inboxBelowUpload;
   }
-  if (settings.downloadShare.enabled && !settings.downloadShare.path.trim()) {
+  if (effective.downloadShare.enabled && !effective.downloadShare.path.trim()) {
     errors.downloadShare = text.downloadFolderRequired;
   }
-  if (settings.uploadShare.enabled && !settings.uploadShare.path.trim()) {
+  if (effective.uploadShare.enabled && !effective.uploadShare.path.trim()) {
     errors.uploadShare = text.uploadFolderRequired;
   }
-  if (settings.downloadShare.enabled
-    && settings.uploadShare.enabled
-    && settings.downloadShare.path
-    && settings.downloadShare.path.localeCompare(
-      settings.uploadShare.path,
+  if (effective.downloadShare.enabled
+    && effective.uploadShare.enabled
+    && effective.downloadShare.path
+    && effective.downloadShare.path.localeCompare(
+      effective.uploadShare.path,
       undefined,
       { sensitivity: "accent" },
     ) === 0) {
@@ -80,10 +88,12 @@ export function hasErrors(errors: DraftValidationErrors | ShareValidation): bool
 }
 
 export function shareSignature(settings: AppSettings): string {
+  const effective = effectiveProfileSettings(settings);
   return JSON.stringify([
-    settings.downloadShare.enabled,
-    settings.downloadShare.path,
-    settings.uploadShare.enabled,
-    settings.uploadShare.path,
+    settings.activeProfileId,
+    effective.downloadShare.enabled,
+    effective.downloadShare.path,
+    effective.uploadShare.enabled,
+    effective.uploadShare.path,
   ]);
 }

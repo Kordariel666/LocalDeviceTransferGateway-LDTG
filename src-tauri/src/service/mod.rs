@@ -3,7 +3,7 @@ pub mod state;
 
 use crate::domain::{
     network::{self, same_network_identity, same_subnet, NetworkInterfaceInfo},
-    settings::AppSettings,
+    settings::RuntimeSettings,
     shares::ShareRoots,
 };
 use axum::{body::Body, extract::ConnectInfo, http::Request, Extension, Router};
@@ -358,7 +358,7 @@ fn record_serve_result(state: &TransferServiceState, result: io::Result<()>) {
 }
 
 pub async fn start(
-    settings: AppSettings,
+    settings: RuntimeSettings,
     interface: NetworkInterfaceInfo,
     roots: ShareRoots,
     app: Option<AppHandle>,
@@ -515,7 +515,7 @@ mod tests {
     fn test_state() -> Arc<TransferServiceState> {
         Arc::new(
             TransferServiceState::new(
-                AppSettings::default(),
+                RuntimeSettings::default(),
                 NetworkInterfaceInfo {
                     id: "lan|192.168.10.2".into(),
                     name: "lan".into(),
