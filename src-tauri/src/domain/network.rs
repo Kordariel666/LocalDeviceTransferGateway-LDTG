@@ -6,6 +6,16 @@ use std::{
 };
 use ts_rs::TS;
 
+#[cfg(windows)]
+use windows::Win32::{
+    Networking::NetworkListManager::{
+        INetworkListManager, NetworkListManager, NLM_NETWORK_CATEGORY,
+        NLM_NETWORK_CATEGORY_DOMAIN_AUTHENTICATED, NLM_NETWORK_CATEGORY_PRIVATE,
+        NLM_NETWORK_CATEGORY_PUBLIC,
+    },
+    System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER},
+};
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct NetworkInterfaceInfo {
@@ -113,55 +123,78 @@ pub fn peer_fairness_key(address: IpAddr) -> String {
 
 #[cfg(windows)]
 fn windows_profiles() -> HashMap<String, (String, String, String)> {
-    let script = r#"
-$profiles = Get-NetConnectionProfile -ErrorAction Stop | ForEach-Object {
-  [pscustomobject]@{
-    InterfaceAlias = [string]$_.InterfaceAlias
-    Name = [string]$_.Name
-    NetworkCategory = [string]$_.NetworkCategory
-    NetworkGuid = [string]$_.InstanceID
-  }
-}
-@($profiles) | ConvertTo-Json -Compress
-"#;
-    let Ok(output) = crate::platform::run_encoded(script) else {
+    let Ok(_apartment) = crate::platform::initialize_com() else {
         return HashMap::new();
     };
-    if !output.status.success() {
+    let Ok(manager): Result<INetworkListManager, _> =
+        (unsafe { CoCreateInstance(&NetworkListManager, None, CLSCTX_INPROC_SERVER) })
+    else {
         return HashMap::new();
+    };
+    let Ok(connections) = (unsafe { manager.GetNetworkConnections() }) else {
+        return HashMap::new();
+    };
+    let mut profiles = HashMap::new();
+    loop {
+        let mut item = [None];
+        let mut fetched = 0_u32;
+        let next = unsafe { connections.Next(&mut item, Some(&mut fetched)) };
+        if next.is_err() || fetched == 0 {
+            break;
+        }
+        let Some(connection) = item[0].take() else {
+            continue;
+        };
+        if !unsafe { connection.IsConnected() }.is_ok_and(|connected| connected.0 != 0) {
+            continue;
+        }
+        let Ok(adapter_id) = (unsafe { connection.GetAdapterId() }) else {
+            continue;
+        };
+        let Ok(network) = (unsafe { connection.GetNetwork() }) else {
+            continue;
+        };
+        let Ok(network_id) = (unsafe { network.GetNetworkId() }) else {
+            continue;
+        };
+        let Ok(name) = (unsafe { network.GetName() }) else {
+            continue;
+        };
+        let Ok(category) = (unsafe { network.GetCategory() }) else {
+            continue;
+        };
+        profiles.insert(
+            normalize_adapter_id(&format!("{adapter_id:?}")),
+            (
+                name.to_string(),
+                network_category_name(category).into(),
+                format!("{network_id:?}"),
+            ),
+        );
     }
-    parse_windows_profiles(&output.stdout)
+    profiles
 }
 
 #[cfg(windows)]
-fn parse_windows_profiles(bytes: &[u8]) -> HashMap<String, (String, String, String)> {
-    let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
-        return HashMap::new();
-    };
-    let values = value.as_array().cloned().unwrap_or_else(|| vec![value]);
-    values
-        .into_iter()
-        .filter_map(|item| {
-            let alias = item.get("InterfaceAlias")?.as_str()?.to_string();
-            let name = item
-                .get("Name")
-                .and_then(|value| value.as_str())
-                .filter(|value| !value.is_empty())
-                .unwrap_or(&alias)
-                .to_string();
-            let category = match item.get("NetworkCategory").and_then(|value| value.as_str()) {
-                Some("Public") => "Öffentlich",
-                Some("Private") => "Privat",
-                Some("DomainAuthenticated") => "Domänennetzwerk",
-                Some(value) => value,
-                None => "Unbekannt",
-            }
-            .to_string();
-            let network_guid = item.get("NetworkGuid")?.as_str()?.to_string();
-            (!alias.is_empty() && !network_guid.is_empty())
-                .then_some((alias, (name, category, network_guid)))
-        })
-        .collect()
+fn normalize_adapter_id(value: &str) -> String {
+    value
+        .trim()
+        .trim_start_matches('{')
+        .trim_end_matches('}')
+        .to_ascii_lowercase()
+}
+
+#[cfg(windows)]
+fn network_category_name(category: NLM_NETWORK_CATEGORY) -> &'static str {
+    if category == NLM_NETWORK_CATEGORY_PUBLIC {
+        "Öffentlich"
+    } else if category == NLM_NETWORK_CATEGORY_PRIVATE {
+        "Privat"
+    } else if category == NLM_NETWORK_CATEGORY_DOMAIN_AUTHENTICATED {
+        "Domänennetzwerk"
+    } else {
+        "Unbekannt"
+    }
 }
 
 #[cfg(not(windows))]
@@ -179,15 +212,22 @@ pub fn list_interfaces() -> Vec<NetworkInterfaceInfo> {
                 if value.ip.is_loopback() || value.ip.is_link_local() || !value.ip.is_private() {
                     continue;
                 }
-                let profile_resolved = !cfg!(windows) || profiles.contains_key(&interface.name);
-                let (profile_name, category, profile_guid) =
-                    profiles.get(&interface.name).cloned().unwrap_or_else(|| {
+                #[cfg(windows)]
+                let profile_key = normalize_adapter_id(&interface.adapter_name);
+                #[cfg(not(windows))]
+                let profile_key = interface.name.clone();
+                let profile_resolved = !cfg!(windows) || profiles.contains_key(&profile_key);
+                let (mut profile_name, category, profile_guid) =
+                    profiles.get(&profile_key).cloned().unwrap_or_else(|| {
                         (
                             interface.name.clone(),
                             "Netzwerkprofil unbekannt".into(),
                             "unresolved".into(),
                         )
                     });
+                if profile_name.is_empty() {
+                    profile_name = interface.name.clone();
+                }
                 let prefix = prefix_length(value.netmask);
                 let network_address =
                     Ipv4Addr::from(u32::from(value.ip) & u32::from(value.netmask));
@@ -353,13 +393,19 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
-    fn windows_profile_output_preserves_identity_and_category() {
-        let profiles = parse_windows_profiles(
-            br#"[{"InterfaceAlias":"Ethernet","Name":"Heimnetz","NetworkCategory":"Private","NetworkGuid":"{1234}"}]"#,
+    fn native_windows_profile_values_preserve_identity_and_category() {
+        assert_eq!(normalize_adapter_id("{ABC-123}"), "abc-123");
+        assert_eq!(
+            network_category_name(NLM_NETWORK_CATEGORY_PUBLIC),
+            "Öffentlich"
         );
         assert_eq!(
-            profiles.get("Ethernet"),
-            Some(&("Heimnetz".into(), "Privat".into(), "{1234}".into()))
+            network_category_name(NLM_NETWORK_CATEGORY_PRIVATE),
+            "Privat"
+        );
+        assert_eq!(
+            network_category_name(NLM_NETWORK_CATEGORY_DOMAIN_AUTHENTICATED),
+            "Domänennetzwerk"
         );
     }
 }

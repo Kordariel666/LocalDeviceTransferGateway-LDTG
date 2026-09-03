@@ -1,6 +1,6 @@
 # Support für eine mögliche öffentliche Beta
 
-Stand: 3. September 2026  
+Stand: 4. September 2026
 Status: **PB-04 am 3. September 2026 akzeptiert; noch kein wirksames Supportversprechen**
 
 Dieser Rahmen wird erst mit einer späteren ausdrücklichen
@@ -12,10 +12,11 @@ keine öffentliche Beta und keinen externen Supportkanal.
 - Unterstützt wird nur die jeweils neueste veröffentlichte LDTG-Beta.
 - Desktop: Windows 11 25H2 Home/Pro mit aktuellen Sicherheitsupdates, aktueller
   WebView2 Runtime und der im Release angegebenen Architektur.
-- Mobil: die bei P4 tatsächlich bestandenen Kombinationen aus der zum
-  Release-Freeze neuesten stabilen iOS-/iPadOS-Version mit Safari sowie Android
-  10 oder neuer mit aktuellem stabilen Chrome. Exakte Geräte-, OS- und
-  Browserversionen werden in der Release-Abnahmematrix festgehalten; eine nicht
+- Mobil: Für die erste Beta ist ausschließlich Android 16 mit Firefox als real
+  geprüfte Kombination belegt. Andere Android-Versionen und -Browser sowie
+  iOS/iPadOS mit Safari dürfen als mögliche Kompatibilitätsfälle beschrieben,
+  aber nicht als getestet oder unterstützt zugesichert werden. Exakte Geräte-,
+  OS- und Browserversionen stehen in der Release-Abnahmematrix; eine nicht
   geprüfte Kombination gilt nicht stillschweigend als unterstützt.
 - Windows 10, frühere oder bereits abgekündigte Windows-11-Stände, andere
   Desktopbetriebssysteme, entfernte/NAS-Freigaben, Internetexposition,

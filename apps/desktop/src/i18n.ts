@@ -58,7 +58,7 @@ export const text = {
   activeTransferCount: (count: number) => count === 1 ? "1 aktiv" : `${count} aktiv`,
   activeTransfers: "Aktive Übertragungen",
   noActiveTransfers: "Keine aktive Übertragung",
-  noTransfersDescription: "Neue Up- und Downloads erscheinen hier automatisch mit ihrem Fortschritt.",
+  noTransfersDescription: "Neue Up- und Downloads erscheinen hier automatisch. Sehr kurze Übertragungen können direkt im Verlauf landen.",
   transfersAfterStart: "Übertragungen werden hier angezeigt, sobald der Dienst läuft.",
   transferHistory: "Verlauf dieses Dienstlaufs",
   historyScope: "Der Verlauf bleibt nur bis zum Ende dieses Dienstlaufs im Arbeitsspeicher und wird nicht dauerhaft gespeichert.",

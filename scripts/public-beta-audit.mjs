@@ -7,6 +7,7 @@ import process from "node:process";
 const root = resolve(import.meta.dirname, "..");
 const outputDirectory = join(root, "qa", "public-beta");
 const allowNetwork = process.argv.includes("--online");
+const dependenciesOnly = process.argv.includes("--dependencies-only");
 const publicationRefs = process.argv
   .filter((argument) => argument.startsWith("--public-ref="))
   .map((argument) => argument.slice("--public-ref=".length))
@@ -633,7 +634,13 @@ const sbom = {
   version: 1,
   metadata: {
     tools: { components: [{ type: "application", name: "LDTG public beta audit generator", version: "1" }] },
-    component: { type: "application", "bom-ref": applicationRef, name: "ldtg", version: applicationManifest.version },
+    component: {
+      type: "application",
+      "bom-ref": applicationRef,
+      name: "ldtg",
+      version: applicationManifest.version,
+      licenses: [{ expression: applicationManifest.license }],
+    },
     properties: [
       { name: "ldtg:source-revision", value: run("git", ["rev-parse", "HEAD"]) },
       { name: "ldtg:pnpm-lock-sha256", value: fileSha256(pnpmLockPath) },
@@ -647,7 +654,7 @@ const sbom = {
 
 writeJson("dependency-licenses.json", inventory);
 writeJson("sbom.cdx.json", sbom);
-writeJson("repository-evidence.json", repositoryEvidence());
+if (!dependenciesOnly) writeJson("repository-evidence.json", repositoryEvidence());
 
 if (unknownLicenses.length) {
   throw new Error(`${unknownLicenses.length} Abhaengigkeiten besitzen keine deklarierte Lizenz.`);

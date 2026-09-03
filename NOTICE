@@ -1,0 +1,11 @@
+LDTG – Local Device Transfer Gateway
+Copyright 2026 Kordariel666
+
+Licensed under the Apache License, Version 2.0. A copy of the license is
+provided in the LICENSE file.
+
+LDTG includes third-party open-source components under their respective
+licenses. The source-tree inventory is recorded in
+qa/public-beta/dependency-licenses.json. The release-ready notices for the exact
+shipped runtime dependency graph are provided in THIRD_PARTY_NOTICES.md; that
+file must accompany every public binary release.

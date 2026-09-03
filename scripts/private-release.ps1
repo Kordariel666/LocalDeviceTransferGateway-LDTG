@@ -81,6 +81,37 @@ function Get-OptionalEnvironmentValue {
     return $value
 }
 
+function Assert-CargoBinaryLayout {
+    $cargoMetadataJson = Invoke-Captured -Command 'cargo' -CommandArguments @(
+        'metadata',
+        '--manifest-path',
+        'src-tauri/Cargo.toml',
+        '--format-version',
+        '1',
+        '--no-deps',
+        '--locked'
+    )
+    $cargoMetadata = $cargoMetadataJson | ConvertFrom-Json
+    $package = @($cargoMetadata.packages | Where-Object { $_.name -eq 'ldtg' })
+    if ($package.Count -ne 1) {
+        throw "Erwartet wurde genau ein Cargo-Paket namens ldtg, gefunden: $($package.Count)."
+    }
+
+    $actualBinaries = @($package[0].targets | Where-Object { $_.kind -contains 'bin' } | ForEach-Object { $_.name } | Sort-Object)
+    $expectedBinaries = @('ldtg', 'ldtg-firewall-cleanup') | Sort-Object
+    $binaryDifference = @(Compare-Object -ReferenceObject $expectedBinaries -DifferenceObject $actualBinaries)
+    if ($binaryDifference.Count -ne 0) {
+        throw "Unerwartete Cargo-Binaerziele: $($actualBinaries -join ', ')."
+    }
+
+    $contractGenerator = @($package[0].targets | Where-Object {
+        $_.name -eq 'generate-contracts' -and $_.kind -contains 'example'
+    })
+    if ($contractGenerator.Count -ne 1) {
+        throw 'generate-contracts muss genau einmal als nicht paketiertes Cargo-Beispiel definiert sein.'
+    }
+}
+
 if ($env:OS -ne 'Windows_NT') {
     throw 'Der private Release-Dry-Run ist ausschliesslich fuer Windows vorgesehen.'
 }
@@ -98,6 +129,8 @@ try {
     if (-not [string]::IsNullOrWhiteSpace($worktreeState)) {
         throw "Der Release-Dry-Run akzeptiert nur einen sauberen Arbeitsbaum.`n$worktreeState"
     }
+
+    Assert-CargoBinaryLayout
 
     $metadataJson = Invoke-Captured -Command 'node' -CommandArguments @('scripts/release-metadata.mjs', '--check', '--json')
     $metadata = $metadataJson | ConvertFrom-Json
@@ -148,6 +181,19 @@ try {
         [Environment]::SetEnvironmentVariable('CARGO_NET_OFFLINE', $previousCargoOffline)
     }
 
+    foreach ($binaryName in @('ldtg.exe', 'ldtg-firewall-cleanup.exe')) {
+        $binaryPath = Join-Path $repoRoot "src-tauri/target/release/$binaryName"
+        if (-not (Test-Path -LiteralPath $binaryPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $binaryPath).LastWriteTimeUtc -lt $buildStartedUtc.AddSeconds(-2)) {
+            throw "Das erwartete frische Paket-Binaerziel fehlt: $binaryName"
+        }
+    }
+    $generatorBinaryPath = Join-Path $repoRoot 'src-tauri/target/release/generate-contracts.exe'
+    if ((Test-Path -LiteralPath $generatorBinaryPath -PathType Leaf) -and
+        (Get-Item -LiteralPath $generatorBinaryPath).LastWriteTimeUtc -ge $buildStartedUtc.AddSeconds(-2)) {
+        throw 'Der Buildgenerator generate-contracts.exe wurde unerwartet als Release-Binaerziel gebaut.'
+    }
+
     $installerRoot = Join-Path $repoRoot 'src-tauri/target/release/bundle/nsis'
     $installers = @(Get-ChildItem -LiteralPath $installerRoot -Filter '*.exe' -File | Where-Object {
         $_.Name -like "*$($metadata.version)*setup.exe" -and $_.LastWriteTimeUtc -ge $buildStartedUtc.AddSeconds(-2)
@@ -158,6 +204,12 @@ try {
 
     $installerPath = Join-Path $outputPath $installers[0].Name
     Copy-Item -LiteralPath $installers[0].FullName -Destination $installerPath
+    $licensePath = Join-Path $outputPath 'LICENSE'
+    $noticePath = Join-Path $outputPath 'NOTICE'
+    $thirdPartyNoticesPath = Join-Path $outputPath 'THIRD_PARTY_NOTICES.md'
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE') -Destination $licensePath
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'NOTICE') -Destination $noticePath
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'THIRD_PARTY_NOTICES.md') -Destination $thirdPartyNoticesPath
 
     Invoke-Logged -Label 'Generate commit-bound CycloneDX SBOM' -Command 'node' -CommandArguments @(
         'scripts/release-metadata.mjs',
@@ -200,6 +252,24 @@ try {
             type = 'build-log'
             bytes = (Get-Item -LiteralPath $logPath).Length
             sha256 = Get-Sha256 -Path $logPath
+        },
+        [ordered]@{
+            path = 'LICENSE'
+            type = 'project-license'
+            bytes = (Get-Item -LiteralPath $licensePath).Length
+            sha256 = Get-Sha256 -Path $licensePath
+        },
+        [ordered]@{
+            path = 'NOTICE'
+            type = 'project-notice'
+            bytes = (Get-Item -LiteralPath $noticePath).Length
+            sha256 = Get-Sha256 -Path $noticePath
+        },
+        [ordered]@{
+            path = 'THIRD_PARTY_NOTICES.md'
+            type = 'third-party-notices'
+            bytes = (Get-Item -LiteralPath $thirdPartyNoticesPath).Length
+            sha256 = Get-Sha256 -Path $thirdPartyNoticesPath
         }
     )
 
@@ -207,6 +277,7 @@ try {
         schemaVersion = 1
         status = 'private-dry-run-not-published'
         version = $metadata.version
+        license = $metadata.license
         sourceRevision = $revision
         sourceTags = $sourceTags
         generatedAtUtc = [DateTime]::UtcNow.ToString('O')
@@ -235,7 +306,7 @@ try {
     $manifestPath = Join-Path $outputPath 'build-manifest.json'
     [IO.File]::WriteAllText($manifestPath, (($manifest | ConvertTo-Json -Depth 10) + "`n"), $script:ReleaseUtf8NoBom)
 
-    $checksumTargets = @($installerPath, $sbomPath, $logPath, $manifestPath) | Sort-Object { [IO.Path]::GetFileName($_) }
+    $checksumTargets = @($installerPath, $sbomPath, $logPath, $licensePath, $noticePath, $thirdPartyNoticesPath, $manifestPath) | Sort-Object { [IO.Path]::GetFileName($_) }
     $checksumLines = $checksumTargets | ForEach-Object {
         "$(Get-Sha256 -Path $_) *$([IO.Path]::GetFileName($_))"
     }

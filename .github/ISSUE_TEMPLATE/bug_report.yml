@@ -1,0 +1,66 @@
+name: Fehlerbericht
+description: Reproduzierbares Fehlverhalten in LDTG melden
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für den Bericht. Veröffentliche hier keine Zugangscodes, privaten Pfade, IP-Adressen, persönlichen Dateinamen oder Sicherheitslücken. Für Sicherheitslücken gilt SECURITY.md.
+  - type: input
+    id: ldtg_version
+    attributes:
+      label: LDTG-Version
+      placeholder: z. B. 0.3.0-beta.1
+    validations:
+      required: true
+  - type: input
+    id: windows_version
+    attributes:
+      label: Windows-Version
+      placeholder: z. B. Windows 11 25H2
+    validations:
+      required: true
+  - type: input
+    id: mobile_environment
+    attributes:
+      label: Mobilgerät und Browser
+      description: Falls der Mobilfluss betroffen ist, nenne Betriebssystem und Browser.
+      placeholder: z. B. Android 16 mit Firefox
+  - type: textarea
+    id: steps
+    attributes:
+      label: Schritte zum Reproduzieren
+      description: Verwende nach Möglichkeit unkritische Beispieldateien.
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Erwartetes Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Tatsächliches Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Bereinigte Diagnoseinformationen
+      description: Nur relevante Auszüge ohne Zugangsdaten oder personenbezogene Inhalte einfügen.
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Datenschutzbestätigung
+      options:
+        - label: Ich habe Zugangscodes, private Pfade, IP-Adressen, persönliche Dateinamen und vertrauliche Dateien entfernt.
+          required: true
+        - label: Dies ist keine vertrauliche Sicherheitsmeldung.
+          required: true

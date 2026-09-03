@@ -121,7 +121,10 @@ select:focus-visible {
 
 .sidebar nav button.active::before { background: var(--amber); }
 .sidebar nav button b { min-width: 22px; padding: 2px 6px; border-radius: 10px; background: var(--amber-dark); color: #ffd28a; font-size: .7rem; text-align: center; }
-.sidebar-note { margin: auto 8px 0; padding-top: 18px; border-top: 1px solid var(--line); color: var(--faint); font-size: .7rem; line-height: 1.45; }
+.sidebar-footer { display: grid; gap: 12px; margin: auto 8px 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.sidebar-note { margin: 0; color: var(--faint); font-size: .7rem; line-height: 1.45; }
+.sidebar-version { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0; color: var(--faint); font-size: .68rem; }
+.sidebar-version strong { color: #b8afa4; font-size: .7rem; font-variant-numeric: tabular-nums; }
 
 .workspace { min-width: 0; }
 

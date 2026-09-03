@@ -125,9 +125,11 @@ Kategoriewechsel als erneut bestätigungspflichtig.
 
 ## Verbleibende Grenzen
 
-- Reale UAC-, Firewall-, Installations-/Deinstallations-, Upgrade-,
-  Netzwechsel-, iOS-/Safari- und Android-/Chrome-Prüfungen gehören zu P4 und
-  werden hier nicht als bestanden dargestellt.
+- Reale UAC-, Firewall-, Installations-/Deinstallations- und
+  Android-16-/Firefox-Kernpfade wurden später in P4 bestanden. Upgrade,
+  Netzwechsel, iOS/Safari, Android/Chrome und Stressfälle blieben auf
+  Owner-Entscheidung echte, sichtbar dokumentierte Evidenzlücken und werden
+  nicht als bestanden oder unterstützt dargestellt.
 - Die Windows-Nachbartabelle ist Best effort; bei fehlendem oder veraltetem
   Eintrag gilt die IP als Auth-/Verbindungs-Fallback.
 - Transport bleibt bewusst unverschlüsseltes HTTP im bestätigten LAN; MITM,

@@ -17,7 +17,7 @@ if (-not (Test-Path -LiteralPath $cargo -PathType Leaf)) {
 
 $generatorMode = if ($Mode -eq "Generate") { "--write" } else { "--check" }
 if (Get-Command link.exe -ErrorAction SilentlyContinue) {
-    & $cargo run --quiet --manifest-path $manifest --bin generate-contracts -- $generatorMode
+    & $cargo run --quiet --manifest-path $manifest --example generate-contracts -- $generatorMode
     exit $LASTEXITCODE
 }
 
@@ -35,6 +35,6 @@ if (-not (Test-Path -LiteralPath $vcvars -PathType Leaf)) {
     throw "vcvars64.bat wurde nicht gefunden: $vcvars"
 }
 
-$command = 'call "{0}" >nul && "{1}" run --quiet --manifest-path "{2}" --bin generate-contracts -- {3}' -f $vcvars, $cargo, $manifest, $generatorMode
+$command = 'call "{0}" >nul && "{1}" run --quiet --manifest-path "{2}" --example generate-contracts -- {3}' -f $vcvars, $cargo, $manifest, $generatorMode
 & $env:ComSpec /d /s /c $command
 exit $LASTEXITCODE

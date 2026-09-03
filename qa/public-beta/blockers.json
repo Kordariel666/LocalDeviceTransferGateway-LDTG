@@ -2,11 +2,16 @@
   "schemaVersion": 1,
   "auditedSourceRevision": "8d15035c68ab4f66912e4e1795e6e8e2944513ac",
   "p2BaseRevision": "950e4301a61bbef79d4ecca3ed81b646baa356ca",
-  "status": "p3_dry_run_authorized",
-  "scope": "public-beta decision program through passed P2; P3 clean-commit dry run authorized",
+  "status": "p6_in_progress",
+  "scope": "P0 through P5 passed; P6 candidate 0.3.0-rc.2 is prepared and awaits its clean-commit dry run plus final manual core acceptance",
   "constraints": {
     "recurringCostEur": 0,
-    "licenseActivated": false,
+    "licenseActivated": true,
+    "projectLicense": "Apache-2.0",
+    "licenseDecidedBy": "repository owner",
+    "licenseDecidedOn": "2026-09-04",
+    "publicCopyrightIdentity": "Kordariel666",
+    "contributionMode": "issues-only",
     "published": false,
     "signPathStarted": false,
     "r5_2Paused": true,
@@ -14,6 +19,53 @@
   },
   "blockers": [],
   "resolved": [
+    {
+      "id": "PB-09",
+      "resolution": "replaced the invalid ExecShellWait exit-code comparison with an elevated cleanup plus separate ExecWait postcondition check, reinstalled the corrected artifact and completed uninstall without an error",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "qa/public-beta/p4-real-device-matrix.md#p4-un-01--pb-09--falscher-fehler-nach-erfolgreichem-cleanup",
+        "corrected private installer sha256 A96D52ECABEDD2D660581740587AE5D5BF19750C825BB8DB85989C0DFBCA1D98",
+        "post-uninstall verification: installation, product rules, shortcuts, processes and test-port connections absent; app data and test files retained"
+      ],
+      "residualRisk": "The check depends on the fixed-purpose helper remaining parameterless and on the postcondition verification staying in the uninstaller hook."
+    },
+    {
+      "id": "PB-08",
+      "resolution": "removed runtime PowerShell and the packaged build helper, then completed Defender scan, install, firewall, service, bidirectional small-transfer, repair-install and corrected-uninstall testing without another Defender alert",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "qa/public-beta/p4-real-device-matrix.md#p4-av-01--pb-08--defender-quarantäne",
+        "operator confirmations on 2026-09-03",
+        "corrected private installer sha256 A96D52ECABEDD2D660581740587AE5D5BF19750C825BB8DB85989C0DFBCA1D98"
+      ],
+      "residualRisk": "The artifact remains unsigned and has no public-download SmartScreen reputation; future Defender signatures can change independently of this completed local run."
+    },
+    {
+      "id": "PB-07",
+      "resolution": "removed the two broad Windows-created ldtg.exe rules, reinstalled from File Explorer outside the Codex package context and repeated the firewall/service flow without a second Windows firewall prompt",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "qa/public-beta/p4-real-device-matrix.md#p4-fw-01--zusätzliche-breite-windows-regeln",
+        "registered LDTG 0.3.0-rc.1 uninstall entry and physical process path",
+        "elevated PersistentStore verification: exactly one scoped LDTG Local Transfer rule"
+      ],
+      "residualRisk": "The unsigned-download SmartScreen reputation path remains untested because the private installer was locally produced. Historical DMDC rules remain outside this LDTG cleanup."
+    },
+    {
+      "id": "PB-06",
+      "resolution": "authorized the controlled local Windows 11 25H2 installation, UAC, firewall, upgrade and uninstall test with explicit preservation requirements",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "qa/public-beta/p4-real-device-matrix.md",
+        "owner confirmation on 2026-09-03"
+      ],
+      "residualRisk": "The Windows AV, firewall, cancellation and corrected-uninstall paths are complete; upgrade, clean reinstallation, remaining device coverage and accessibility checks remain P4 scope."
+    },
     {
       "id": "PB-01",
       "resolution": "rewrote every intended public branch and release tag after a separate verified private backup",
@@ -79,7 +131,7 @@
         "scripts/release-metadata.mjs",
         "owner confirmation on 2026-09-03"
       ],
-      "residualRisk": "Authorization alone does not pass P3; the clean-commit dry run must still produce and validate the private installer, checksums, SBOM, build log and manifest."
+      "residualRisk": "The authorized clean-commit dry run completed successfully from commit 4c48058fc1b438ae1f0d5a76a2b17408a6b4b25e. Real installation and device behavior remains P4 scope."
     }
   ],
   "dependencyLicenseBlockers": []

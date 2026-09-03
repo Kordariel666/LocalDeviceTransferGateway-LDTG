@@ -1,7 +1,7 @@
 # Datenschutz und lokale Datenverarbeitung
 
 Stand: 3. September 2026  
-Geltung: Quellstand `0.3.0-rc.1` einschließlich der P2-Härtung auf Basis von
+Geltung: Quellstand `0.3.0-rc.2` einschließlich der P2-Härtung auf Basis von
 `950e4301a61bbef79d4ecca3ed81b646baa356ca`
 
 LDTG arbeitet ohne Konto, Cloud-Backend, Telemetrie, Werbung oder

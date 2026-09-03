@@ -127,6 +127,12 @@ Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals
 - [Privater Release-Dry-Run](docs/PRIVATE_RELEASE.md)
 - [Codesignierungsentwurf](CODE_SIGNING.md)
 - [P3-Releasepipeline-Nachweis](qa/public-beta/p3-release-pipeline.md)
+- [P4-Realsystem- und Gerätematrix](qa/public-beta/p4-real-device-matrix.md)
+- [P5-Lizenz-, Beitrags- und SignPath-Entscheidungsmappe](qa/public-beta/p5-license-contribution-signpath.md)
+- [P6-Unveröffentlichter Releasekandidat](qa/public-beta/p6-release-candidate.md)
+- [Release-Notes für 0.3.0-rc.2](docs/RELEASE_NOTES_0.3.0-rc.2.md)
+- [Beitragsrichtlinie](CONTRIBUTING.md)
+- [Verhaltensregeln](CODE_OF_CONDUCT.md)
 - [Abnahmeplan](docs/TESTPLAN.md)
 - [Geprüfter Git-Ausgangsstand](docs/BASELINE_2026-09-02.md)
 - [Abhängigkeitsstrategie](docs/DEPENDENCIES.md)
@@ -143,3 +149,14 @@ Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals
 LDTG führt empfangene Dateien nicht aus und enthält keinen Virenscanner. Empfangene Dateien sollten wie jeder andere externe Inhalt behandelt werden.
 Windows-Autostartverzeichnisse dürfen nicht als Upload-Eingang verwendet werden. Download- und Uploadwurzel müssen vollständig getrennt sein.
 LDTG akzeptiert Upload-Eingänge nur auf lokalen festen, entfernbaren oder RAM-Laufwerken. Effektive Windows-Startordner, bekannte Office-Autoload-Verzeichnisse und nachträglich umgebogene beziehungsweise ausgetauschte Freigabewurzeln werden abgewiesen. Nicht auflösbare Windows-Netzwerkprofile gelten als nicht vertrauenswürdig und benötigen nach jeder Identitätsänderung eine neue Bestätigung.
+
+## Lizenz
+
+LDTG steht unter der [Apache License 2.0](LICENSE). Copyright © 2026
+Kordariel666. Drittanbieterkomponenten bleiben unter ihren jeweiligen Lizenzen;
+die aktuelle maschinenlesbare Inventur steht unter
+[`qa/public-beta/dependency-licenses.json`](qa/public-beta/dependency-licenses.json).
+Die aus dem tatsächlich ausgelieferten Laufzeitgraphen erzeugten Lizenz- und
+Attributionshinweise stehen in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) und werden dem Installer
+sowie jedem Releasepaket beigefügt.

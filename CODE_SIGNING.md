@@ -1,6 +1,6 @@
-# Entwurf zur Codesignierung
+# Code signing policy (Entwurf)
 
-Stand: 3. September 2026  
+Stand: 4. September 2026
 Status: **Entwurf; keine SignPath-Zusage, kein Zertifikat und keine aktive Signierung**
 
 LDTG wird derzeit weder veröffentlicht noch signiert. Es wurde kein SignPath-
@@ -42,10 +42,36 @@ entscheidbare, SignPath-kompatible Trennung.
   verantwortliche Personen müssen vor Aktivierung ausdrücklich entschieden
   werden.
 
-## Offene Entscheidung
+## SignPath-Stand und geplanter Weg
 
-SignPath-Eignung, Lizenzvoraussetzungen und konkrete Anbieterbedingungen werden
-erst im dafür vorgesehenen P5-Entwurf bewertet. R5.2, Phase 6, Lizenzaktivierung
-und jede tatsächliche Anmeldung bleiben pausiert. Eine unsignierte private
-P3-Datei ist kein Downloadangebot und begründet keine Aussage über Publisher-
-Identität, SmartScreen-Reputation oder zukünftige Signierbarkeit.
+Die am 4. September 2026 geprüften Bedingungen der SignPath Foundation
+verlangen unter anderem eine OSI-anerkannte Lizenz ohne kommerzielle
+Doppellizenzierung, vollständig offenen Projektcode, aktive Wartung und eine
+bereits veröffentlichte Version in der Form, die später signiert werden soll.
+Sie verlangen außerdem MFA, getrennte Rollen, manuelle Freigabe jedes
+Signierauftrags, einen verifizierbaren Build und eine öffentlich verlinkte
+„Code signing policy“. Datenschutz, angekündigte Systemänderungen und ein
+funktionierender Deinstallationsweg gehören ebenfalls zum Prüfrahmen.
+
+Damit ist für den kostenlosen Foundation-Pfad folgende Reihenfolge vorgesehen:
+
+1. eine ausdrücklich freigegebene erste öffentliche Beta ohne behauptete
+   Signatur veröffentlichen;
+2. öffentliche Herkunft, Buildpfad, Wartung und Releaseform nachweisen;
+3. erst danach einen SignPath-Antrag separat genehmigen und stellen;
+4. nach einer eventuellen Annahme die konkrete Rollen- und
+   Repositorykonfiguration nochmals prüfen;
+5. nur neu gebaute und eindeutig als signiert ausgewiesene Folgeartefakte
+   veröffentlichen.
+
+Eine Annahme ist kein Anspruch und wird insbesondere bei einem neuen Projekt
+nicht vorausgesetzt. Die vollständige Vorprüfung und die offenen Entscheidungen
+stehen in der
+[P5-Entscheidungsmappe](qa/public-beta/p5-license-contribution-signpath.md).
+Die Projektlizenz `Apache-2.0` ist aktiviert. R5.2, Phase 6, Anmeldung und
+Veröffentlichung bleiben bis zu den vorgesehenen Freigaben pausiert. Eine
+unsignierte private P3-Datei ist kein
+Downloadangebot und begründet keine Aussage über Publisher-Identität,
+SmartScreen-Reputation oder zukünftige Signierbarkeit.
+
+Quelle: [SignPath Foundation conditions for Open Source projects](https://signpath.org/terms.html)

@@ -1,11 +1,14 @@
 [package]
 name = "ldtg"
-version = "0.3.0-rc.1"
+version = "0.3.0-rc.2"
+autobins = false
 default-run = "ldtg"
 description = "Lokaler Dateitransfer zwischen Desktop und Mobilgerät"
-authors = ["LDTG"]
+authors = ["Kordariel666"]
 edition = "2021"
 rust-version = "1.85"
+license = "Apache-2.0"
+repository = "https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG"
 
 [lib]
 name = "ldtg_lib"
@@ -14,6 +17,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [[bin]]
 name = "ldtg"
 path = "src/main.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "ldtg-firewall-cleanup"
+path = "src/firewall_cleanup.rs"
 test = false
 bench = false
 
@@ -52,8 +61,17 @@ unicode-normalization = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 
 [target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_NetworkManagement_WindowsFirewall",
+  "Win32_Networking_NetworkListManager",
+  "Win32_System_Com",
+  "Win32_System_Ole",
+  "Win32_System_Variant",
+] }
 windows-sys = { version = "0.61", features = [
   "Win32_Foundation",
+  "Win32_Globalization",
   "Win32_NetworkManagement_IpHelper",
   "Win32_NetworkManagement_Ndis",
   "Win32_Networking_WinSock",

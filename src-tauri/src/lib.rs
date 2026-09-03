@@ -2,6 +2,15 @@ pub mod domain;
 mod platform;
 mod service;
 
+/// Entrypoint for the separately packaged, fixed-purpose uninstall helper.
+///
+/// The helper accepts no operation parameters and can only remove LDTG's two
+/// compiled-in firewall rule names.
+#[doc(hidden)]
+pub fn run_firewall_cleanup_helper() -> i32 {
+    platform::run_firewall_cleanup_helper()
+}
+
 use crate::domain::{
     network,
     settings::{self, AppSettings, TrustedNetwork},
@@ -908,6 +917,9 @@ fn initialize_logging(log_dir: &std::path::Path) {
 }
 
 pub fn run() {
+    if let Some(exit_code) = platform::run_internal_firewall_command() {
+        std::process::exit(exit_code);
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
@@ -971,7 +983,6 @@ mod capability_tests {
         network::NetworkInterfaceInfo,
         types::{CommandErrorCode, FirewallStatus},
     };
-    use base64::{engine::general_purpose::STANDARD, Engine};
     use std::{net::Ipv4Addr, sync::Arc};
     use tokio::time::{timeout, Duration};
 
@@ -1051,27 +1062,23 @@ mod capability_tests {
     #[test]
     fn uninstaller_strictly_removes_current_and_legacy_firewall_rules() {
         let hook = include_str!("../windows/hooks.nsh");
-        let encoded = hook
-            .split("-EncodedCommand ")
-            .nth(1)
-            .and_then(|value| value.split('\'').next())
-            .expect("uninstall hook must contain an encoded command");
-        let bytes = STANDARD
-            .decode(encoded)
-            .expect("encoded uninstall command must be base64");
-        let units = bytes
-            .chunks_exact(2)
-            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
-            .collect::<Vec<_>>();
-        let script = String::from_utf16(&units).expect("encoded command must be UTF-16LE");
-
-        assert!(script.contains("$ErrorActionPreference = 'Stop'"));
-        assert!(script.contains("'LDTG Local Transfer'"));
-        assert!(script.contains("'DMDC Local Transfer'"));
-        assert!(script.contains("Remove-NetFirewallRule -ErrorAction Stop"));
-        assert!(script.contains("$remaining.Count -ne 0"));
-        assert!(hook.contains("Pop $0"));
+        let helper = include_str!("firewall_cleanup.rs");
+        let platform = include_str!("platform/mod.rs");
+        assert!(hook.contains(
+            "ExecShellWait \"runas\" \"$INSTDIR\\ldtg-firewall-cleanup.exe\" \"\" SW_HIDE"
+        ));
+        assert!(!hook.contains("SW_HIDE $0"));
+        assert!(hook.contains("ExecWait '\"$INSTDIR\\ldtg-firewall-cleanup.exe\"' $0"));
+        assert!(!hook.contains("$INSTDIR\\ldtg.exe"));
+        assert!(hook.contains("StrCmp $0 \"0\""));
+        assert!(hook.contains("IDRETRY"));
         assert!(hook.contains("Abort"));
+        assert!(helper.contains("std::env::args_os().nth(1).is_none()"));
+        assert!(helper.contains("run_firewall_cleanup_helper"));
+        assert!(platform.contains("LDTG Local Transfer"));
+        assert!(platform.contains("DMDC Local Transfer"));
+        assert!(!hook.to_ascii_lowercase().contains("powershell"));
+        assert!(!hook.contains("EncodedCommand"));
     }
 
     #[test]

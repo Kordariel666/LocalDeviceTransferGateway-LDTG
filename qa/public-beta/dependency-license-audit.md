@@ -1,14 +1,18 @@
 # P1-Abhängigkeits- und Lizenz-Audit
 
-Stand: 3. September 2026
+Stand: 4. September 2026
 
-Auditierter Quellstand: `a523770d8c20ae0695763acbb25c0e32fd552926`
+Auditierter Basis-Commit: `4c48058fc1b438ae1f0d5a76a2b17408a6b4b25e`;
+die finale P6-Inventur wird nach dem nächsten freigegebenen Commit erneut
+erzeugt.
 
-Ergebnis: **Abhängigkeitsanteil des P1-Gates erfüllt; kein Projektlizenzentscheid**
+Ergebnis: **Abhängigkeitsanteil des P1-Gates erfüllt; `Apache-2.0` wurde später
+als Projektlizenz gewählt**
 
-Dieses Audit ist eine technische Lizenzinventur, keine Rechtsberatung. Es
-aktiviert weder `GPL-3.0-only` noch `Apache-2.0`, erzeugt noch kein finales
-Auslieferungs-Notice und sagt keine SignPath-Annahme zu.
+Dieses Audit ist eine technische Lizenzinventur, keine Rechtsberatung. Die
+spätere Aktivierung von `Apache-2.0` ändert die Drittanbieterpflichten nicht. Der
+Audit erzeugt noch kein finales Auslieferungs-Notice und sagt keine
+SignPath-Annahme zu.
 
 ## Reproduzierbarkeit und Artefakte
 
@@ -32,7 +36,7 @@ pnpm audit:public-beta:online
 | [`dependency-licenses.json`](dependency-licenses.json) | vollständige versionsgenaue Lizenz-, Herkunfts-, Scope-, Hash- und Notice-Inventur |
 | [`sbom.cdx.json`](sbom.cdx.json) | CycloneDX 1.6 SBOM-Entwurf mit PURLs, Hashes und Abhängigkeitskanten |
 | `pnpm-lock.yaml` | SHA-256 `95af3687f770be22de3aff4693c25c7f8de5f7882a500726a298b77186fcdaa3` |
-| `src-tauri/Cargo.lock` | SHA-256 `a5eb92fc2dff06c8ca035f290345e731825fe38072a8ed4831cf32bc345856e4` |
+| `src-tauri/Cargo.lock` | SHA-256 `2365e240d30c54207e73d4436b8d18ef0f30a45e62e77df38064c885cd94fcfd` |
 
 Der Audit bricht ab, wenn ein Lockfile nicht geparst werden kann, Cargo die
 gesperrte Auflösung nicht bestätigt, npm-Metadaten fehlen oder ein Paket keine

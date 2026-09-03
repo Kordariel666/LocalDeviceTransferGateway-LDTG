@@ -67,24 +67,60 @@ if (!trackedManifests.includes("package.json") || trackedManifests.length < 2) {
 const applicationManifest = readJson(join(root, "package.json"));
 const version = applicationManifest.version;
 if (!version) fail("package.json enthaelt keine Version.");
+const projectLicense = "Apache-2.0";
+if (applicationManifest.license !== projectLicense) {
+  fail(`package.json muss die aktivierte Projektlizenz ${projectLicense} enthalten.`);
+}
 
 const manifestVersions = trackedManifests.map((path) => ({
   path,
   name: readJson(join(root, path)).name,
   version: readJson(join(root, path)).version,
+  license: readJson(join(root, path)).license,
 }));
 for (const manifest of manifestVersions) {
   if (manifest.version !== version) {
     fail(`Versionskonflikt: ${manifest.path} enthaelt ${manifest.version ?? "keine Version"}, erwartet ${version}.`);
+  }
+  if (manifest.license !== projectLicense) {
+    fail(`Lizenzkonflikt: ${manifest.path} enthaelt ${manifest.license ?? "keine Lizenz"}, erwartet ${projectLicense}.`);
   }
 }
 
 const cargoToml = readFileSync(join(root, "src-tauri", "Cargo.toml"), "utf8");
 const cargoVersion = cargoToml.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
 if (cargoVersion !== version) fail(`Versionskonflikt: src-tauri/Cargo.toml enthaelt ${cargoVersion}, erwartet ${version}.`);
+const cargoLicense = cargoToml.match(/^license\s*=\s*"([^"]+)"/m)?.[1];
+if (cargoLicense !== projectLicense) {
+  fail(`Lizenzkonflikt: src-tauri/Cargo.toml enthaelt ${cargoLicense ?? "keine Lizenz"}, erwartet ${projectLicense}.`);
+}
 
-const tauriVersion = readJson(join(root, "src-tauri", "tauri.conf.json")).version;
+const licenseText = readFileSync(join(root, "LICENSE"), "utf8");
+if (!licenseText.includes("Apache License") ||
+    !licenseText.includes("Version 2.0, January 2004") ||
+    !licenseText.includes("END OF TERMS AND CONDITIONS")) {
+  fail("LICENSE enthaelt nicht den erwarteten Apache-2.0-Lizenztext.");
+}
+const noticeText = readFileSync(join(root, "NOTICE"), "utf8");
+if (!noticeText.includes("Copyright 2026 Kordariel666") || !noticeText.includes("Apache License, Version 2.0")) {
+  fail("NOTICE enthaelt nicht den erwarteten LDTG-Copyright- und Lizenzhinweis.");
+}
+run("node", ["scripts/third-party-notices.mjs", "--check"]);
+const thirdPartyNoticesPath = join(root, "THIRD_PARTY_NOTICES.md");
+const thirdPartyNoticesText = readFileSync(thirdPartyNoticesPath, "utf8");
+if (!thirdPartyNoticesText.includes("# Third-party notices for LDTG") ||
+    !thirdPartyNoticesText.includes(`Generated for LDTG ${version}.`)) {
+  fail("THIRD_PARTY_NOTICES.md passt nicht zur aktuellen LDTG-Version.");
+}
+
+const tauriConfig = readJson(join(root, "src-tauri", "tauri.conf.json"));
+const tauriVersion = tauriConfig.version;
 if (tauriVersion !== version) fail(`Versionskonflikt: src-tauri/tauri.conf.json enthaelt ${tauriVersion}, erwartet ${version}.`);
+if (tauriConfig.bundle?.resources?.["../LICENSE"] !== "LICENSE" ||
+    tauriConfig.bundle?.resources?.["../NOTICE"] !== "NOTICE" ||
+    tauriConfig.bundle?.resources?.["../THIRD_PARTY_NOTICES.md"] !== "THIRD_PARTY_NOTICES.md") {
+  fail("Der Windows-Build muss LICENSE, NOTICE und THIRD_PARTY_NOTICES.md als Ressourcen ausliefern.");
+}
 
 const changelog = readFileSync(join(root, "CHANGELOG.md"), "utf8");
 const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -101,6 +137,9 @@ const cargoLockHash = fileSha256(join(root, "src-tauri", "Cargo.lock"));
 const inventory = readJson(join(root, "qa", "public-beta", "dependency-licenses.json"));
 const sbomTemplate = readJson(join(root, "qa", "public-beta", "sbom.cdx.json"));
 const blockers = readJson(join(root, "qa", "public-beta", "blockers.json"));
+if (blockers.constraints?.licenseActivated !== true) {
+  fail("blockers.json bestaetigt die aktivierte Projektlizenz nicht.");
+}
 
 if (inventory.lockfiles?.pnpm?.sha256 !== pnpmLockHash || inventory.lockfiles?.cargo?.sha256 !== cargoLockHash) {
   fail("Der Abhaengigkeitsaudit passt nicht zu den eingecheckten Lockfiles.");
@@ -150,6 +189,7 @@ for (const filename of readdirSync(join(root, ".github", "workflows")).filter((n
 
 const result = {
   version,
+  license: projectLicense,
   manifests: manifestVersions,
   packageManager: `pnpm@${expectedPnpm}`,
   nodeVersion: expectedNode,
@@ -160,6 +200,10 @@ const result = {
   },
   dependencyAuditSourceRevision: inventory.sourceRevision,
   dependencyComponents: sbomTemplate.components?.length ?? 0,
+  thirdPartyNotices: {
+    path: "THIRD_PARTY_NOTICES.md",
+    sha256: fileSha256(thirdPartyNoticesPath),
+  },
   actionPins,
 };
 

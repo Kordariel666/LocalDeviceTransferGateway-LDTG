@@ -1,6 +1,11 @@
 {
   "name": "ldtg",
-  "version": "0.3.0-rc.1",
+  "version": "0.3.0-rc.2",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG.git"
+  },
   "private": true,
   "packageManager": "pnpm@11.19.0",
   "scripts": {
@@ -9,9 +14,11 @@
     "build:web": "pnpm --filter @ldtg/mobile build && pnpm --filter @ldtg/desktop build",
     "audit:public-beta": "node scripts/public-beta-audit.mjs",
     "audit:public-beta:online": "node scripts/public-beta-audit.mjs --online",
+    "notices:generate": "node scripts/third-party-notices.mjs",
+    "notices:check": "node scripts/third-party-notices.mjs --check",
     "release:check": "node scripts/release-metadata.mjs --check",
     "release:private": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/private-release.ps1",
-    "check": "pnpm contracts:check && pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm build:web && pnpm test:rust:prepared && cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "check": "pnpm contracts:check && pnpm notices:check && pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm build:web && pnpm test:rust:prepared && cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
     "contracts:check": "pnpm --filter @ldtg/mobile build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/contracts.ps1 -Mode Check",
     "contracts:generate": "pnpm --filter @ldtg/mobile build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/contracts.ps1 -Mode Generate",
     "lint": "eslint apps packages",

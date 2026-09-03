@@ -763,7 +763,10 @@ export function App() {
             </button>
           ))}
         </nav>
-        <p className="sidebar-note">{text.localOnly}</p>
+        <div className="sidebar-footer">
+          <p className="sidebar-note">{text.localOnly}</p>
+          <p className="sidebar-version"><span>{text.version}</span><strong>{currentSnapshot.appVersion}</strong></p>
+        </div>
       </aside>
       <div className="workspace">
         <header className="service-bar">

@@ -249,10 +249,14 @@ describe("Desktop-Dashboard", () => {
     currentSnapshot.settings.version = 42;
     render(<App />);
 
+    const sidebar = await screen.findByRole("complementary");
+    expect(within(sidebar).getByText("App-Version")).toBeTruthy();
+    expect(within(sidebar).getByText("9.8.7-test")).toBeTruthy();
+
     fireEvent.click(await screen.findByRole("button", { name: "Diagnose" }));
 
-    expect(await screen.findByText("9.8.7-test")).toBeTruthy();
-    expect(screen.getByText("App-Version")).toBeTruthy();
+    expect((await screen.findAllByText("9.8.7-test")).length).toBe(2);
+    expect(screen.getAllByText("App-Version").length).toBe(2);
   });
 
   it("ordnet die laufende Dienst-URL nur einer exakt gleichen IP-Adresse zu", async () => {
@@ -418,6 +422,7 @@ describe("Desktop-Dashboard", () => {
       await Promise.resolve();
       await Promise.resolve();
     });
+    expect(screen.getByText(/Sehr kurze Übertragungen können direkt im Verlauf landen/)).toBeTruthy();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(29_999);

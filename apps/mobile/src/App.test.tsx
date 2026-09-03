@@ -29,6 +29,9 @@ describe("mobile Oberfläche", () => {
     fireEvent.submit(input.closest("form")!);
     expect(await screen.findByText("Vom PC herunterladen")).toBeTruthy();
     expect(screen.getByText("Zum PC hochladen")).toBeTruthy();
+    expect(screen.getByText(/Den Downloadfortschritt zeigt dein Browser/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Zum PC hochladen" }));
+    expect(screen.getByText(/Den Uploadfortschritt siehst und steuerst du hier/)).toBeTruthy();
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/auth");
     expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({
       code: "12345678",

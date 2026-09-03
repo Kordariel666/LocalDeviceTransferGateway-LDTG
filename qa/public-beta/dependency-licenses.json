@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generator": "scripts/public-beta-audit.mjs",
-  "sourceRevision": "a523770d8c20ae0695763acbb25c0e32fd552926",
+  "sourceRevision": "4c48058fc1b438ae1f0d5a76a2b17408a6b4b25e",
   "lockfiles": {
     "pnpm": {
       "path": "pnpm-lock.yaml",
@@ -10,7 +10,7 @@
     },
     "cargo": {
       "path": "src-tauri/Cargo.lock",
-      "sha256": "a5eb92fc2dff06c8ca035f290345e731825fe38072a8ed4831cf32bc345856e4",
+      "sha256": "58ec0bf5866ec981eb1a6babf547584b799ce63910fb74c25240d677eff9ba04",
       "packages": 552
     }
   },
@@ -24582,8 +24582,13 @@
       ],
       "homepage": null,
       "repository": "https://github.com/microsoft/windows-rs",
-      "direct": false,
-      "directKinds": [],
+      "direct": true,
+      "directKinds": [
+        {
+          "kind": "normal",
+          "target": "cfg(windows)"
+        }
+      ],
       "scopes": [
         "runtime"
       ],

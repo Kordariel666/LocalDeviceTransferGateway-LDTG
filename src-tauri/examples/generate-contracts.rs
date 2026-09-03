@@ -1,3 +1,5 @@
+//! Build-only generator for the shared TypeScript contracts.
+
 use ldtg_lib::domain::{
     network::NetworkInterfaceInfo,
     settings::{

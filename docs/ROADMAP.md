@@ -758,12 +758,36 @@ Status: erfüllt am 3. September 2026 für R5.1.
 
 ## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
 
-Status: gestartet am 3. September 2026; P0, P1 und P2 abgeschlossen, P3
-technisch vorbereitet. Der Owner hat mit `PB-04` den engen Support- und
-Wartungsrahmen für den Fall einer später freigegebenen Beta akzeptiert und mit
-`PB-05` genau einen lokalen Commit samt anschließendem kostenfreien
-Clean-Commit-Dry-Run autorisiert. Das P3-Gate bleibt bis zu dessen erfolgreichem
-Nachweis offen. Es gibt weiterhin keine Veröffentlichungsfreigabe.
+Status: gestartet am 3. September 2026; P0 bis P5 abgeschlossen, P6 in Arbeit.
+P4 wurde nach
+Owner-Freigabe `PB-06` begonnen. Der Owner hat mit `PB-04` den engen Support-
+und Wartungsrahmen für den Fall einer später freigegebenen Beta akzeptiert und
+mit `PB-05` genau einen lokalen Commit samt anschließendem kostenfreien
+Clean-Commit-Dry-Run autorisiert. Der P3-Lauf bestand. In P4 wurden die erste
+paketvirtualisierte Codex-Installation und ihre zwei breiten Windows-Autoregeln
+gezielt verworfen. Nach `PB-07` erfolgte die Neuinstallation unabhängig über den
+Datei-Explorer; der Firewall-/Dienstfluss erzeugte keinen zweiten Dialog. Die
+erhöhte Prüfung bestätigte genau eine enge LDTG-Regel für TCP 8765 und
+`LocalSubnet`. Der getestete P3-Build wurde danach von Microsoft Defender als
+`Trojan:Win32/Bearfoos.A!ml` quarantänisiert. Der daraus abgeleitete
+AV-Härtungskandidat entfernt installierte PowerShell-Ausführung und den
+versehentlich paketierten Vertragsgenerator. Sein Defender-, Installations-,
+Firewall-, Dienst- und bidirektionaler Kleintransfer-Retest blieb ohne neuen
+AV-Fund. Der erste vollständige Uninstall entfernte zwar die Firewallregel,
+meldete wegen einer fehlerhaften NSIS-Exitcode-Auswertung aber einen falschen
+Fehler. Nach der Korrektur bestanden Defender-Prüfung, Darüberinstallation,
+enge Firewallregel und vollständiger Uninstall mit erhaltenen AppData- und
+Freigabedaten; `PB-08` und `PB-09` sind geschlossen. Der Owner akzeptierte die
+nicht real ausgeführten Plattform-, Stress- und Barrierefreiheitsfälle als
+sichtbare Beta-Grenzen; unterstützt behauptet wird nur die tatsächlich geprüfte
+Android-16-/Firefox-Kombination. P4 ist damit bestanden. Die P5-Lizenz-,
+Beitrags- und SignPath-Unterlagen sind abgeschlossen. Der Owner hat
+`Apache-2.0`, `Kordariel666` als vorläufiges öffentliches Copyright-Pseudonym
+und zunächst ausschließlich Issues ohne Pull Requests bestätigt. Für P6 ist
+`0.3.0-rc.2` als unveröffentlichter Kandidat mit sichtbarer Laufzeitversion,
+Release-Notes und vollständigen Drittanbieterhinweisen vorbereitet. Clean-
+Commit-Dry-Run und manuelle Kernabnahme stehen noch aus. Es gibt weiterhin
+keine Veröffentlichungsfreigabe.
 
 Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
 nicht auf Verdacht weitere Funktionen entstehen. Der detaillierte
@@ -778,9 +802,10 @@ nicht auf Verdacht weitere Funktionen entstehen. Der detaillierte
 - ein abschließendes Gate mit `GO-GPL`, `GO-APACHE`, `HOLD`, `ARCHIVE` oder
   `COMMERCIAL-DISCOVERY`.
 
-Bis zu diesem Gate bleibt das Repository privat, die Projektlizenz ungesetzt,
-das Kostenlimit bei null Euro und jede externe Veröffentlichung oder Anmeldung
-gesondert zustimmungspflichtig. R5.2 und Phase 6 sind solange pausiert.
+Bis zu diesem Gate bleibt das Repository privat, das Kostenlimit bei null Euro
+und jede externe Veröffentlichung oder Anmeldung gesondert
+zustimmungspflichtig. Die Projektlizenz `Apache-2.0` wurde am 4. September 2026
+bereits lokal aktiviert. R5.2 und Phase 6 sind weiterhin pausiert.
 
 Der aktuelle P1-Nachweis liegt im
 [Repository-Audit](../qa/public-beta/repository-audit.md), im
@@ -792,8 +817,9 @@ Die Marken- und Kollisions-Vorprüfung steht in [`docs/BRANDING.md`](BRANDING.md
 Der abgeschlossene P2-Stand ist im
 [Sicherheits-/Datenschutz-/Supportnachweis](../qa/public-beta/p2-security-privacy-support.md),
 im [Dateninventar](PRIVACY.md), im [akzeptierten Supportrahmen](../SUPPORT.md) und im
-aktualisierten [Bedrohungsmodell](THREAT_MODEL.md) festgehalten. Drei bestätigte
-Findings niedriger Schwere wurden behoben; reale Windows-/Gerätetests bleiben P4.
+aktualisierten [Bedrohungsmodell](THREAT_MODEL.md) festgehalten. Die drei
+bestätigten Findings niedriger Schwere wurden behoben; die reale
+Windows-/Android-Abnahme P4 ist mit dokumentierten Evidenzlücken abgeschlossen.
 Die technisch vorbereitete private Releasepipeline und ihre bewusst begrenzte
 Reproduzierbarkeit stehen in [`docs/PRIVATE_RELEASE.md`](PRIVATE_RELEASE.md), der
 unverbindliche Signierentwurf in [`CODE_SIGNING.md`](../CODE_SIGNING.md) und der

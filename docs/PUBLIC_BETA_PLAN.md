@@ -1,6 +1,6 @@
 # Plan bis zur Veröffentlichungsentscheidung für LDTG
 
-Stand: 3. September 2026
+Stand: 4. September 2026
 Status: beschlossenes Entscheidungsprogramm, noch keine Veröffentlichungsfreigabe
 
 ## 1. Zweck und verbindliche Grenze
@@ -13,7 +13,8 @@ kostenpflichtige Bestellung, Registrierung oder externe Bewerbung.
 Bis zum letzten Entscheidungsgate gelten deshalb folgende Regeln:
 
 - Das Repository bleibt privat.
-- Es wird noch keine `LICENSE`-Datei im Repository-Stamm aktiviert.
+- Die am 4. September 2026 ausdrücklich gewählte `Apache-2.0`-Lizenz ist lokal
+  aktiviert. Das ist keine Veröffentlichungsfreigabe.
 - Es wird kein GitHub-Repository öffentlich geschaltet und kein öffentliches
   Release erzeugt.
 - Es wird kein SignPath-Antrag, Store-Konto, Zertifikat, Domain- oder
@@ -38,8 +39,8 @@ Der aktuelle Stand besitzt:
 - typisierte Verträge, automatisierte Tests, CI-Grundlage und einen
   per-user-NSIS-Installer;
 - keine Cloud, kein Konto, keinen öffentlichen Dienst und keine Telemetrie;
-- noch keine Projektlizenz, vollständigen Drittanbieterhinweise,
-  Codesignierung oder öffentliche Releasepipeline;
+- die gewählte Projektlizenz `Apache-2.0`, aber noch keine vollständigen
+  Drittanbieterhinweise, Codesignierung oder öffentliche Releasepipeline;
 - noch keine vollständige reale Abnahmematrix auf Windows 11 25H2 sowie aktuellem
   iOS/Safari und Android/Chrome.
 
@@ -76,15 +77,12 @@ aber einen überprüfbaren Bezug zwischen Quellstand und Download.
 | `ARCHIVE` | Entwicklung wird geordnet beendet | privaten Stand dokumentieren und keine Binärdateien veröffentlichen |
 | `COMMERCIAL-DISCOVERY` | Erst ein separates Geschäftsmodell prüfen | keine Open-Source-Veröffentlichung und keine Produktinvestition ohne neue Validierung |
 
-`GPL-3.0-only` ist der vorläufige Favorit, wenn veröffentlichte Ableitungen nicht
-proprietär weitergegeben werden sollen. Dritte dürfen GPL-Software weiterhin
-nutzen, verändern und verkaufen, müssen verteilte abgeleitete Werke aber unter
-den GPL-Bedingungen samt Quellcode anbieten.
-
-`Apache-2.0` bleibt die Alternative, wenn möglichst einfache Übernahme,
-Integration und Mitwirkung wichtiger sind. Der ursprüngliche LDTG-Code und
-seine Hinweise bleiben geschützt; größere oder abgeleitete Werke können jedoch
-unter anderen Bedingungen verteilt werden.
+Der Owner hat am 4. September 2026 `Apache-2.0` gewählt. Damit sind möglichst
+einfache Übernahme, Integration und spätere geschäftliche Flexibilität bewusst
+höher gewichtet als ein Copyleft-Zwang für weitergegebene Ableitungen. Der
+ursprüngliche LDTG-Code und seine Hinweise bleiben geschützt; größere oder
+abgeleitete Werke können jedoch unter anderen Bedingungen verteilt werden.
+`GPL-3.0-only` bleibt nur als dokumentierte verworfene Alternative im Dossier.
 
 Eine individuelle Nichtkommerziell-Lizenz oder selbst formulierte Lizenz ist
 nicht vorgesehen. Sie wäre keine übliche Open-Source-Lizenz, erschwert
@@ -97,9 +95,9 @@ Abhängigkeitsprüfung und Beiträge und würde die SignPath-Eignung gefährden.
 | P0 | abgeschlossen | Umfang einfrieren und Entscheidungsregeln festhalten | Phase 5.1 | S | Plan ist verbindlich und verlinkt |
 | P1 | abgeschlossen | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | technische Prüfung und Owner-Bestätigung vollständig |
 | P2 | abgeschlossen | Sicherheits-, Datenschutz- und Supportversprechen schärfen | P1 | M | öffentliche Aussagen entsprechen dem Code; Owner akzeptiert Wartungsgrenze |
-| P3 | technisch vorbereitet; Dry-Run autorisiert | Releasepipeline und Herkunftsnachweise härten | P1 | M–L | lokaler/privater Release-Dry-Run reproduzierbar |
-| P4 | offen | Reale Installations- und Geräteabnahme durchführen | P2–P3 | L | Abnahmematrix und priorisierte Befunde vollständig |
-| P5 | offen | Open-Source- und SignPath-Unterlagen als Entwurf vorbereiten | P1–P4 | M | beide Lizenzpfade entscheidungsreif |
+| P3 | abgeschlossen | Releasepipeline und Herkunftsnachweise härten | P1 | M–L | lokaler/privater Release-Dry-Run reproduzierbar |
+| P4 | abgeschlossen | Reale Installations- und Geräteabnahme durchführen | P2–P3 | L | Kernpfade bestanden; nicht ausgeführte Plattform-/Stressfälle ausdrücklich als Beta-Grenzen akzeptiert |
+| P5 | abgeschlossen | Open-Source- und SignPath-Unterlagen als Entwurf vorbereiten | P1–P4 | M | Apache-2.0, Pseudonym und Issues-only-Modus bestätigt |
 | P6 | offen | Veröffentlichung vollständig trocken durchspielen | P3–P5 | M | unveröffentlichte Beta-Mappe ist vollständig |
 | PG | offen | Bewusste Veröffentlichungsentscheidung treffen | P0–P6 | S | genau ein dokumentierter Ausgang |
 
@@ -274,11 +272,10 @@ Meldekanal.
 
 ## 9. P3 – Releasepipeline und Herkunftsnachweis
 
-Status: technisch vorbereitet am 3. September 2026. Der Owner hat mit `PB-05`
-genau einen lokalen Commit und den anschließenden kostenfreien
-Clean-Commit-Dry-Run autorisiert. Das Gate bleibt bis zu dessen erfolgreichem
-Nachweis offen. Es erfolgten keine Veröffentlichung, Signierung oder
-kostenpflichtige Maßnahme.
+Status: abgeschlossen am 3. September 2026. Der Owner hat mit `PB-05` genau
+einen lokalen Commit und den anschließenden kostenfreien Clean-Commit-Dry-Run
+autorisiert. Der Lauf war erfolgreich. Es erfolgten keine Veröffentlichung,
+Signierung oder kostenpflichtige Maßnahme.
 
 ### 9.1 Privater CI-Releasepfad
 
@@ -314,17 +311,39 @@ kostenpflichtige Maßnahme.
 - Für den Dry-Run werden keine dauerhaften Zugangsdaten oder bezahlten Dienste
   benötigt.
 
-Gatebewertung vom 3. September 2026: **noch nicht bestanden**. Versions-,
-Toolchain-, Lockfile-, Audit-, Berechtigungs- und Clean-Tree-Gates sind
-implementiert und ihre Vorprüfungen bestanden. Der kanonische Gesamtlauf setzt
-absichtlich einen sauberen Commit voraus. Der Owner hat diesen einen lokalen
-Commit und den anschließenden Dry-Run mit `PB-05` autorisiert; bis zu dessen
-Erfolg werden Installer, Prüfsummen, SBOM und Buildmanifest noch nicht als
-P3-Abnahme behauptet. Details
-stehen im [privaten Releasepfad](PRIVATE_RELEASE.md) und im
+Gatebewertung vom 3. September 2026: **bestanden**. Der lokale Dry-Run aus Commit
+`4c48058fc1b438ae1f0d5a76a2b17408a6b4b25e` erzeugte nach dem vollständigen
+Qualitätsgate einen frischen unsignierten NSIS-Installer, vier unabhängig
+bestätigte SHA-256-Einträge, eine commitgebundene CycloneDX-SBOM mit 857
+Komponenten, Buildlog und Manifest. Der Quellbaum blieb sauber. Details und
+exakte Hashes stehen im [privaten Releasepfad](PRIVATE_RELEASE.md) und im
 [P3-Nachweis](../qa/public-beta/p3-release-pipeline.md).
 
 ## 10. P4 – Reale Abnahme
+
+Status: **abgeschlossen am 4. September 2026**; die Releaseblocker `PB-08` und
+`PB-09` sind geschlossen.
+Installation und grundlegender Funktionslauf waren erfolgreich. `P4-FW-01`
+wurde als Testumgebungsartefakt geschlossen: Die erste aus dem paketierten
+Codex-Kontext gestartete Installation wurde verworfen, ihre zwei breiten
+Windows-Autoregeln wurden entfernt und die Neuinstallation über den unabhängigen
+Datei-Explorer wiederholt. Der Firewall-/Dienstfluss zeigte keinen zweiten
+Dialog; die erhöhte Prüfung bestätigte genau eine enge LDTG-Regel. Anschließend
+quarantänisierte Microsoft Defender den getesteten P3-Build als
+`Trojan:Win32/Bearfoos.A!ml`. Der ersetzende AV-Härtungskandidat verwendet für
+Firewall- und Netzwerkzugriffe keine PowerShell mehr und paketiert den
+Vertragsgenerator nicht mehr. Sein Defender-, Installations-, Firewall-,
+Dienst- und bidirektionaler Kleintransfer-Retest blieb ohne neuen AV-Fund. Beim
+vollständigen Uninstall entfernte der erhöhte Helfer die Regel, aber der
+NSIS-Hook wertete wegen eines nicht unterstützten `ExecShellWait`-Exitcodes
+fälschlich einen Fehler aus (`PB-09`). Nach der Korrektur bestanden
+Defender-Prüfung, Darüberinstallation, enge Firewallregel und vollständiger
+Uninstall mit erhaltenen AppData- und Freigabedaten. Die reale Neuinstallation
+erhielt anschließend Freigaben und Einstellungen. Der Owner akzeptierte die
+nicht real ausgeführten Upgrade-, iOS-, Chrome-, Großdatei-, Queue-,
+Datenträger-, Netzwerkwechsel- und Barrierefreiheitsfälle ausdrücklich als
+sichtbare Beta-Grenzen; automatisierte Sicherheits- und Konsistenztests bleiben
+grün. P4 ist damit für den engen Beta-Supportumfang abgeschlossen.
 
 ### 10.1 Windows
 
@@ -369,6 +388,15 @@ stehen im [privaten Releasepfad](PRIVATE_RELEASE.md) und im
 - P0 und P1 sind geschlossen; offene P2 sind einzeln entscheidbar.
 - Nicht verfügbare Hardware wird als echte Evidenzlücke ausgewiesen und nicht
   als bestanden markiert.
+
+Gatebewertung vom 4. September 2026: **bestanden mit ausdrücklich akzeptierten
+Evidenzlücken**. Es gibt keinen offenen P0-/P1-Befund. Die tatsächlich getestete
+Mobilkombination ist Android 16 mit Firefox; andere Mobilplattformen und
+Browser werden nicht als getestet zugesichert. Der beobachtete Anzeigehinweis
+`P4-UI-01` ist als P3-UX-Klarstellung behoben und ohne Großdatei-Realtest
+akzeptiert. Da die Klarstellung den eingebetteten Webbuild ändert, muss P6 ein
+frisches finales Artefakt erzeugen und vor jeder Veröffentlichung erneut
+hashen und mit Defender prüfen.
 
 ## 11. P5 – Lizenz-, Mitwirkungs- und SignPath-Entwürfe
 
@@ -424,6 +452,15 @@ nicht als Urheber, Rechteinhaber oder Herausgeber eingetragen.
 - Alle vor einer SignPath-Bewerbung intern erfüllbaren Bedingungen sind erfüllt
   oder mit einer konkreten Restmaßnahme versehen.
 
+Zwischenstand vom 4. September 2026: Die
+[P5-Entscheidungsmappe](../qa/public-beta/p5-license-contribution-signpath.md)
+vergleicht beide Lizenzwege, enthält nicht aktive Beitragsentwürfe und bewertet
+die aktuellen SignPath-Bedingungen. `Apache-2.0` wurde mit ausdrücklicher
+Owner-Freigabe aktiviert. `Kordariel666` wurde als vorläufiges öffentliches
+Copyright-Pseudonym und „zunächst nur Issues“ als Beitragsmodus bestätigt. P5
+ist damit abgeschlossen; es wurde kein Antrag begonnen und nichts
+veröffentlicht.
+
 ## 12. P6 – Unveröffentlichter Beta-Dry-Run
 
 ### Inhalt der Entscheidungsmappe
@@ -459,6 +496,13 @@ nicht als Urheber, Rechteinhaber oder Herausgeber eingetragen.
 - Zwischen `GO` und Veröffentlichung existiert kein unbekanntes technisches oder
   lizenzrechtliches Arbeitspaket mehr.
 - Alle verbleibenden Risiken sind sichtbar und einzeln akzeptierbar.
+
+Zwischenstand vom 4. September 2026: `0.3.0-rc.2` ist als unveröffentlichter
+Kandidat festgelegt. Die tatsächliche Backendversion wird dauerhaft in der
+Desktop-Seitenleiste angezeigt. Vollständige Laufzeit-Notices, Release-Notes
+und die [P6-Entscheidungsmappe](../qa/public-beta/p6-release-candidate.md) sind
+vorbereitet. P6 bleibt bis zum Clean-Commit-Dry-Run und der manuellen
+Defender-/Installations-/Kernfunktionsabnahme offen.
 
 ## 13. PG – Veröffentlichungsentscheidung
 

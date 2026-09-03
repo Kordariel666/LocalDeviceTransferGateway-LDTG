@@ -1,11 +1,14 @@
 # Privater Release-Dry-Run
 
-Stand: 3. September 2026  
-Status: **technisch vorbereitet, noch nicht als P3-Gate bestanden**
+Stand: 4. September 2026
+Status: **P3 bestanden; für P6 um versionsgenaue Drittanbieterhinweise erweitert**
+
+Der bestandene Lauf und seine exakten Hashes stehen im
+[P3-Nachweis](../qa/public-beta/p3-release-pipeline.md).
 
 Diese Strecke erzeugt ausschließlich private, unsignierte Prüfartefakte. Sie
 veröffentlicht keinen GitHub Release, ändert keine Repositorysichtbarkeit,
-aktiviert keine Lizenz, meldet keinen Dienst an und benötigt keine dauerhaften
+ändert die gewählte Projektlizenz nicht, meldet keinen Dienst an und benötigt keine dauerhaften
 Zugangsdaten. Der lokale Dry-Run verwendet keine kostenpflichtige Leistung.
 
 ## Festgelegte Eingaben
@@ -45,12 +48,17 @@ absichtlich ignoriert. Ein bereits gefülltes Ausgabeverzeichnis wird nicht
 überschrieben. Ein erfolgreicher Lauf enthält:
 
 - genau einen frisch erzeugten, unsignierten NSIS-Installer;
-- `SHA256SUMS.txt` für Installer, SBOM, Buildprotokoll und Manifest;
+- `LICENSE`, `NOTICE` und `THIRD_PARTY_NOTICES.md` als eigenständige, gehashte
+  Begleitdateien; dieselben Dateien werden zusätzlich als Ressourcen in den
+  Installer aufgenommen;
+- `SHA256SUMS.txt` für Installer, Lizenz- und Notice-Dateien, SBOM,
+  Buildprotokoll und Manifest;
 - `sbom.cdx.json` im CycloneDX-1.6-Format, an Commit und Lockfile-Hashes
   gebunden;
 - `build.log` mit den tatsächlich ausgeführten Gates;
-- `build-manifest.json` mit Quellrevision, Tags, Toolchain, Runnerbild,
-  Lockfile-Hashes, Action-Pins, Auditbasis, Dateigrößen und Artefakthashes.
+- `build-manifest.json` mit Projektlizenz, Quellrevision, Tags, Toolchain,
+  Runnerbild, Lockfile-Hashes, Action-Pins, Auditbasis, Dateigrößen und
+  Artefakthashes.
 
 Die aktuelle Tauri-Konfiguration erzeugt nur NSIS. Eine portable ZIP-Datei ist
 für diesen Dry-Run bewusst **nicht** Teil des Lieferumfangs; das Manifest hält

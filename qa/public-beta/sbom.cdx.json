@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:a523770d-0000-4000-8000-95af3687f770",
+  "serialNumber": "urn:uuid:4c48058f-0000-4000-8000-95af3687f770",
   "version": 1,
   "metadata": {
     "tools": {
@@ -15,14 +15,19 @@
     },
     "component": {
       "type": "application",
-      "bom-ref": "pkg:generic/ldtg@0.3.0-rc.1",
+      "bom-ref": "pkg:generic/ldtg@0.3.0-rc.2",
       "name": "ldtg",
-      "version": "0.3.0-rc.1"
+      "version": "0.3.0-rc.2",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
     },
     "properties": [
       {
         "name": "ldtg:source-revision",
-        "value": "a523770d8c20ae0695763acbb25c0e32fd552926"
+        "value": "4c48058fc1b438ae1f0d5a76a2b17408a6b4b25e"
       },
       {
         "name": "ldtg:pnpm-lock-sha256",
@@ -30,7 +35,7 @@
       },
       {
         "name": "ldtg:cargo-lock-sha256",
-        "value": "a5eb92fc2dff06c8ca035f290345e731825fe38072a8ed4831cf32bc345856e4"
+        "value": "58ec0bf5866ec981eb1a6babf547584b799ce63910fb74c25240d677eff9ba04"
       },
       {
         "name": "ldtg:status",
@@ -36911,7 +36916,7 @@
         },
         {
           "name": "ldtg:direct",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "ldtg:windows-resolved",
@@ -44799,7 +44804,7 @@
       ]
     },
     {
-      "ref": "pkg:generic/ldtg@0.3.0-rc.1",
+      "ref": "pkg:generic/ldtg@0.3.0-rc.2",
       "dependsOn": [
         "pkg:cargo/async-stream@0.3.6",
         "pkg:cargo/axum@0.8.9",
@@ -44832,6 +44837,7 @@
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/uuid@1.26.0",
         "pkg:cargo/windows-sys@0.61.2",
+        "pkg:cargo/windows@0.61.3",
         "pkg:npm/%40eslint/js@10.0.1",
         "pkg:npm/%40tauri-apps/api@2.11.1",
         "pkg:npm/%40tauri-apps/cli@2.11.4",

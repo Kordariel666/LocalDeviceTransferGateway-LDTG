@@ -8,8 +8,16 @@ die Versionsnummern folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
+## [0.3.0-rc.2] - 2026-09-04
+
 ### Changed
 
+- Die vom Backend gelieferte tatsächliche App-Version ist neben der
+  Diagnose-Seite nun dauerhaft unten in der Desktop-Navigation sichtbar.
+- Die Mobiloberfläche erklärt, dass Browserdownloads ihren Fortschritt außerhalb
+  von LDTG anzeigen, während Uploads in LDTG verfolgt und gesteuert werden. Der
+  Desktop weist darauf hin, dass sehr kurze Transfers direkt im Verlauf landen
+  können.
 - Das Projekt heißt nun **LDTG – Local Device Transfer Gateway**. Apptitel,
   Paketnamen, Protokollkennungen, Dokumentation sowie Plattformicons verwenden
   die neue Bezeichnung konsistent.
@@ -26,6 +34,13 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
 
 ### Added
 
+- Apache License 2.0 als verbindliche Projektlizenz samt `LICENSE`, `NOTICE`,
+  Paketmetadaten, SBOM-Kennzeichnung und Installerressourcen.
+- Versionsgenaue `THIRD_PARTY_NOTICES.md` für alle 344 ausgelieferten npm- und
+  Cargo-Laufzeitkomponenten, einschließlich Prüfsummenbindung und Paketierung.
+- Issues-only-Beitragsrichtlinie mit datensparsamen GitHub-Vorlagen für
+  Fehlerberichte und Funktionsvorschläge sowie projektbezogenen
+  Verhaltensregeln.
 - Exakt fixierte Node-, pnpm- und Rust-Toolchains sowie unveränderliche
   GitHub-Action-Revisionen.
 - Eine fail-closed private Releasepipeline mit Versions-, Lockfile-, Audit- und
@@ -33,6 +48,16 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Buildprotokoll und SHA-256-Prüfsummen.
 - Dokumentierte Reproduzierbarkeitsgrenzen und ein unverbindlicher,
   SignPath-kompatibel getrennter Codesignierungsentwurf.
+
+### Fixed
+
+- Windows-Laufzeitprüfungen verwenden native Schnittstellen statt versteckter,
+  kodierter PowerShell-Aufrufe; der Buildgenerator wird nicht mehr als
+  Produktprogramm paketiert.
+- Der erhöhte Firewall-Cleanup-Helfer entfernt aktuelle und historische
+  Produktregeln. Der NSIS-Uninstaller prüft das Ergebnis mit einem echten
+  `ExecWait`-Exitcode und meldet nach erfolgreicher Bereinigung keinen falschen
+  Fehler mehr.
 
 ## [0.3.0-rc.1] - 2026-09-03
 
