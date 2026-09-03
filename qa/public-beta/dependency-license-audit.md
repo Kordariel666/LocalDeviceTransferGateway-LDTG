@@ -191,5 +191,6 @@ Bündel werden erst nach Projektlizenz- und Releaseentscheidung festgeschrieben.
   Paketquellen ableitbar; finales Bündel noch nicht aktiviert**.
 - SignPath: **kein Dependency-Blocker erkannt, Gesamteignung noch offen**.
 
-Damit ist der Abhängigkeitsanteil von P1 geschlossen. P1 insgesamt bleibt nur
-wegen der Herkunftsbestätigung `PB-02` aus [`blockers.json`](blockers.json) offen.
+Damit ist der Abhängigkeitsanteil von P1 geschlossen. Nach der bestätigten
+Herkunftserklärung `PB-02` aus [`blockers.json`](blockers.json) ist auch P1
+insgesamt abgeschlossen.

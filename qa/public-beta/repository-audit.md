@@ -4,7 +4,7 @@ Stand: 3. September 2026
 
 Auditierter Quellstand: `a523770d8c20ae0695763acbb25c0e32fd552926`
 
-Ergebnis: **BLOCKIERT – technische Prüfung abgeschlossen, eine Owner-Bestätigung offen**
+Ergebnis: **ERFÜLLT – P1 abgeschlossen**
 
 Dieses Dokument prüft ausschließlich P1 des
 [Plans bis zur Veröffentlichungsentscheidung](../../docs/PUBLIC_BETA_PLAN.md).
@@ -26,8 +26,8 @@ SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
   keine erkannten Text-, EXIF- oder Kommentarmetadatenblöcke.
 - Die Herkunft des Quellcodes, des Logos und der aus dem Logo abgeleiteten
   Icons kann aus Git allein nicht lückenlos bewiesen werden, weil der
-  Wurzelcommit bereits fast das vollständige Projekt importierte. Dafür fehlt
-  eine Bestätigung des Rechteinhabers.
+  Wurzelcommit bereits fast das vollständige Projekt importierte. Der
+  Repositoryinhaber hat die Herkunft und Rechte deshalb gesondert bestätigt.
 - Die frühere Bezeichnung wurde wegen eines deutlichen
   Auffindbarkeits-/Verwechslungsrisikos ersetzt. Der Owner hat **LDTG – Local
   Device Transfer Gateway** gewählt. Die wiederholte exakte Vorprüfung ergab
@@ -35,8 +35,8 @@ SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
   Abkürzung besitzt jedoch fachfremde Verwendungen. Das ist keine formale
   Markenfreigabe.
 
-Das P1-Gate bleibt deshalb nur noch an `PB-02` aus
-[`blockers.json`](blockers.json) hängen. `PB-01` und `PB-03` sind abgeschlossen.
+Das P1-Gate ist erfüllt. `PB-01`, `PB-02` und `PB-03` sind in
+[`blockers.json`](blockers.json) als abgeschlossen dokumentiert.
 
 ## Prüfumfang und reproduzierbare Nachweise
 
@@ -111,27 +111,27 @@ Pull-Request-/Cache-Refs nicht öffentlich erreichbar werden.
 
 | Gruppe | Befund | Herkunftsstatus |
 |---|---|---|
-| Quellcode, Projektdokumentation und UI-Texte | keine vendorten Fremdquellen erkannt; nahezu vollständig im Wurzelcommit importiert | Owner-Bestätigung ausstehend |
-| `assets/ldtg-logo-lockup.png`, `assets/ldtg-app-icon.png`, `assets/ldtg-ui-icon.png` | ausgewählte und abgeleitete LDTG-Markenassets, mit KI-Unterstützung erzeugt | Owner-Bestätigung ausstehend |
-| `src-tauri/icons/**` | mit der Tauri-CLI aus `assets/ldtg-app-icon.png` erzeugte PNG/ICO/ICNS- sowie Android-/iOS-Varianten | reproduzierbar; Owner-Bestätigung für das Quellicon ausstehend |
-| `qa/*.png`, `qa/*.jpg` | Aufnahmen der LDTG-Oberflächen und zwei per `qa/make_comparison.py` erzeugte Vergleiche | Rechte-/Testdatenbestätigung ausstehend |
+| Quellcode, Projektdokumentation und UI-Texte | keine vendorten Fremdquellen erkannt; nahezu vollständig im Wurzelcommit importiert | vom Owner bestätigt |
+| `assets/ldtg-logo-lockup.png`, `assets/ldtg-app-icon.png`, `assets/ldtg-ui-icon.png` | ausgewählte und abgeleitete LDTG-Markenassets, mit KI-Unterstützung erzeugt | vom Owner zur späteren Veröffentlichung freigegeben |
+| `src-tauri/icons/**` | mit der Tauri-CLI aus `assets/ldtg-app-icon.png` erzeugte PNG/ICO/ICNS- sowie Android-/iOS-Varianten | reproduzierbar; Quellicon vom Owner bestätigt |
+| `qa/*.png`, `qa/*.jpg` | Aufnahmen der LDTG-Oberflächen und zwei per `qa/make_comparison.py` erzeugte Vergleiche | Rechte und Freigabefähigkeit der Testdaten vom Owner bestätigt |
 | `packages/shared/src/index.ts` | laut Dateikopf aus Rust-Verträgen erzeugt | im Repository reproduzierbar |
 | `src-tauri/gen/schemas/*.json` | Tauri-generierte Konfigurations-/Berechtigungsschemata | Fremdherkunft über Tauri; Notices aus Lizenzinventur ableitbar |
 | `pnpm-lock.yaml`, `src-tauri/Cargo.lock` | von pnpm beziehungsweise Cargo erzeugte Auflösung | reproduzierbare Paketmetadaten |
 | Fonts | nur lokale Systemfont-Fallbacks, kein `@font-face`, keine Fontdatei | nichts wird gebündelt |
-| mobile Webassets | aus eigenem Workspace gebaut und mit `rust-embed` in den Dienst eingebettet; keine externen Laufzeitressourcen | abhängig von Owner-Bestätigung für Projektquellen |
+| mobile Webassets | aus eigenem Workspace gebaut und mit `rust-embed` in den Dienst eingebettet; keine externen Laufzeitressourcen | Projektquellen vom Owner bestätigt |
 
 Alle 13 QA-Oberflächen-/Vergleichsbilder wurden zusätzlich visuell geprüft.
 Erkennbar sind nur LDTG-Oberflächen, private LAN-Adressen, generische
 `C:\LDTG\...`-Testordner, ein Testprofil sowie Zugangscodes/QR-Codes. Namen,
 Benutzerprofile oder Dateiinhalte sind nicht sichtbar. Laut `qa/README.md`
 wurden die Codes nach den Laufzustandsaufnahmen durch Stoppen des Dienstes
-ungültig. Vor einer Veröffentlichung muss der Owner dennoch bestätigen, dass
-LAN-Adressen, Ordner und Profil reine freigabefähige Testdaten sind.
+ungültig. Der Owner hat bestätigt, dass LAN-Adressen, Ordner und Profil reine
+freigabefähige Testdaten sind.
 
-Die dafür vorgesehene, noch **nicht bestätigte** Erklärung steht in
-[`provenance-attestation.md`](provenance-attestation.md). Ohne diese Erklärung
-kann Git keine Rechtekette vor dem Wurzelcommit belegen.
+Die bestätigte Erklärung steht in
+[`provenance-attestation.md`](provenance-attestation.md). Sie dokumentiert die
+vom Git-Verlauf allein nicht belegbare Rechtekette vor dem Wurzelcommit.
 
 ## Namens- und offensichtliche Konfliktprüfung
 
@@ -161,11 +161,11 @@ gemeinsam.
 
 | P1-Kriterium | Status | Begründung |
 |---|---|---|
-| kein ungeklärtes fremdes/proprietäres Artefakt | blockiert | Herkunftsbestätigung für Projektquellen, Logo, Icons und QA-Testdaten fehlt |
+| kein ungeklärtes fremdes/proprietäres Artefakt | erfüllt | technische Prüfung ohne Fremdartefakt-Befund; Herkunft, Assets und QA-Testdaten zusätzlich vom Owner bestätigt |
 | ausgelieferte Abhängigkeiten mit bekannter kompatibler Lizenz | erfüllt | 857 Pakete inventarisiert, 0 ohne deklarierte Lizenz; siehe Lizenz-Audit |
 | erforderliche Drittanbieterhinweise ableitbar | erfüllt mit Auslieferungsauflage | Lizenz-/Notice-Dateien und Prüfsummen sind inventarisiert; das finale Notice-Bündel entsteht erst nach Lizenzentscheidung |
 | keine Secrets oder privaten Nutzdaten im vorgesehenen öffentlichen Git-Stand | erfüllt | exakter Scan von `main` und drei Tags: 0 Secret-, 0 persönliche Pfad- und 0 persönliche Identitätstreffer; privates Vollbackup verifiziert |
 
-P1 ist daher **nicht abgeschlossen**. P2, P3, R5.2, Phase 6, Lizenzaktivierung,
-SignPath und Veröffentlichung werden durch dieses Audit weder begonnen noch
-freigegeben.
+P1 ist damit **abgeschlossen**. P2 und P3 können nach Plan beginnen. R5.2,
+Phase 6, Lizenzaktivierung, SignPath und Veröffentlichung werden durch dieses
+Audit weder begonnen noch freigegeben.

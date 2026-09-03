@@ -758,8 +758,7 @@ Status: erfüllt am 3. September 2026 für R5.1.
 
 ## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
 
-Status: gestartet am 3. September 2026; P0 abgeschlossen, P1 technisch
-auditiert, aber durch eine dokumentierte Owner-Bestätigung blockiert. Es gibt
+Status: gestartet am 3. September 2026; P0 und P1 abgeschlossen. Es gibt
 weiterhin keine Veröffentlichungsfreigabe.
 
 Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
@@ -783,10 +782,9 @@ Der aktuelle P1-Nachweis liegt im
 [Repository-Audit](../qa/public-beta/repository-audit.md), im
 [Abhängigkeits-Lizenz-Audit](../qa/public-beta/dependency-license-audit.md) und
 in der [maschinenlesbaren Blockerliste](../qa/public-beta/blockers.json). Der
-Dependency-Teil und die Namensentscheidung zu **LDTG – Local Device Transfer
-Gateway** sowie die bereinigte Historienstrategie sind abgeschlossen; offen
-bleibt die Herkunftsbestätigung. Die Marken- und Kollisions-Vorprüfung steht in
-[`docs/BRANDING.md`](BRANDING.md).
+Dependency-Teil, Herkunftsbestätigung, Namensentscheidung zu **LDTG – Local
+Device Transfer Gateway** und bereinigte Historienstrategie sind abgeschlossen.
+Die Marken- und Kollisions-Vorprüfung steht in [`docs/BRANDING.md`](BRANDING.md).
 
 ## 11. Phase 6 – Strategische Transferfunktionen
 

@@ -56,8 +56,8 @@ keine formale Markenfreigabe, Ähnlichkeitssuche oder Rechtsberatung.
   `assets/ldtg-app-icon.png` erzeugte Plattform- und Installericons.
 
 Der frühere Markenassetbestand wird nicht weiter ausgeliefert. Die vollständige
-Owner-Bestätigung für Quellcode, Texte, generierte Assets und QA-Testdaten bleibt
-separat unter `PB-02` offen.
+Owner-Bestätigung für Quellcode, Texte, generierte Assets und QA-Testdaten wurde
+separat unter `PB-02` dokumentiert und abgeschlossen.
 
 ## Repositoryziel
 

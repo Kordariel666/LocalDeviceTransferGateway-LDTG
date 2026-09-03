@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "auditedSourceRevision": "a523770d8c20ae0695763acbb25c0e32fd552926",
-  "status": "blocked",
+  "auditedSourceRevision": "8d15035c68ab4f66912e4e1795e6e8e2944513ac",
+  "status": "passed",
   "scope": "P1 repository, provenance and dependency-license audit only",
   "constraints": {
     "recurringCostEur": 0,
@@ -11,31 +11,7 @@
     "r5_2Paused": true,
     "phase6Paused": true
   },
-  "blockers": [
-    {
-      "id": "PB-02",
-      "title": "Pre-import provenance and asset rights are not attested",
-      "owner": "repository owner",
-      "severity": "high",
-      "blocksP1": true,
-      "evidence": [
-        "git root commit 0102600da4d7738984c52218e9c17a4637b8275c",
-        "qa/public-beta/provenance-attestation.md",
-        "qa/public-beta/repository-audit.md#assets-texte-und-erzeugte-dateien"
-      ],
-      "facts": [
-        "The root commit imports almost the entire application and its assets.",
-        "Git therefore cannot prove authorship or tool/source provenance before that commit.",
-        "No obvious vendored binary, font or unrelated foreign asset was found in the current tree."
-      ],
-      "ownerDecisionRequired": [
-        "complete the provenance attestation",
-        "list every exception with source and license",
-        "replace or remove any item that cannot be cleared"
-      ],
-      "completionEvidence": "Committed owner attestation with no unresolved exception, or replacement/removal evidence for each exception"
-    }
-  ],
+  "blockers": [],
   "resolved": [
     {
       "id": "PB-01",
@@ -64,6 +40,17 @@
         "repeated exact-name conflict check on 2026-09-03"
       ],
       "residualRisk": "The check is not a formal trademark clearance; unrelated uses of LDTG remain."
+    },
+    {
+      "id": "PB-02",
+      "resolution": "the repository owner confirmed provenance, publication rights for project assets and the releasability of QA test data",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "qa/public-beta/provenance-attestation.md",
+        "owner confirmation on 2026-09-03"
+      ],
+      "residualRisk": "The attestation is owner-supplied and is not independent legal verification."
     }
   ],
   "dependencyLicenseBlockers": []
