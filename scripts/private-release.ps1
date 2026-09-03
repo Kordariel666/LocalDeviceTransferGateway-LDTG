@@ -74,27 +74,58 @@ function Get-Sha256 {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-function Get-WindowsAuthenticodeStatus {
+function Get-EmbeddedAuthenticodeStatus {
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    $windowsPowerShellPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    if (-not (Test-Path -LiteralPath $windowsPowerShellPath -PathType Leaf)) {
-        throw "Windows PowerShell fuer die Authenticode-Pruefung nicht gefunden: $windowsPowerShellPath"
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    $reader = New-Object IO.BinaryReader($stream)
+    try {
+        if ($stream.Length -lt 64 -or $reader.ReadUInt16() -ne 0x5A4D) {
+            throw "Installer besitzt keinen gueltigen DOS-/PE-Header: $Path"
+        }
+        $stream.Position = 0x3C
+        $peOffset = [int64]$reader.ReadUInt32()
+        if ($peOffset -lt 64 -or $peOffset + 24 -gt $stream.Length) {
+            throw "Installer besitzt einen ungueltigen PE-Header-Offset: $Path"
+        }
+        $stream.Position = $peOffset
+        if ($reader.ReadUInt32() -ne 0x00004550) {
+            throw "Installer besitzt keine gueltige PE-Signatur: $Path"
+        }
+        $stream.Position = $peOffset + 20
+        $optionalHeaderSize = [int64]$reader.ReadUInt16()
+        $optionalHeaderOffset = $peOffset + 24
+        if ($optionalHeaderOffset + $optionalHeaderSize -gt $stream.Length) {
+            throw "Installer besitzt einen abgeschnittenen optionalen PE-Header: $Path"
+        }
+        $stream.Position = $optionalHeaderOffset
+        $optionalHeaderMagic = $reader.ReadUInt16()
+        $dataDirectoryOffset = switch ($optionalHeaderMagic) {
+            0x010B { $optionalHeaderOffset + 96 }
+            0x020B { $optionalHeaderOffset + 112 }
+            default { throw "Installer besitzt einen unbekannten optionalen PE-Header: $Path" }
+        }
+        $certificateDirectoryOffset = $dataDirectoryOffset + (4 * 8)
+        if ($certificateDirectoryOffset + 8 -gt $optionalHeaderOffset + $optionalHeaderSize) {
+            throw "Installer besitzt keine vollstaendige PE-Zertifikatstabelle: $Path"
+        }
+        $stream.Position = $certificateDirectoryOffset
+        $certificateOffset = [int64]$reader.ReadUInt32()
+        $certificateSize = [int64]$reader.ReadUInt32()
+        if (($certificateOffset -eq 0) -xor ($certificateSize -eq 0)) {
+            throw "Installer besitzt einen inkonsistenten Authenticode-Verweis: $Path"
+        }
+        if ($certificateOffset -ne 0) {
+            if ($certificateOffset + $certificateSize -gt $stream.Length) {
+                throw "Installer besitzt eine abgeschnittene Authenticode-Tabelle: $Path"
+            }
+            throw "Der private Dry-Run erwartet einen unsignierten Installer, fand aber eine Authenticode-Tabelle: $Path"
+        }
+        return 'NotSigned'
     }
-
-    $escapedPath = ([IO.Path]::GetFullPath($Path)).Replace("'", "''")
-    $scriptText = "`$ProgressPreference='SilentlyContinue'; (Get-AuthenticodeSignature -LiteralPath '$escapedPath').Status.ToString()"
-    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($scriptText))
-    $status = (Invoke-Captured -Command $windowsPowerShellPath -CommandArguments @(
-        '-NoProfile',
-        '-NonInteractive',
-        '-EncodedCommand',
-        $encodedCommand
-    )).Trim()
-    if ($status -notin @('Valid', 'UnknownError', 'NotSigned', 'HashMismatch', 'NotTrusted', 'NotSupported', 'Incompatible')) {
-        throw "Unerwarteter Authenticode-Status: $status"
+    finally {
+        $reader.Dispose()
     }
-    return $status
 }
 
 function Get-OptionalEnvironmentValue {
@@ -254,7 +285,7 @@ try {
     $tagsText = Invoke-Captured -Command 'git' -CommandArguments @('tag', '--points-at', $revision)
     $sourceTags = @($tagsText -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     $sbomPath = Join-Path $outputPath 'sbom.cdx.json'
-    $signatureStatus = Get-WindowsAuthenticodeStatus -Path $installerPath
+    $signatureStatus = Get-EmbeddedAuthenticodeStatus -Path $installerPath
 
     $artifactEntries = @(
         [ordered]@{
