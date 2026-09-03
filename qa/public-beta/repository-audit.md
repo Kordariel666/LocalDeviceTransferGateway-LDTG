@@ -2,7 +2,7 @@
 
 Stand: 4. September 2026
 
-Auditierter Quellstand: `2c58a4088cdd10eb352fdb49736ef7b9a230bdd8`
+Auditierter Quellstand: `493d20b27380d043c0a9f289862a424b09e31087`
 
 Ergebnis: **ERFÜLLT – P1 abgeschlossen**
 
@@ -20,10 +20,10 @@ bleiben pausiert.
   Stand aber keinen Secret-Befund.
 - Nach dem vom Owner gewählten destruktiven Rewrite enthalten der vorgesehene
   Quellcommit und die drei Release-Tags keine persönlichen
-  Commit-/Tag-E-Mail-Adressen. Sämtliche 41 Commit-Identitäten und drei
+  Commit-/Tag-E-Mail-Adressen. Sämtliche 43 Commit-Identitäten und drei
   annotierten Tagger verwenden die konfigurierte GitHub-noreply-Adresse. Der
-  einzige absolute Benutzerpfad-Mustertreffer ist die synthetische Testadresse
-  `C:\Users\operator-home`, kein realer Benutzer- oder Werkzeugpfad.
+  einzige unterschiedliche Benutzerpfad-Mustertreffer ist eine synthetische
+  Windows-Testadresse, kein realer Benutzer- oder Werkzeugpfad.
 - Es wurden keine eingecheckten ausführbaren Fremdbinärdateien, Archive, Fonts,
   PDFs oder WebAssembly-Dateien gefunden. Die 51 PNG/JPEG-Dateien enthalten
   keine erkannten Text-, EXIF- oder Kommentarmetadatenblöcke.
@@ -56,11 +56,11 @@ Wesentliche Kennzahlen des Ausgangsstands:
 
 | Merkmal | Ergebnis |
 |---|---:|
-| erreichbare Commits über die öffentlichen Ziel-Refs | 41 |
+| erreichbare Commits über die öffentlichen Ziel-Refs | 43 |
 | geprüfte Refs | 4 |
 | eingecheckte Dateien | 211 |
-| Größe der eingecheckten Dateien | 8.769.331 Bytes |
-| erreichbare Git-Objekte / eindeutige Blobs | 1.196 / 767 |
+| Größe der eingecheckten Dateien | 8.767.055 Bytes |
+| erreichbare Git-Objekte / eindeutige Blobs | 1.209 / 773 |
 | größter Blob | 1.117.268 Bytes |
 | Blobs ab 5 MiB | 0 |
 | geprüfte PNG/JPEG-Dateien | 51 |
@@ -89,16 +89,16 @@ Der Musterscan über den vollständigen, lokal erreichbaren Patchverlauf ergab:
 | JWT-Muster | 0 |
 | Zugangsdaten in URLs | 0 |
 | generische Secret-Zuweisungen | 0 |
-| absolute Benutzerpfad-Muster | 1 synthetischer Testpfad |
-| E-Mail-ähnliche Zeichenfolgen | 994 Mustertreffer |
+| absolute Benutzerpfad-Muster | 3 Vorkommen derselben synthetischen Testadresse |
+| E-Mail-ähnliche Zeichenfolgen | 996 Mustertreffer |
 
 Die Zahlen zählen Vorkommen in wiederholten Patches und sind keine Anzahl
 eindeutiger Probleme. Die verbleibenden E-Mail-Treffer stammen aus öffentlichen
 Dependency-Metadaten, Beispielen und GitHub-noreply-Identitäten; eine persönliche
-Adresse wurde im Zielscan nicht festgestellt. Der einzelne Pfadtreffer ist die
-offensichtlich fiktive Testadresse `C:\Users\operator-home` in einem
-Firewall-Matcher-Test. Der maschinenlesbare Nachweis speichert Commit- und
-Tagger-Adressen nur als SHA-256-Fingerabdruck und Domain.
+Adresse wurde im Zielscan nicht festgestellt. Die drei Pfadtreffer sind
+Vorkommen derselben offensichtlich fiktiven Adresse eines Firewall-Matcher-
+Tests und seiner Auditdokumentation. Der maschinenlesbare Nachweis speichert
+Commit- und Tagger-Adressen nur als SHA-256-Fingerabdruck und Domain.
 
 Vor dem Rewrite wurde ein vollständiges privates Git-Bundle außerhalb des
 Repositorys erzeugt und mit `git bundle verify` geprüft. Es umfasst 19 damalige
@@ -172,7 +172,7 @@ gemeinsam.
 | kein ungeklärtes fremdes/proprietäres Artefakt | erfüllt | technische Prüfung ohne Fremdartefakt-Befund; Herkunft, Assets und QA-Testdaten zusätzlich vom Owner bestätigt |
 | ausgelieferte Abhängigkeiten mit bekannter kompatibler Lizenz | erfüllt | 857 Pakete inventarisiert, 0 ohne deklarierte Lizenz; siehe Lizenz-Audit |
 | erforderliche Drittanbieterhinweise ableitbar | erfüllt | Lizenz-/Notice-Dateien, Prüfsummen und `THIRD_PARTY_NOTICES.md` sind vorhanden und werden automatisch gegengeprüft |
-| keine Secrets oder privaten Nutzdaten im vorgesehenen öffentlichen Git-Stand | erfüllt | exakter Scan von vorgesehenem Quellcommit und drei Tags: 0 Secret- und 0 persönliche Identitätstreffer; der einzige Pfadtreffer ist eine dokumentierte synthetische Testadresse; privates Vollbackup verifiziert |
+| keine Secrets oder privaten Nutzdaten im vorgesehenen öffentlichen Git-Stand | erfüllt | exakter Scan von vorgesehenem Quellcommit und drei Tags: 0 Secret- und 0 persönliche Identitätstreffer; die Pfadtreffer sind Vorkommen derselben dokumentierten synthetischen Testadresse; privates Vollbackup verifiziert |
 
 P1 bleibt damit **abgeschlossen**. Die nachfolgenden Vorbereitungspakete P2 bis
 P6 sind ebenfalls abgeschlossen. R5.2, Phase 6, SignPath und Veröffentlichung
