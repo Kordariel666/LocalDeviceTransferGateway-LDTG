@@ -2,7 +2,7 @@
 
 **Vergleichsziel**
 
-- Source visual truth: `<USER_PROFILE>\.codex\generated_images\01a06722-3ba2-7ee3-afd0-7d2a66d211b0\exec-58b7e118-cec5-4fca-b8c8-1a2ebdf00601.png`, die vom Owner ausgewählte Variante 3.
+- Source visual truth: `assets/ldtg-logo-lockup.png`, die ins Repository übernommene Kopie der vom Owner ausgewählten Variante 3.
 - Implementation screenshot: `qa/ldtg-branding-desktop.png`.
 - Full-view comparison evidence: `qa/ldtg-branding-comparison.png`.
 - Focused brand comparison: `qa/ldtg-branding-focused.png`.

@@ -7,6 +7,10 @@ import process from "node:process";
 const root = resolve(import.meta.dirname, "..");
 const outputDirectory = join(root, "qa", "public-beta");
 const allowNetwork = process.argv.includes("--online");
+const publicationRefs = process.argv
+  .filter((argument) => argument.startsWith("--public-ref="))
+  .map((argument) => argument.slice("--public-ref=".length))
+  .filter(Boolean);
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -396,8 +400,12 @@ function imageEvidence(path) {
 }
 
 function repositoryEvidence() {
+  const refScope = publicationRefs.length ? publicationRefs : ["--all"];
+  const scannedRefs = publicationRefs.length
+    ? publicationRefs.map((ref) => `${ref}\t${run("git", ["rev-parse", "--verify", ref])}`)
+    : run("git", ["for-each-ref", "--format=%(refname)%09%(objectname)"]).split("\n").filter(Boolean);
   const tracked = run("git", ["ls-files"]).split("\n").filter(Boolean);
-  const history = run("git", ["log", "--all", "-p", "--no-ext-diff", "--no-textconv"]);
+  const history = run("git", ["log", "-p", "--no-ext-diff", "--no-textconv", ...refScope]);
   const patterns = {
     privateKey: /-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----/g,
     awsAccessKey: /AKIA[0-9A-Z]{16}/g,
@@ -411,7 +419,7 @@ function repositoryEvidence() {
     emailLike: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}/gi,
   };
   const historyPatternCounts = Object.fromEntries(Object.entries(patterns).map(([name, regex]) => [name, [...history.matchAll(regex)].length]));
-  const identities = run("git", ["log", "--all", "--format=%an%x09%ae%x09%cn%x09%ce"]).split("\n").filter(Boolean);
+  const identities = run("git", ["log", "--format=%an%x09%ae%x09%cn%x09%ce", ...refScope]).split("\n").filter(Boolean);
   const identityRecords = new Map();
   for (const line of identities) {
     const [authorName, authorEmail, committerName, committerEmail] = line.split("\t");
@@ -423,7 +431,21 @@ function repositoryEvidence() {
     }
   }
 
-  const objectLines = run("git", ["rev-list", "--objects", "--all"]).split("\n").filter(Boolean);
+  const tagRefs = publicationRefs.length
+    ? publicationRefs.filter((ref) => ref.startsWith("refs/tags/"))
+    : run("git", ["for-each-ref", "--format=%(refname)", "refs/tags"]).split("\n").filter(Boolean);
+  const taggers = tagRefs.map((ref) => {
+    const [name, email] = run("git", ["for-each-ref", "--format=%(taggername)%09%(taggeremail)", ref]).split("\t");
+    const normalizedEmail = email?.replace(/^<|>$/g, "") ?? "";
+    return {
+      ref,
+      name: name || null,
+      emailSha256: normalizedEmail ? sha256(normalizedEmail.toLowerCase()) : null,
+      domain: normalizedEmail.includes("@") ? normalizedEmail.split("@").at(-1) : null,
+    };
+  });
+
+  const objectLines = run("git", ["rev-list", "--objects", ...refScope]).split("\n").filter(Boolean);
   const objectPaths = new Map(objectLines.map((line) => {
     const [oid, ...pathParts] = line.split(" ");
     return [oid, pathParts.join(" ")];
@@ -438,8 +460,9 @@ function repositoryEvidence() {
   return {
     schemaVersion: 1,
     sourceRevision: run("git", ["rev-parse", "HEAD"]),
-    refs: run("git", ["for-each-ref", "--format=%(refname)%09%(objectname)"]).split("\n").filter(Boolean),
-    commitCount: Number(run("git", ["rev-list", "--all", "--count"])),
+    refScope: publicationRefs.length ? "explicit-publication-refs" : "all-local-refs",
+    refs: scannedRefs,
+    commitCount: Number(run("git", ["rev-list", "--count", ...refScope])),
     trackedFiles: tracked.length,
     trackedBytes: tracked.reduce((total, path) => total + statSync(join(root, path)).size, 0),
     reachableObjects: objectInfo.length,
@@ -447,6 +470,7 @@ function repositoryEvidence() {
     largestBlobBytes: Math.max(...blobs.map((item) => item.size)),
     blobsAtLeastFiveMiB: blobs.filter((item) => item.size >= 5 * 1024 * 1024).length,
     identities: [...identityRecords.values()].sort((a, b) => `${a.role}:${a.name}`.localeCompare(`${b.role}:${b.name}`)),
+    taggers,
     historyPatternCounts,
     images: imagePaths.map(imageEvidence),
   };
