@@ -13,7 +13,6 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-Import-Module Microsoft.PowerShell.Security -ErrorAction Stop
 $script:ReleaseUtf8NoBom = New-Object Text.UTF8Encoding($false)
 
 function Invoke-Captured {
@@ -73,6 +72,29 @@ function Invoke-Logged {
 function Get-Sha256 {
     param([Parameter(Mandatory = $true)][string]$Path)
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-WindowsAuthenticodeStatus {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $windowsPowerShellPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    if (-not (Test-Path -LiteralPath $windowsPowerShellPath -PathType Leaf)) {
+        throw "Windows PowerShell fuer die Authenticode-Pruefung nicht gefunden: $windowsPowerShellPath"
+    }
+
+    $escapedPath = ([IO.Path]::GetFullPath($Path)).Replace("'", "''")
+    $scriptText = "`$ProgressPreference='SilentlyContinue'; (Get-AuthenticodeSignature -LiteralPath '$escapedPath').Status.ToString()"
+    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($scriptText))
+    $status = (Invoke-Captured -Command $windowsPowerShellPath -CommandArguments @(
+        '-NoProfile',
+        '-NonInteractive',
+        '-EncodedCommand',
+        $encodedCommand
+    )).Trim()
+    if ($status -notin @('Valid', 'UnknownError', 'NotSigned', 'HashMismatch', 'NotTrusted', 'NotSupported', 'Incompatible')) {
+        throw "Unerwarteter Authenticode-Status: $status"
+    }
+    return $status
 }
 
 function Get-OptionalEnvironmentValue {
@@ -232,7 +254,7 @@ try {
     $tagsText = Invoke-Captured -Command 'git' -CommandArguments @('tag', '--points-at', $revision)
     $sourceTags = @($tagsText -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     $sbomPath = Join-Path $outputPath 'sbom.cdx.json'
-    $signatureStatus = (Get-AuthenticodeSignature -LiteralPath $installerPath).Status.ToString()
+    $signatureStatus = Get-WindowsAuthenticodeStatus -Path $installerPath
 
     $artifactEntries = @(
         [ordered]@{
