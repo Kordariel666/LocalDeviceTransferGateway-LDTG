@@ -15,7 +15,7 @@ Besonders relevant sind Befunde, durch die ein LAN-Client:
 
 ## Bewusste Grenze von v1
 
-DMDC v1 nutzt HTTP im bestätigten lokalen Netzwerk und beansprucht keine Transport- oder Ende-zu-Ende-Verschlüsselung. Ein Angreifer mit der Möglichkeit, LAN-Verkehr mitzulesen oder aktiv umzuleiten, liegt außerhalb der Schutzgarantie. Internetfreigabe, Router-Portweiterleitung, UPnP und der Einsatz in nicht vertrauenswürdigen Netzen werden nicht unterstützt.
+LDTG v1 nutzt HTTP im bestätigten lokalen Netzwerk und beansprucht keine Transport- oder Ende-zu-Ende-Verschlüsselung. Ein Angreifer mit der Möglichkeit, LAN-Verkehr mitzulesen oder aktiv umzuleiten, liegt außerhalb der Schutzgarantie. Internetfreigabe, Router-Portweiterleitung, UPnP und der Einsatz in nicht vertrauenswürdigen Netzen werden nicht unterstützt.
 
 ## Durchgesetzte Sicherheitsgrenzen
 
@@ -32,7 +32,7 @@ DMDC v1 nutzt HTTP im bestätigten lokalen Netzwerk und beansprucht keine Transp
 - Der Zugangscode bleibt bis zur lokalen Rotation oder zum Dienstende für mehrere legitime Geräte verwendbar. Rotation ersetzt nur den Code und setzt dessen Fehlversuchszustand zurück; bestehende Sitzungen werden ausschließlich durch Ablauf, Einzel-/Gesamtwiderruf oder Dienststopp beendet. Gerätename und User-Agent beeinflussen weder Fehlversuchs- noch Sitzungslimits.
 - Download- und Uploadrollen werden in v1 dienstweit durch die beim Start aktivierten Freigabewurzeln festgelegt. Eine vom LAN-Client selbst angegebene Rolle wäre keine Autorisierung und wird deshalb nicht als Sicherheitskontrolle angeboten.
 
-Der `.dmdc`-Arbeitsordner ist kein öffentlicher Eigentumsnachweis. Laufende Uploads werden über ihre offenen Handles aufgeräumt; nach einem Prozessabsturz bleiben nicht mehr sicher zuordenbare Teildateien erhalten und müssen bei Bedarf manuell geprüft werden.
+Der `.ldtg`-Arbeitsordner ist kein öffentlicher Eigentumsnachweis. Laufende Uploads werden über ihre offenen Handles aufgeräumt; nach einem Prozessabsturz bleiben nicht mehr sicher zuordenbare Teildateien erhalten und müssen bei Bedarf manuell geprüft werden.
 
 ## Meldung
 

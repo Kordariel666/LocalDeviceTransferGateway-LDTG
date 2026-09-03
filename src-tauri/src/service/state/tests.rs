@@ -230,7 +230,7 @@ async fn transfer_progress_models_monotonic_smoothed_speed_and_timestamps() {
 }
 
 #[test]
-fn preserves_unmanaged_dmdc_directory() {
+fn preserves_unmanaged_ldtg_directory() {
     let temp = tempfile::tempdir().unwrap();
     fs::create_dir(temp.path().join(PARTIAL_DIR_NAME)).unwrap();
     let user_file = temp.path().join(PARTIAL_DIR_NAME).join("user.txt");

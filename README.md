@@ -1,10 +1,12 @@
-# DMDC
+# LDTG
 
-**Desktop Mobile Data Center** ist eine lokale Desktopanwendung für kontrollierte Dateiübertragungen zwischen einem PC und Mobilgeräten im selben Netzwerk. Die Desktop-App verwaltet schnell wechselbare Freigabeprofile und startet jeweils eines davon; Uploads und Downloads werden ausschließlich im Browser des Handys ausgelöst.
+<img src="assets/ldtg-logo-lockup.png" alt="LDTG – Local Device Transfer Gateway" width="760">
+
+**Local Device Transfer Gateway** ist eine lokale Desktopanwendung für kontrollierte Dateiübertragungen zwischen einem PC und Mobilgeräten im selben Netzwerk. Die Desktop-App verwaltet schnell wechselbare Freigabeprofile und startet jeweils eines davon; Uploads und Downloads werden ausschließlich im Browser des Handys ausgelöst.
 
 ## Sicherheitsmodell
 
-DMDC v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gibt keine Cloud, kein Konto, keine öffentliche Webseite, keine Portweiterleitung und keine externen Web-Ressourcen. HTTP ist jedoch keine Ende-zu-Ende-Verschlüsselung: Andere Teilnehmer oder Administratoren des lokalen Netzes könnten Verkehr grundsätzlich mitlesen oder manipulieren. DMDC darf deshalb nur in einem bewusst bestätigten Netzwerk eingesetzt werden.
+LDTG v1 verwendet bewusst gehärtetes **HTTP im vertrauenswürdigen LAN**. Es gibt keine Cloud, kein Konto, keine öffentliche Webseite, keine Portweiterleitung und keine externen Web-Ressourcen. HTTP ist jedoch keine Ende-zu-Ende-Verschlüsselung: Andere Teilnehmer oder Administratoren des lokalen Netzes könnten Verkehr grundsätzlich mitlesen oder manipulieren. LDTG darf deshalb nur in einem bewusst bestätigten Netzwerk eingesetzt werden.
 
 - Der achtstellige Code steht nie in URL oder QR-Code. Verteilte Fehlversuche besitzen zusätzlich einen dienstweiten Grenzwert. Eine aktive Abkühlphase wird vor dem Codevergleich geprüft und rotiert den Code nicht, damit fremde Geräte weder einen Codewechsel erzwingen noch den gültigen Code als Prüf-Orakel verwenden können.
 - Der Code bleibt innerhalb eines Dienstlaufs absichtlich für mehrere legitime Geräte verwendbar, bis er lokal rotiert wird. Eine Rotation widerruft bestehende Sitzungen nicht; dafür stehen getrennte Geräte- und Gesamtwiderrufe bereit. Die aktive Download-/Uploadrolle gilt derzeit dienstweit und kann nicht vom Mobilgerät als eigene Berechtigung gewählt werden.
@@ -51,7 +53,7 @@ dort 14 Tage als Buildartefakt aufbewahrt.
 
 Rust-DTOs unter `src-tauri/src/domain` sind die maßgebliche Quelle der gemeinsam
 genutzten Datenverträge. Nach einer DTO-Änderung aktualisiert
-`pnpm contracts:generate` das Paket `@dmdc/shared`; `pnpm contracts:check` meldet
+`pnpm contracts:generate` das Paket `@ldtg/shared`; `pnpm contracts:check` meldet
 vergessene Exporte, ohne Dateien zu verändern.
 
 Fallible Tauri-Aufrufe lehnen Promises mit einem typisierten `CommandError` ab.
@@ -61,13 +63,13 @@ noch ungefiltert in der Oberfläche angezeigt.
 
 Der NSIS-Installer wird mit `pnpm build` erzeugt. Code-Signing, Auto-Updates und öffentliche Veröffentlichung sind nicht Bestandteil von v1.
 
-Der Uninstaller entfernt die Firewallregel, bewahrt aber Konfiguration, Logs und mögliche Nutzdaten in den DMDC-AppData-Verzeichnissen. Er löscht diese Verzeichnisse nicht rekursiv.
+Der Uninstaller entfernt die Firewallregel, bewahrt aber Konfiguration, Logs und mögliche Nutzdaten in den LDTG-AppData-Verzeichnissen. Er löscht diese Verzeichnisse nicht rekursiv.
 
 Die Konfiguration besitzt ein eigenes versioniertes Schema. Ältere
 `settings.json`-Dateien werden beim Laden schrittweise migriert; zukünftige,
 beschädigte oder semantisch ungültige Dateien bleiben unverändert und führen zu
 sicheren Standardwerten mit sichtbarer Warnung. Vor einem bewussten Ersetzen legt
-DMDC eine nummerierte Recovery-Kopie an. Die App-Buildversion wird nicht als
+LDTG eine nummerierte Recovery-Kopie an. Die App-Buildversion wird nicht als
 Benutzereinstellung gespeichert.
 
 Jedes Freigabeprofil enthält genau einen optionalen Downloadordner und einen
@@ -84,7 +86,7 @@ vor dem Verwerfen eine ausdrückliche Bestätigung.
 
 `pnpm test:rust` bettet ausschließlich in den Windows-Test-Runner das Common-Controls-v6-Manifest ein, das Tauri beim normalen App-Build ohnehin erhält. Dadurch laufen die Rust-Unit- und Integrationstests ohne den Windows-Ladefehler `TaskDialogIndirect`; Produktions- und Installer-Manifeste werden nicht verändert.
 
-Auf Rechnern mit einer strikten Windows-Anwendungssteuerungsrichtlinie müssen lokal von Cargo erzeugte Build-Helfer für Entwicklungsbuilds zugelassen sein. Diese Einschränkung betrifft nur die Entwicklung, nicht die Architektur von DMDC.
+Auf Rechnern mit einer strikten Windows-Anwendungssteuerungsrichtlinie müssen lokal von Cargo erzeugte Build-Helfer für Entwicklungsbuilds zugelassen sein. Diese Einschränkung betrifft nur die Entwicklung, nicht die Architektur von LDTG.
 
 ## Projektstruktur
 
@@ -119,8 +121,8 @@ Die beiden Weboberflächen sind getrennte Builds. Dateiinhalte passieren niemals
 2. Netzwerk, Port und Grenzen prüfen und die Firewallregel einmalig einrichten.
 3. Nur in einem vertrauten Netz den Dienst starten.
 4. Die angezeigte URL oder den QR-Code am Handy öffnen und den separat angezeigten Code eingeben.
-5. Nach der Übertragung den Dienst manuell stoppen. Solange er läuft, minimiert das Schließen des Fensters DMDC in den System-Tray.
+5. Nach der Übertragung den Dienst manuell stoppen. Solange er läuft, minimiert das Schließen des Fensters LDTG in den System-Tray.
 
-DMDC führt empfangene Dateien nicht aus und enthält keinen Virenscanner. Empfangene Dateien sollten wie jeder andere externe Inhalt behandelt werden.
+LDTG führt empfangene Dateien nicht aus und enthält keinen Virenscanner. Empfangene Dateien sollten wie jeder andere externe Inhalt behandelt werden.
 Windows-Autostartverzeichnisse dürfen nicht als Upload-Eingang verwendet werden. Download- und Uploadwurzel müssen vollständig getrennt sein.
-DMDC akzeptiert Upload-Eingänge nur auf lokalen festen, entfernbaren oder RAM-Laufwerken. Effektive Windows-Startordner, bekannte Office-Autoload-Verzeichnisse und nachträglich umgebogene beziehungsweise ausgetauschte Freigabewurzeln werden abgewiesen. Nicht auflösbare Windows-Netzwerkprofile gelten als nicht vertrauenswürdig und benötigen nach jeder Identitätsänderung eine neue Bestätigung.
+LDTG akzeptiert Upload-Eingänge nur auf lokalen festen, entfernbaren oder RAM-Laufwerken. Effektive Windows-Startordner, bekannte Office-Autoload-Verzeichnisse und nachträglich umgebogene beziehungsweise ausgetauschte Freigabewurzeln werden abgewiesen. Nicht auflösbare Windows-Netzwerkprofile gelten als nicht vertrauenswürdig und benötigen nach jeder Identitätsänderung eine neue Bestätigung.

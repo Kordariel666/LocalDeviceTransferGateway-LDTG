@@ -1,4 +1,4 @@
-use dmdc_lib::domain::{
+use ldtg_lib::domain::{
     network::NetworkInterfaceInfo,
     settings::{
         AppSettings, LimitSettings, NetworkSettings, ProfileOverrides, ShareProfile, ShareSettings,

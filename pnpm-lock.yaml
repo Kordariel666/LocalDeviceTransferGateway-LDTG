@@ -38,7 +38,7 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@dmdc/shared':
+      '@ldtg/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@tauri-apps/api':
@@ -87,7 +87,7 @@ importers:
 
   apps/mobile:
     dependencies:
-      '@dmdc/shared':
+      '@ldtg/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       react:

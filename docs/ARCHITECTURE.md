@@ -1,4 +1,4 @@
-# Architektur von DMDC v1
+# Architektur von LDTG v1
 
 ## Grenzen und Module
 
@@ -10,7 +10,7 @@ Der Rust-Code ist in drei Schichten gegliedert:
 - `service`: kurzlebiger Dienstzustand, Authentifizierung, Sitzungen, Übertragungen und die Axum-HTTP-API.
 - `platform`: betriebssystemspezifische Funktionen. In v1 ist nur der Windows-Firewallhelfer implementiert.
 
-Die mobile React-App wird separat gebaut und mit `rust-embed` in die Rust-Binärdatei aufgenommen. Dadurch benötigt DMDC weder Internet noch einen separaten Webserver.
+Die mobile React-App wird separat gebaut und mit `rust-embed` in die Rust-Binärdatei aufgenommen. Dadurch benötigt LDTG weder Internet noch einen separaten Webserver.
 
 Innerhalb der Schichten gelten folgende Modulgrenzen:
 
@@ -102,7 +102,7 @@ Appzustand gespiegelt, damit Fensterschließen und Tray-Beenden nicht am React-S
 vorbei ungespeicherte Änderungen verwerfen. Die Bestätigung dafür bleibt von der
 separaten Bestätigung zum Abbruch aktiver Übertragungen unabhängig.
 
-Ein Dienststopp widerruft alle Sitzungen, signalisiert laufenden Downloads und Uploadjobs den Abbruch und wartet kontrolliert auf den HTTP-Server. Die über offene Handles eindeutig zugeordneten unvollständigen Uploaddateien werden anschließend dienstbesessen und exklusiv entfernt; ein bereits laufender Blocking-Job verzögert die Steuerung oder den Shutdown dabei nicht. Die öffentliche Markierung des `.dmdc`-Arbeitsordners beweist nicht die Eigentümerschaft einzelner Dateien. Nach einem Prozessabsturz bleiben deshalb nicht mehr zweifelsfrei zuordenbare `.part`-Dateien zur manuellen Prüfung erhalten; vorhandene Inhalte werden nie rekursiv gelöscht.
+Ein Dienststopp widerruft alle Sitzungen, signalisiert laufenden Downloads und Uploadjobs den Abbruch und wartet kontrolliert auf den HTTP-Server. Die über offene Handles eindeutig zugeordneten unvollständigen Uploaddateien werden anschließend dienstbesessen und exklusiv entfernt; ein bereits laufender Blocking-Job verzögert die Steuerung oder den Shutdown dabei nicht. Die öffentliche Markierung des `.ldtg`-Arbeitsordners beweist nicht die Eigentümerschaft einzelner Dateien. Nach einem Prozessabsturz bleiben deshalb nicht mehr zweifelsfrei zuordenbare `.part`-Dateien zur manuellen Prüfung erhalten; vorhandene Inhalte werden nie rekursiv gelöscht.
 
 Zur Ressourcenbegrenzung sind gleichzeitig höchstens 12 Downloads insgesamt, 4 pro Client-IP und 3 pro Sitzung zulässig; jeder Download besitzt zusätzlich eine absolute Laufzeitgrenze von 6 Stunden. Es gelten höchstens 64 unvollständige Uploads insgesamt und 4 pro Client-IP. Das globale Inbox-Objektbudget reserviert beim Anlegen einen Platz; das globale Bytebudget wächst dagegen ausschließlich um erfolgreich geschriebene Blöcke und reserviert nicht die angekündigte Restgröße. Beide Budgets schließen bereits abgeschlossene Inbox-Dateien ein und werden beim Anlegen eines Uploads mit dem Dateisystem abgeglichen. Zusätzlich bleibt eine Datenträgerreserve von 1 GiB unangetastet. Ein Upload läuft nach 30 Minuten ohne erfolgreich gespeicherten Block oder spätestens nach 24 Stunden absolut ab. Vor dem Body-Puffern gilt genau ein aktiver Datenblock pro Upload-ID und ein globales Limit von 8 aktiven Uploadblöcken. Es gelten außerdem feste globale und IP-bezogene Grenzen für TCP-Verbindungen und gleichzeitig bearbeitete HTTP-Anfragen; inaktive Verbindungs-I/O, vollständige Requests und bereits das Lesen eines HTTP-Headers besitzen eigene Zeitlimits. Auch bei fortlaufendem I/O endet jede Verbindung spätestens nach 6 Stunden. Blockierende Ordnerarbeit besitzt einen Pool von 4 Jobs, höchstens 2 pro Client-IP und 1 pro Sitzung. Download-Pfad- und HEAD-Metadatenprüfungen besitzen ebenfalls 4 globale und 2 IP-bezogene Slots. Uploadanlage, Inbox-Scan, Speicherprüfung, Chunk-Persistierung und Abschluss besitzen einen eigenen Pool von 4 Jobs mit höchstens 2 pro Client-IP; interne Partial-Löschungen teilen dessen globale Kapazität. Permits gehören dem tatsächlichen Blocking-Job beziehungsweise dem ihn abschließenden dienstbesessenen Task und bleiben deshalb auch nach HTTP-Timeout oder Clientabbruch bis zum konsistenten Jobende gehalten.
 
@@ -182,8 +182,8 @@ Bei Sitzungsverlust bleiben lokale Dateireferenzen und Reihenfolge erhalten, wä
 
 XHR-Antworten des Chunk-Endpunkts werden wie Fetch-Antworten als strukturierte `ApiError`-Objekte ausgewertet. Nicht transiente 4xx-Antworten behalten ihren stabilen Fehlercode und schlagen ohne zusätzliche Backoff-Wartezeit fehl; Netzwerkfehler, 408, 409, 425, 429 und Serverfehler werden begrenzt wiederholt. Eine laufende Anmeldung besitzt einen lokalen Einmal-Guard. Beim Logout wird die lokale Sitzung auch dann im `finally`-Pfad entfernt, wenn der Dienst nicht mehr erreichbar ist.
 
-Der Windows-Uninstaller entfernt weiterhin die DMDC-Firewallregel, bewahrt jedoch Konfiguration, Logs und mögliche Nutzdaten in den AppData-Verzeichnissen. Er führt dort keine rekursive Löschung aus.
+Der Windows-Uninstaller entfernt weiterhin die LDTG-Firewallregel, bewahrt jedoch Konfiguration, Logs und mögliche Nutzdaten in den AppData-Verzeichnissen. Er führt dort keine rekursive Löschung aus.
 
 Download- und Uploadwurzeln werden kanonisch auf vollständige Trennung geprüft. Benutzer- und systemweite Windows-Autostartpfade sind als Uploadziele gesperrt. Uploadnamen werden vor der Übertragung nach UTF-16-Komponenten- und Gesamtpfadbudget begrenzt; auch Kollisionssuffixe bleiben innerhalb dieser Grenze.
 
-Die Windows-Firewallregel ist auf Programmpfad, TCP-Port und `LocalSubnet` begrenzt, gilt aber bewusst in allen Windows-Profilkategorien. Ein als „Öffentlich“ klassifiziertes Heimnetz blockiert den Start daher nicht; die DMDC-eigene Vertrauensbestätigung bleibt maßgeblich.
+Die Windows-Firewallregel ist auf Programmpfad, TCP-Port und `LocalSubnet` begrenzt, gilt aber bewusst in allen Windows-Profilkategorien. Ein als „Öffentlich“ klassifiziertes Heimnetz blockiert den Start daher nicht; die LDTG-eigene Vertrauensbestätigung bleibt maßgeblich.

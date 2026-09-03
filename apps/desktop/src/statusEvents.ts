@@ -2,7 +2,7 @@ import type {
   ServiceStatus,
   SessionChangedEvent,
   TransferChangedEvent,
-} from "@dmdc/shared";
+} from "@ldtg/shared";
 
 export function applyTransferChanged(
   service: ServiceStatus,

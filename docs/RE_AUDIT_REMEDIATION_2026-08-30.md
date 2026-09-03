@@ -68,7 +68,7 @@ Nach der ersten Implementierung wurde genau eine frische, read-only Gegenprüfun
 
 Erzeugter Installer:
 
-- Pfad: `src-tauri/target/release/bundle/nsis/DMDC_0.1.3_x64-setup.exe`
+- Pfad: `src-tauri/target/release/bundle/nsis/LDTG_0.1.3_x64-setup.exe`
 - Größe: 3.266.057 Bytes
 - SHA-256: `A6090ECEB8D61B09D939D47432F53CADD36713554F18DEF99BE037031A123556`
 

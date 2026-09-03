@@ -58,26 +58,20 @@
         "replace or remove any item that cannot be cleared"
       ],
       "completionEvidence": "Committed owner attestation with no unresolved exception, or replacement/removal evidence for each exception"
-    },
+    }
+  ],
+  "resolved": [
     {
       "id": "PB-03",
-      "title": "DMDC acronym collision/searchability risk is undecided",
-      "owner": "repository owner",
-      "severity": "medium",
-      "blocksP1": true,
+      "resolution": "renamed to LDTG – Local Device Transfer Gateway before public preparation",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
       "evidence": [
-        "qa/public-beta/repository-audit.md#namens--und-offensichtliche-konfliktprüfung"
+        "docs/BRANDING.md",
+        "updated application, package, protocol, documentation and icon artifacts",
+        "repeated exact-name conflict check on 2026-09-03"
       ],
-      "facts": [
-        "No exact npm, crates.io, winget or combined DPMAregister mark hit was found for the checked exact terms.",
-        "DMDC is nevertheless a strongly established acronym, prominently used by the US Defense Manpower Data Center.",
-        "The check is not a formal trademark clearance."
-      ],
-      "ownerDecisionRequired": [
-        "rename before public preparation",
-        "accept the documented risk and consistently lead with the full name Desktop Mobile Data Center"
-      ],
-      "completionEvidence": "Recorded owner decision; if renamed, updated artifacts and a repeated exact-name conflict check"
+      "residualRisk": "The check is not a formal trademark clearance; unrelated uses of LDTG remain."
     }
   ],
   "dependencyLicenseBlockers": []

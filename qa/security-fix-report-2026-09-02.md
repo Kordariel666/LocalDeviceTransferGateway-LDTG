@@ -1,4 +1,4 @@
-# DMDC – Sicherheits- und Fehlerbehebungsbericht
+# LDTG – Sicherheits- und Fehlerbehebungsbericht
 
 Datum: 2026-09-02  
 Scan-ID: `86fe353e-43db-4564-99a6-3eddfc5b4844`  
@@ -45,7 +45,7 @@ Ausgangsscan: `unversioned_20260902T110711Z_s3_lqggp`
 - Bei Sitzungsverlust werden alle aktiven Mobile-Requests beendet, veraltete Server-IDs entfernt und die vollständige Uploadwarteschlange nach erneuter Anmeldung fortgesetzt.
 - Die Desktop-App ordnet eine Dienst-URL nur noch über einen exakt geparsten Hostnamen einer Netzwerkschnittstelle zu.
 - Ein fehlgeschlagener initialer Desktop-Snapshot zeigt eine Retry-Aktion, versucht begrenzt automatisch erneut und kann bei einem späteren Service-Ereignis vollständig neu geladen werden.
-- Die öffentliche `.dmdc`-Markierung wird nicht länger als Eigentumsnachweis für einzelne Dateien behandelt. Nicht sicher zuordenbare Absturzreste werden bewahrt statt gelöscht.
+- Die öffentliche `.ldtg`-Markierung wird nicht länger als Eigentumsnachweis für einzelne Dateien behandelt. Nicht sicher zuordenbare Absturzreste werden bewahrt statt gelöscht.
 - Der unabhängige Patchreview fand zusätzlich eine mögliche Verzeichnis-Enumeration nach Namespace-Tausch, eine IP-Wechsel-Lücke bei Abschlussquittungen und ein Race beim gleichzeitigen Upgrade einer Verbindung. Diese Punkte wurden mit handle-validierten Einträgen, adressunabhängigen 128-Bit-Recovery-Tokens und atomarer Permit-Belegung korrigiert.
 
 ## Verifikation
@@ -63,8 +63,8 @@ Ausgangsscan: `unversioned_20260902T110711Z_s3_lqggp`
 
 ## Bewusste Restgrenzen
 
-- DMDC bleibt ein HTTP-Dienst für ein bewusst bestätigtes, vertrauenswürdiges lokales Netzwerk. Transportverschlüsselung und Schutz gegen LAN-MITM sind nicht Bestandteil von Version 1.
+- LDTG bleibt ein HTTP-Dienst für ein bewusst bestätigtes, vertrauenswürdiges lokales Netzwerk. Transportverschlüsselung und Schutz gegen LAN-MITM sind nicht Bestandteil von Version 1.
 - Nachbartabellen-/MAC-Gruppierung verhindert gewöhnliche IP-Alias-Umgehungen, ist aber keine kryptografische Geräteidentität. Ein Angreifer, der zusätzlich viele Layer-2-Identitäten fälscht oder das gesamte LAN flutet, kann auf Anwendungsebene nicht vollständig von legitimen neuen, noch nicht angemeldeten Geräten unterschieden werden.
 - Echte Windows-Namespace-Races, umgeleitete Known Folders und NTFS-8.3-Verhalten werden im Code beziehungsweise soweit lokal verfügbar in Tests geprüft; eine zusätzliche adversariale Mehrprozess-/Hardware-Testumgebung bleibt sinnvoll.
 - Ein aktueller Online-`pnpm audit` wurde nicht ausgeführt, weil dafür die Produktions-Abhängigkeitsliste an die npm-Registry übertragen werden müsste und diese Datenweitergabe nicht freigegeben war. `cargo-audit` ist in der lokalen Toolchain nicht installiert. Lokale Compiler-, Lockfile-, Test- und Buildprüfungen waren erfolgreich.
-- Absturzreste im `.dmdc`-Ordner werden absichtlich nicht automatisch gelöscht, wenn ihre Eigentümerschaft nicht mehr über ein lebendes Dateihandle bewiesen werden kann.
+- Absturzreste im `.ldtg`-Ordner werden absichtlich nicht automatisch gelöscht, wenn ihre Eigentümerschaft nicht mehr über ein lebendes Dateihandle bewiesen werden kann.

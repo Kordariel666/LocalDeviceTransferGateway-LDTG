@@ -6,7 +6,7 @@
 
 ## Systemzusammenfassung
 
-DMDC v1 ist eine Windows-10/11-Tauri-Anwendung. Ein vertrauenswürdiger lokaler Operator wählt Download- und/oder Uploadordner, private IPv4-Schnittstelle und Port, bestätigt ein Netzwerk und startet einen Axum-HTTP-Dienst für Mobilbrowser im LAN. Die lokale React-WebView steuert Einstellungen, Dienstlebenszyklus, Sitzungen, Firewall und Diagnose ausschließlich über registrierte Tauri-Befehle; diese Desktopfunktionen sind nicht Teil des LAN-Routers (`src-tauri/src/lib.rs:205-438`, `554-566`, `src-tauri/src/service/api.rs:81-104`, `docs/API.md:5-18`).
+LDTG v1 ist eine Windows-10/11-Tauri-Anwendung. Ein vertrauenswürdiger lokaler Operator wählt Download- und/oder Uploadordner, private IPv4-Schnittstelle und Port, bestätigt ein Netzwerk und startet einen Axum-HTTP-Dienst für Mobilbrowser im LAN. Die lokale React-WebView steuert Einstellungen, Dienstlebenszyklus, Sitzungen, Firewall und Diagnose ausschließlich über registrierte Tauri-Befehle; diese Desktopfunktionen sind nicht Teil des LAN-Routers (`src-tauri/src/lib.rs:205-438`, `554-566`, `src-tauri/src/service/api.rs:81-104`, `docs/API.md:5-18`).
 
 Beim Start werden Einstellungen geprüft, die Schnittstelle aufgelöst, Freigabepfade kanonisiert und der Listener direkt an `<ausgewählte IPv4>:<Port>` gebunden (`src-tauri/src/lib.rs:243-301`, `src-tauri/src/service/mod.rs:44-59`). Der Mobile-Build ist im Rust-Binary eingebettet. Nach der Anmeldung überträgt Rust Dateien direkt zwischen HTTP und Dateisystem; Dateiinhalte laufen nicht über Tauri-IPC (`src-tauri/src/service/api.rs:38-40`, `1434-1463`, `README.md:55`).
 
@@ -14,17 +14,17 @@ Beim Start werden Einstellungen geprüft, die Schnittstelle aufgelöst, Freigabe
 
 - Dateien und Metadaten unter der kanonischen Downloadwurzel; LAN-Zugriff muss dort lesend und enthalten bleiben.
 - Bestehende Inhalte und Integrität des Upload-Eingangs; Clients dürfen ihn nicht auflisten und abgeschlossene Uploads dürfen nichts ersetzen.
-- Unvollständige Uploaddaten unter `<Uploadwurzel>/.dmdc/<UUID>.part` sowie Uploadzahl, Speicherreservierung und 1-GiB-Reserve.
+- Unvollständige Uploaddaten unter `<Uploadwurzel>/.ldtg/<UUID>.part` sowie Uploadzahl, Speicherreservierung und 1-GiB-Reserve.
 - Flüchtiger sechsstelliger Zugangscode, Sitzungs- und CSRF-Tokens, Service-ID, Upload-Eigentümer und IP-Bindungen.
 - Persistierte Freigabepfade, Adapter, Port, Upload-/Idle-Limits und bestätigte Netzwerkidentitäten.
 - Lokale Desktopbefugnisse: Start/Stop, Rotation, Widerruf, Einstellungen, Diagnose, Beenden und erhöhte Firewallkonfiguration.
-- Windows-Firewallregel `DMDC Local Transfer` mit Programm, TCP-Port, `LocalSubnet`, allen Profilen und gesperrtem Edge Traversal.
+- Windows-Firewallregel `LDTG Local Transfer` mit Programm, TCP-Port, `LocalSubnet`, allen Profilen und gesperrtem Edge Traversal.
 - Vertraulichkeit der Diagnose und Logs.
 - Verfügbarkeit von Dienst und Host.
 
 ## Vertrauensgrenzen
 
-1. **Lokaler Operator → Desktop-WebView → Tauri-Backend.** Der Hauptfensterkontext besitzt Core-/Dialogrechte und registrierte DMDC-Befehle, aber keine generische Shell- oder Dateisystemfähigkeit (`src-tauri/capabilities/default.json:3-10`).
+1. **Lokaler Operator → Desktop-WebView → Tauri-Backend.** Der Hauptfensterkontext besitzt Core-/Dialogrechte und registrierte LDTG-Befehle, aber keine generische Shell- oder Dateisystemfähigkeit (`src-tauri/capabilities/default.json:3-10`).
 2. **Desktop-Backend → Windows-Admin/UAC.** Die Firewallroutine startet kanonisches System32-PowerShell über `runas`, ersetzt die benannte Regel und liest das Ergebnis zurück (`src-tauri/src/platform/mod.rs:32-67`, `108-157`, `170-262`).
 3. **LAN-Client → HTTP-Listener.** Statische Assets sind vor Anmeldung erreichbar; jede Anfrage benötigt passendes Quellsubnetz und exakten Host, Schreibmethoden zusätzlich exakten Origin. Es existieren nur Datei-/Sitzungs-APIs (`src-tauri/src/service/api.rs:81-194`).
 4. **Nicht angemeldet → angemeldete Sitzung.** `/auth` besitzt ein enges JSON-Limit, konstanten Codevergleich und IP-bezogene Fehlversuchsbegrenzung. Erfolg erstellt zufällige Tokens und ein HttpOnly-/SameSite-Strict-Cookie (`src-tauri/src/service/api.rs:304-395`).
@@ -52,7 +52,7 @@ Beim Start werden Einstellungen geprüft, die Schnittstelle aufgelöst, Freigabe
 - Sitzungen bleiben dienstlokal und IP-gebunden; Widerruf oder Stop müssen ihre Übertragungen abbrechen.
 - Downloads bleiben read-only, kanonisch enthalten, Attachment/Octet-stream und nicht cachebar.
 - Uploads bleiben add-only, eigentümergebunden, nicht auflistbar und nicht überschreibend.
-- Cleanup darf nur reguläre UUID-`.part`-Dateien in einem korrekt markierten, nicht reparse-basierten `.dmdc`-Ordner verändern.
+- Cleanup darf nur reguläre UUID-`.part`-Dateien in einem korrekt markierten, nicht reparse-basierten `.ldtg`-Ordner verändern.
 - Einstellungen und privilegierte Firewalloperationen bleiben lokale Desktopabläufe.
 - Diagnosen und Logs dürfen keine Dateilisten, Dateiinhalte, Codes oder Sitzungstokens aufnehmen.
 

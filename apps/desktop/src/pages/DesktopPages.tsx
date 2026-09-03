@@ -10,7 +10,7 @@ import type {
   TransferDirection,
   TransferInfo,
   TransferState,
-} from "@dmdc/shared";
+} from "@ldtg/shared";
 import {
   EmptyState,
   NetworkLabel,

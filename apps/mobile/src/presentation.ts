@@ -4,4 +4,4 @@ export {
   formatDateTime,
   formatDuration,
   formatRate,
-} from "@dmdc/shared/presentation";
+} from "@ldtg/shared/presentation";

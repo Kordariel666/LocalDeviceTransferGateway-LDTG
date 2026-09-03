@@ -1,6 +1,6 @@
 # Lokale HTTP-API
 
-Alle Pfade beginnen mit `/api/v1`. Antworten werden nicht gecacht. Schreibende Aufrufe benötigen nach der Anmeldung `X-DMDC-CSRF`; Sitzungstoken werden ausschließlich als `HttpOnly; SameSite=Strict`-Cookie gesetzt.
+Alle Pfade beginnen mit `/api/v1`. Antworten werden nicht gecacht. Schreibende Aufrufe benötigen nach der Anmeldung `X-LDTG-CSRF`; Sitzungstoken werden ausschließlich als `HttpOnly; SameSite=Strict`-Cookie gesetzt.
 
 | Methode | Pfad | Zweck |
 |---|---|---|

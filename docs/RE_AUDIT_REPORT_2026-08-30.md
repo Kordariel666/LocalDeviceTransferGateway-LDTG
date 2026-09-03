@@ -89,7 +89,7 @@ Der abgeschlossene Standard-Sicherheitslauf trägt die ID `572a7323-cf9d-442b-87
 **Priorität:** P1  
 **Betroffen:** `src-tauri/src/service/state.rs:29-33`, `577-609`, `690-725`; `src-tauri/src/service/mod.rs:96-140`
 
-**Evidenz:** DMDC erlaubt vier Sitzungen pro IP, drei Downloads pro Sitzung und zwölf Downloads global. Eine Per-IP-Downloadquote fehlt. Damit kann eine einzelne angemeldete Adresse exakt alle zwölf globalen Slots belegen. `AcceptedIo` erneuert die Schreib-Idlefrist bei jedem Fortschritt; eine absolute Transferlease oder Mindestdurchsatzgrenze fehlt.
+**Evidenz:** LDTG erlaubt vier Sitzungen pro IP, drei Downloads pro Sitzung und zwölf Downloads global. Eine Per-IP-Downloadquote fehlt. Damit kann eine einzelne angemeldete Adresse exakt alle zwölf globalen Slots belegen. `AcceptedIo` erneuert die Schreib-Idlefrist bei jedem Fortschritt; eine absolute Transferlease oder Mindestdurchsatzgrenze fehlt.
 
 **Reproduktion:** Von derselben IP vier getrennte Cookies/Sitzungen anlegen, pro Sitzung drei große Dateien herunterladen und jeweils nur so viel lesen, dass die 30-Sekunden-Idlefrist erneuert wird. Andere Geräte erhalten danach das globale Downloadlimit.
 
@@ -150,7 +150,7 @@ Der abgeschlossene Standard-Sicherheitslauf trägt die ID `572a7323-cf9d-442b-87
 **Priorität:** P2  
 **Betroffen:** `src-tauri/src/service/state.rs:43-45`, `370-445`; `src-tauri/src/service/api.rs:329-403`, Test ab `1828`
 
-**Evidenz:** Nach 50 Fehlversuchen in fünf Minuten setzt DMDC einen globalen Fünf-Minuten-Block und rotiert den Code. Der Block wird vor dem Vergleich des gelieferten Codes geprüft. Der vorhandene Test `distributed_failures_rotate_and_block_the_service_code` bestätigt diesen Zustand ausdrücklich.
+**Evidenz:** Nach 50 Fehlversuchen in fünf Minuten setzt LDTG einen globalen Fünf-Minuten-Block und rotiert den Code. Der Block wird vor dem Vergleich des gelieferten Codes geprüft. Der vorhandene Test `distributed_failures_rotate_and_block_the_service_code` bestätigt diesen Zustand ausdrücklich.
 
 **Reproduktion:** Fünf Quelladressen mit jeweils zehn Fehlversuchen verwenden. Während `global_blocked_until` erhält auch ein Gerät mit dem neuen korrekten Code `SERVICE_CODE_BLOCKED`. Der Zyklus lässt sich wiederholen; bestehende Sitzungen bleiben allerdings aktiv.
 
@@ -188,11 +188,11 @@ Der abgeschlossene Standard-Sicherheitslauf trägt die ID `572a7323-cf9d-442b-87
 **Priorität:** P1  
 **Betroffen:** `src-tauri/windows/hooks.nsh:5-7`; `src-tauri/src/domain/shares.rs:40-160`; `validate_root()`
 
-**Evidenz:** Der NSIS-Post-Uninstall-Hook löscht rekursiv und ohne Besitzprüfung `$APPDATA\de.dmdc.desktop` und `$LOCALAPPDATA\de.dmdc.desktop`. `validate_root()` verbietet Windows-, Programm-, PATH-, PowerShell-Modul- und Autostartpfade, nicht aber diese beiden AppData-Bäume. Ein Operator kann daher einen Download- oder Uploadordner darin auswählen und später durch Deinstallation alle dortigen Nutzdaten verlieren. Die historische Dokumentation bezeichnet diese Verzeichnisse pauschal als app-spezifisch und sicher löschbar.
+**Evidenz:** Der NSIS-Post-Uninstall-Hook löscht rekursiv und ohne Besitzprüfung `$APPDATA\de.ldtg.desktop` und `$LOCALAPPDATA\de.ldtg.desktop`. `validate_root()` verbietet Windows-, Programm-, PATH-, PowerShell-Modul- und Autostartpfade, nicht aber diese beiden AppData-Bäume. Ein Operator kann daher einen Download- oder Uploadordner darin auswählen und später durch Deinstallation alle dortigen Nutzdaten verlieren. Die historische Dokumentation bezeichnet diese Verzeichnisse pauschal als app-spezifisch und sicher löschbar.
 
 **Reproduktion:** Unter einem der beiden Hook-Ziele einen Ordner mit Nutzdaten anlegen, ihn als Freigabe konfigurieren und die Anwendung deinstallieren. Der Hook entfernt den gesamten übergeordneten Baum rekursiv.
 
-**Empfehlung:** Keine Freigabe innerhalb der später rekursiv gelöschten AppData-Ziele zulassen und beim Uninstall ausschließlich eindeutig DMDC-eigene Konfigurations-/Logdateien entfernen. Alternativ Daten standardmäßig erhalten und eine explizite, verständliche Löschoption anbieten.
+**Empfehlung:** Keine Freigabe innerhalb der später rekursiv gelöschten AppData-Ziele zulassen und beim Uninstall ausschließlich eindeutig LDTG-eigene Konfigurations-/Logdateien entfernen. Alternativ Daten standardmäßig erhalten und eine explizite, verständliche Löschoption anbieten.
 
 ### RA-ERR-09 — Weitere Dateiauswahl während Upload wird still verworfen
 
@@ -229,7 +229,7 @@ Der abgeschlossene Standard-Sicherheitslauf trägt die ID `572a7323-cf9d-442b-87
 | `cargo clippy --all-targets --all-features -- -D warnings` | bestanden | Exitcode 0, keine Clippy-/Quellwarnung. Dieselbe Sandbox-Kanonisierungswarnung wie oben. |
 | `pnpm build:web` | bestanden | Mobile: 30 Module; Desktop: 35 Module; beide Vite-Produktionsbuilds erfolgreich. |
 | `pnpm build` | bestanden | Release-Binary gebaut und NSIS erfolgreich ausgeführt. Die MSVC-Linkerausgabe zur Erstellung von `.dll.lib` und `.dll.exp` wurde von Cargo als `linker_messages`-Warnung weitergereicht, enthielt aber keinen Code- oder Linkfehler. |
-| Installer | bestanden | `src-tauri/target/release/bundle/nsis/DMDC_0.1.3_x64-setup.exe`, 3.252.941 Bytes, SHA-256 `33FB2BA4CE9DEDB5E98DCE964A14A7AC317E45AF90FE8C01B8AAE6E1382022AD`. |
+| Installer | bestanden | `src-tauri/target/release/bundle/nsis/LDTG_0.1.3_x64-setup.exe`, 3.252.941 Bytes, SHA-256 `33FB2BA4CE9DEDB5E98DCE964A14A7AC317E45AF90FE8C01B8AAE6E1382022AD`. |
 
 ## Ausdrücklich ohne weiteren Befund
 

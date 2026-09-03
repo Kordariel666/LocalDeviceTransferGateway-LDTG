@@ -22,7 +22,7 @@ use windows_sys::Win32::{
     },
 };
 
-const RULE_NAME: &str = "DMDC Local Transfer";
+const RULE_NAME: &str = "LDTG Local Transfer";
 #[cfg(windows)]
 const POWERSHELL_TIMEOUT: Duration = Duration::from_secs(15);
 
@@ -235,7 +235,7 @@ $protocolMatches = [String]::Equals([string]$portFilter.Protocol, 'TCP', [String
 $profileMatches = [String]::Equals([string]$rule.Profile, 'Any', [StringComparison]::OrdinalIgnoreCase)
 $edgeTraversalBlocked = [String]::Equals([string]$rule.EdgeTraversalPolicy, 'Block', [StringComparison]::OrdinalIgnoreCase)
 $configured = $rule.Enabled -eq 'True' -and $rule.Direction -eq 'Inbound' -and $rule.Action -eq 'Allow' -and $programMatches -and $portMatches -and $subnetMatches -and $protocolMatches -and $profileMatches -and $edgeTraversalBlocked
-$detail = if ($configured) {{ "Firewallregel ist für DMDC und TCP-Port $expectedPort eingerichtet." }} else {{ 'Die vorhandene Firewallregel passt nicht vollständig zu Programmpfad, Port und Sicherheitsumfang.' }}
+$detail = if ($configured) {{ "Firewallregel ist für LDTG und TCP-Port $expectedPort eingerichtet." }} else {{ 'Die vorhandene Firewallregel passt nicht vollständig zu Programmpfad, Port und Sicherheitsumfang.' }}
 @{{ configured = [bool]$configured; programPath = [string]$appFilter.Program; port = if ($portFilter.LocalPort -as [int]) {{ [int]$portFilter.LocalPort }} else {{ $null }}; detail = $detail }} | ConvertTo-Json -Compress
 }} catch {{
     [Console]::Error.WriteLine($_.Exception.Message)
@@ -288,9 +288,9 @@ Import-Module (Join-Path $PSHOME 'Modules\NetSecurity\NetSecurity.psd1') -Force 
 $ruleName = {rule_name}
 $programPath = {program_path}
 $port = {port}
-if (-not (Test-Path -LiteralPath $programPath -PathType Leaf)) {{ throw 'Der angegebene DMDC-Programmpfad existiert nicht.' }}
+if (-not (Test-Path -LiteralPath $programPath -PathType Leaf)) {{ throw 'Der angegebene LDTG-Programmpfad existiert nicht.' }}
 Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue | Remove-NetFirewallRule
-New-NetFirewallRule -DisplayName $ruleName -Description 'Lokaler DMDC-Dateitransfer im eigenen Subnetz' -Direction Inbound -Action Allow -Enabled True -Profile Any -Program $programPath -Protocol TCP -LocalPort $port -RemoteAddress LocalSubnet -EdgeTraversalPolicy Block | Out-Null
+New-NetFirewallRule -DisplayName $ruleName -Description 'Lokaler LDTG-Dateitransfer im eigenen Subnetz' -Direction Inbound -Action Allow -Enabled True -Profile Any -Program $programPath -Protocol TCP -LocalPort $port -RemoteAddress LocalSubnet -EdgeTraversalPolicy Block | Out-Null
 "#,
         rule_name = powershell_literal(RULE_NAME),
         program_path = powershell_literal(&program.to_string_lossy()),
@@ -310,13 +310,13 @@ mod tests {
     #[test]
     fn powershell_json_is_utf8_even_with_german_text() {
         let output = run_encoded(
-            "@{ configured = $true; programPath = 'C:\\DMDC.exe'; port = 8765; detail = 'Regel für DMDC' } | ConvertTo-Json -Compress",
+            "@{ configured = $true; programPath = 'C:\\LDTG.exe'; port = 8765; detail = 'Regel für LDTG' } | ConvertTo-Json -Compress",
         )
         .expect("PowerShell should start");
         assert!(output.status.success());
         let parsed = parse_firewall_status(&output.stdout).expect("valid UTF-8 JSON");
         assert!(parsed.configured);
-        assert_eq!(parsed.detail, "Regel für DMDC");
+        assert_eq!(parsed.detail, "Regel für LDTG");
     }
 
     #[test]

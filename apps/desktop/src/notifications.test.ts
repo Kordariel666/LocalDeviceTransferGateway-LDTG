@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { TransferChangedEvent, TransferInfo, TransferState } from "@dmdc/shared";
+import type { TransferChangedEvent, TransferInfo, TransferState } from "@ldtg/shared";
 
 const notificationMocks = vi.hoisted(() => ({
   isPermissionGranted: vi.fn(),

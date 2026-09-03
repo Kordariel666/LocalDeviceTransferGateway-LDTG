@@ -1,7 +1,7 @@
 fn main() {
-    println!("cargo:rerun-if-env-changed=DMDC_TEST_RUNNER_MANIFEST");
+    println!("cargo:rerun-if-env-changed=LDTG_TEST_RUNNER_MANIFEST");
     #[cfg(windows)]
-    if std::env::var_os("DMDC_TEST_RUNNER_MANIFEST").is_some() {
+    if std::env::var_os("LDTG_TEST_RUNNER_MANIFEST").is_some() {
         let manifest = std::path::PathBuf::from(
             std::env::var("CARGO_MANIFEST_DIR").expect("manifest directory"),
         )

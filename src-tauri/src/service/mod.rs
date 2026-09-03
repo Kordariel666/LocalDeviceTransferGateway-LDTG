@@ -192,13 +192,13 @@ impl AcceptedIo {
     }
 
     fn timeout_error() -> io::Error {
-        io::Error::new(io::ErrorKind::TimedOut, "DMDC connection became idle")
+        io::Error::new(io::ErrorKind::TimedOut, "LDTG connection became idle")
     }
 
     fn lifetime_error() -> io::Error {
         io::Error::new(
             io::ErrorKind::TimedOut,
-            "DMDC connection exceeded its absolute lifetime",
+            "LDTG connection exceeded its absolute lifetime",
         )
     }
 
@@ -424,11 +424,11 @@ pub async fn start(
                 }
                 Some(result) = network_checks.join_next(), if !network_checks.is_empty() => {
                     if matches!(result, Ok((false, _))) {
-                        monitor_state.set_stop_reason("Ein freigegebener Ordner wurde ersetzt oder umgeleitet. DMDC wurde sicher gestoppt.");
+                        monitor_state.set_stop_reason("Ein freigegebener Ordner wurde ersetzt oder umgeleitet. LDTG wurde sicher gestoppt.");
                         break;
                     }
                     if !matches!(result, Ok((true, true))) {
-                        monitor_state.set_stop_reason("Die ausgewählte Netzwerkverbindung wurde getrennt oder geändert. DMDC wurde sicher gestoppt.");
+                        monitor_state.set_stop_reason("Die ausgewählte Netzwerkverbindung wurde getrennt oder geändert. LDTG wurde sicher gestoppt.");
                         monitor_state.emit_network_lost();
                         break;
                     }

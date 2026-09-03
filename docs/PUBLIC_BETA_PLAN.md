@@ -1,11 +1,11 @@
-# Plan bis zur Veröffentlichungsentscheidung für DMDC
+# Plan bis zur Veröffentlichungsentscheidung für LDTG
 
 Stand: 3. September 2026
 Status: beschlossenes Entscheidungsprogramm, noch keine Veröffentlichungsfreigabe
 
 ## 1. Zweck und verbindliche Grenze
 
-Dieser Plan führt DMDC vom geprüften Stand `0.3.0-rc.1` zu einer belastbaren
+Dieser Plan führt LDTG vom geprüften Stand `0.3.0-rc.1` zu einer belastbaren
 Entscheidung darüber, ob das Projekt privat bleibt oder als öffentliche
 Open-Source-Beta erscheint. Er autorisiert weder eine Veröffentlichung noch eine
 kostenpflichtige Bestellung, Registrierung oder externe Bewerbung.
@@ -43,7 +43,7 @@ Der aktuelle Stand besitzt:
 - noch keine vollständige reale Abnahmematrix auf Windows 10/11 sowie aktuellem
   iOS/Safari und Android/Chrome.
 
-DMDC wird für dieses Programm nicht als fertiges kommerzielles Produkt
+LDTG wird für dieses Programm nicht als fertiges kommerzielles Produkt
 behandelt. Der Zielzustand ist höchstens eine klar begrenzte, nachvollziehbar
 gebaute **öffentliche Beta**.
 
@@ -82,7 +82,7 @@ nutzen, verändern und verkaufen, müssen verteilte abgeleitete Werke aber unter
 den GPL-Bedingungen samt Quellcode anbieten.
 
 `Apache-2.0` bleibt die Alternative, wenn möglichst einfache Übernahme,
-Integration und Mitwirkung wichtiger sind. Der ursprüngliche DMDC-Code und
+Integration und Mitwirkung wichtiger sind. Der ursprüngliche LDTG-Code und
 seine Hinweise bleiben geschützt; größere oder abgeleitete Werke können jedoch
 unter anderen Bedingungen verteilt werden.
 
@@ -95,7 +95,7 @@ Abhängigkeitsprüfung und Beiträge und würde die SignPath-Eignung gefährden.
 | Paket | Status | Ziel | Abhängigkeit | Größe | Ergebnis/Gate |
 |---|---|---|---|---|---|
 | P0 | abgeschlossen | Umfang einfrieren und Entscheidungsregeln festhalten | Phase 5.1 | S | Plan ist verbindlich und verlinkt |
-| P1 | blockiert | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | technische Prüfung abgeschlossen; drei Owner-Entscheidungen offen |
+| P1 | blockiert | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | technische Prüfung abgeschlossen; zwei Owner-Entscheidungen offen |
 | P2 | offen | Sicherheits-, Datenschutz- und Supportversprechen schärfen | P1 | M | öffentliche Aussagen entsprechen dem Code |
 | P3 | offen | Releasepipeline und Herkunftsnachweise härten | P1 | M–L | lokaler/privater Release-Dry-Run reproduzierbar |
 | P4 | offen | Reale Installations- und Geräteabnahme durchführen | P2–P3 | L | Abnahmematrix und priorisierte Befunde vollständig |
@@ -131,10 +131,12 @@ Status: abgeschlossen am 3. September 2026.
 ## 7. P1 – Repository- und Lizenz-Audit
 
 Status: technische Prüfung am 3. September 2026 abgeschlossen; Gate durch
-`PB-01` bis `PB-03` blockiert. Offen sind die Zielstrategie für persönliche
-Metadaten in der Git-Historie, die Herkunftsbestätigung vor dem Wurzelcommit und
-die bewusste Entscheidung zum stark belegten Kürzel `DMDC`. Es erfolgten keine
-Veröffentlichung, Lizenzaktivierung, Historienumschreibung oder Anmeldung.
+`PB-01` und `PB-02` blockiert. Die Namensentscheidung `PB-03` ist mit der
+Umbenennung in **LDTG – Local Device Transfer Gateway** und der dokumentierten
+[Kollisions-Vorprüfung](BRANDING.md) abgeschlossen. Offen sind die
+Zielstrategie für persönliche Metadaten in der Git-Historie und die
+Herkunftsbestätigung vor dem Wurzelcommit. Es erfolgten keine Veröffentlichung,
+Lizenzaktivierung, Historienumschreibung oder Anmeldung.
 
 ### 7.1 Herkunft und Rechte
 
@@ -143,8 +145,9 @@ Veröffentlichung, Lizenzaktivierung, Historienumschreibung oder Anmeldung.
 - Icons, Logos, Screenshots, Fonts, Texte, Testdaten und eingebettete Webassets
   einzeln auf Herkunft und erlaubte Weitergabe prüfen.
 - Unklare oder nicht benötigte Fremdassets ersetzen oder entfernen.
-- Name und Abkürzung `DMDC` auf offensichtliche Konflikte in Softwarekatalogen,
-  Paketregistern und Markenregistern prüfen; daraus folgt noch keine formale
+- Name und Abkürzung `LDTG` wurden auf offensichtliche Konflikte in
+  Softwarekatalogen, Paketregistern und Markenregistern geprüft und in
+  [`docs/BRANDING.md`](BRANDING.md) dokumentiert; daraus folgt keine formale
   Markenfreigabe.
 
 ### 7.2 Git- und Datenschutzprüfung
@@ -194,10 +197,10 @@ Gatebewertung vom 3. September 2026: **nicht erfüllt**. Der
 Abhängigkeitsanteil ist mit 857 inventarisierten Paketversionen, null unbekannten
 Lizenzdeklarationen und ableitbaren Notices abgeschlossen. Der bereinigte
 Arbeitsbaum besitzt keinen offenen Secret-Befund. Die bestehende Historie ist
-aber ohne Owner-Entscheidung nicht als öffentlicher Zielstand freigegeben; ebenso
-fehlen Herkunftsbestätigung und Namensrisiko-Entscheidung. Nach deren Abschluss
-muss der Audit für genau die zur Veröffentlichung vorgesehenen Refs erneut
-laufen.
+aber ohne Owner-Entscheidung nicht als öffentlicher Zielstand freigegeben;
+außerdem fehlt die Herkunftsbestätigung. Die Namensrisiko-Entscheidung ist
+abgeschlossen. Nach Abschluss von `PB-01` und `PB-02` muss der Audit für genau
+die zur Veröffentlichung vorgesehenen Refs erneut laufen.
 
 ## 8. P2 – Sicherheits-, Datenschutz- und Supportgrenzen
 

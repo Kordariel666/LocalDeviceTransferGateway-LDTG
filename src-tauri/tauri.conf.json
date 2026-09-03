@@ -1,10 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "DMDC",
+  "productName": "LDTG",
   "version": "0.3.0-rc.1",
-  "identifier": "de.dmdc.desktop",
+  "identifier": "de.ldtg.desktop",
   "build": {
-    "beforeDevCommand": "pnpm --filter @dmdc/mobile build && pnpm --filter @dmdc/desktop dev",
+    "beforeDevCommand": "pnpm --filter @ldtg/mobile build && pnpm --filter @ldtg/desktop dev",
     "devUrl": "http://127.0.0.1:1420",
     "beforeBuildCommand": "pnpm build:web",
     "frontendDist": "../apps/desktop/dist"
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "DMDC – Desktop Mobile Data Center",
+        "title": "LDTG – Local Device Transfer Gateway",
         "width": 1180,
         "height": 820,
         "minWidth": 780,
@@ -31,9 +31,9 @@
     "active": true,
     "targets": ["nsis"],
     "shortDescription": "Lokaler Dateitransfer zwischen PC und Handy",
-    "longDescription": "DMDC stellt ausgewählte Ordner im lokalen Netzwerk kontrolliert zum Herunterladen oder Hochladen bereit.",
+    "longDescription": "LDTG stellt ausgewählte Ordner im lokalen Netzwerk kontrolliert zum Herunterladen oder Hochladen bereit.",
     "category": "Utility",
-    "copyright": "Copyright © 2026 DMDC",
+    "copyright": "Copyright © 2026 LDTG",
     "windows": {
       "nsis": {
         "installMode": "currentUser",

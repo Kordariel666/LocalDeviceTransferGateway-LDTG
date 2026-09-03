@@ -4,7 +4,7 @@ Status: Design-Spike abgeschlossen am 3. September 2026
 
 ## Ergebnis
 
-DMDC behält für v1 den wiederverwendbaren, dienstlokalen Zugangscode und die
+LDTG behält für v1 den wiederverwendbaren, dienstlokalen Zugangscode und die
 dienstweit aktivierten Freigaberollen bei. Eine automatische Rotation nach der
 ersten Anmeldung und vom Mobilgerät selbst gewählte Sitzungsrollen werden nicht
 implementiert.

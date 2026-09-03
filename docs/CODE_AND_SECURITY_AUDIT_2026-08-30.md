@@ -1,6 +1,6 @@
 # Vollständiger Code- und Sicherheits-Audit
 
-**Projekt:** Desktop Mobile Data Center (DMDC) v0.1.3  
+**Projekt:** Local Device Transfer Gateway (LDTG) v0.1.3
 **Stichtag:** 30. August 2026  
 **Status:** Analyse abgeschlossen; keine Behebung durchgeführt  
 **Zweck:** Belastbare Befundbasis für einen späteren, gesonderten Fix-Plan
@@ -57,7 +57,7 @@ Wichtig zum Repository-Zustand: Git meldet derzeit **keine verfolgten Dateien**;
 | Produktions-Build Mobile | bestanden |
 | Produktions-Build Desktop | bestanden |
 
-Die anfängliche Ausführung über die normale Shell fand Node.js nicht im `PATH`. Mit der gebündelten Workspace-Laufzeit liefen Typechecks, Tests und Builds erfolgreich. Die Frontendtests mussten außerhalb der eingeschränkten Dateisystem-Sandbox gestartet werden, weil `esbuild` einen Elternprozess außerhalb des Sandboxpfads benötigt. Beides sind Ausführungsumgebungs-Hinweise und keine DMDC-Codefehler.
+Die anfängliche Ausführung über die normale Shell fand Node.js nicht im `PATH`. Mit der gebündelten Workspace-Laufzeit liefen Typechecks, Tests und Builds erfolgreich. Die Frontendtests mussten außerhalb der eingeschränkten Dateisystem-Sandbox gestartet werden, weil `esbuild` einen Elternprozess außerhalb des Sandboxpfads benötigt. Beides sind Ausführungsumgebungs-Hinweise und keine LDTG-Codefehler.
 
 Es wurde kein Online-Advisory-Dienst verwendet. Aussagen zu aktuell veröffentlichten CVEs in npm- oder Cargo-Abhängigkeiten sind deshalb ausdrücklich **nicht** Teil dieses Audits.
 
@@ -136,7 +136,7 @@ Beim Start wird eine `network_id` bestätigt, die Schnittstelle, Windows-Profiln
 
 **Angriffsweg:** Derselbe Adapter wechselt zwischen zwei Windows-Netzwerkprofilen, erhält aber zwischen zwei Prüfpunkten dieselbe IPv4-Adresse und Netzmaske. Listener, Code und Sitzungen bleiben bestehen, obwohl das neue Profil nie bestätigt wurde.
 
-**Auswirkung:** DMDC kann auf einem unbestätigten Netzwerk weiter erreichbar sein.
+**Auswirkung:** LDTG kann auf einem unbestätigten Netzwerk weiter erreichbar sein.
 
 **Wirksame Gegenkontrollen:** Geänderte Adresse/Netzmaske oder eine beobachtete Trennung stoppen den Dienst; Request-Subnetz, Host und Origin bleiben aktiv. Die identische Wiedervergabe und das verpasste Trennungsfenster sind enge Voraussetzungen.
 
@@ -159,7 +159,7 @@ Die Uploadwurzel wird über einen freien Ordnerdialog gewählt. Die Backendprüf
 
 **Auswirkung:** Ausführung von Angreifercode im Kontext des angemeldeten Windows-Benutzers und mögliche Persistenz.
 
-**Wirksame Gegenkontrollen:** Authentifizierung, Pfadkanonisierung, keine Traversierung, kein Überschreiben und keine direkte Ausführung durch DMDC. Der unsichere Operatorpfad ist zwingende Voraussetzung.
+**Wirksame Gegenkontrollen:** Authentifizierung, Pfadkanonisierung, keine Traversierung, kein Überschreiben und keine direkte Ausführung durch LDTG. Der unsichere Operatorpfad ist zwingende Voraussetzung.
 
 **Späteres Abnahmekriterium:** Bekannte benutzerbezogene und gemeinsame Windows-Autostart-/Code-Ladepfade sowie kanonische Aliase müssen abgewiesen oder Uploads zunächst in einem anwendungskontrollierten, nicht ausführbaren Eingang isoliert werden.
 
@@ -180,7 +180,7 @@ Die Uploadwurzel wird über einen freien Ordnerdialog gewählt. Die Backendprüf
 
 **Auswirkung:** Vertraulichkeitsverlust für bestehende Upload-Inhalte; Bruch der in `SECURITY.md` und `README.md` zugesagten Write-only-Rolle.
 
-**Wirksame Gegenkontrollen:** `.dmdc`-Teildateien bleiben verborgen; bei disjunkten Wurzeln existiert keine Uploadlistenroute; exakte rohe Gleichheit wird sichtbar gewarnt.
+**Wirksame Gegenkontrollen:** `.ldtg`-Teildateien bleiben verborgen; bei disjunkten Wurzeln existiert keine Uploadlistenroute; exakte rohe Gleichheit wird sichtbar gewarnt.
 
 **Späteres Abnahmekriterium:** Gleiche oder überlappende kanonische Wurzeln müssen im Backend abgewiesen werden; Tests müssen Gleichheit, beide Verschachtelungsrichtungen und Pfadaliasfälle abdecken.
 
@@ -307,7 +307,7 @@ Diese Abweichungen wurden dokumentiert, aber noch nicht in den ursprünglichen D
 Folgende Bereiche wurden bis zum sensiblen Sink verfolgt; dabei wurde kein belegbarer Umgehungsweg gefunden:
 
 - Downloadpfade weisen Parent-/Root-/Prefix-Komponenten, Alternate Data Streams, Symlinks, Reparse-Points, versteckte/Systemeinträge und kanonisches Entkommen zurück.
-- Uploadteildateien erhalten serverseitige UUID-Namen in einem markierten `.dmdc`-Ordner; Upload-IDs sind an die Sitzung gebunden.
+- Uploadteildateien erhalten serverseitige UUID-Namen in einem markierten `.ldtg`-Ordner; Upload-IDs sind an die Sitzung gebunden.
 - Fertige Uploads überschreiben keine vorhandenen Dateien; Veröffentlichung verwendet einen freien Namen und No-Replace-Semantik.
 - Sitzungstokens sind zufällig, HttpOnly, SameSite=Strict und an die Client-IP gebunden; Schreiboperationen verlangen zusätzlich CSRF.
 - Host, Origin und Quellsubnetz werden zentral geprüft.

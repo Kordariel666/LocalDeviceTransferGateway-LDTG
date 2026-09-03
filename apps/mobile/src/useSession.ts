@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { SessionResponse } from "@dmdc/shared";
+import type { SessionResponse } from "@ldtg/shared";
 
 export function useSessionState() {
   const [session, setSession] = useState<SessionResponse | null>(null);

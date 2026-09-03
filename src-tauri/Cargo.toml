@@ -1,18 +1,18 @@
 [package]
-name = "dmdc"
+name = "ldtg"
 version = "0.3.0-rc.1"
-default-run = "dmdc"
+default-run = "ldtg"
 description = "Lokaler Dateitransfer zwischen Desktop und Mobilgerät"
-authors = ["DMDC"]
+authors = ["LDTG"]
 edition = "2021"
 rust-version = "1.85"
 
 [lib]
-name = "dmdc_lib"
+name = "ldtg_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
-name = "dmdc"
+name = "ldtg"
 path = "src/main.rs"
 test = false
 bench = false

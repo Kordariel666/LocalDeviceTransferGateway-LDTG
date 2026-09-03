@@ -77,9 +77,9 @@ const AUTH_BLOCK_DURATION: Duration = Duration::from_secs(5 * 60);
 const AUTH_ATTEMPT_TTL: Duration = Duration::from_secs(10 * 60);
 pub(crate) const DIRECTORY_CURSOR_TTL: Duration = Duration::from_secs(2 * 60);
 
-const PARTIAL_DIR_NAME: &str = ".dmdc";
+const PARTIAL_DIR_NAME: &str = ".ldtg";
 const PARTIAL_MARKER_NAME: &str = ".owner-v1";
-const PARTIAL_MARKER: &[u8] = b"DMDC_UPLOAD_PARTIALS_V1\n";
+const PARTIAL_MARKER: &[u8] = b"LDTG_UPLOAD_PARTIALS_V1\n";
 
 #[derive(Debug, Clone)]
 pub struct SessionRecord {
@@ -441,30 +441,30 @@ fn validate_owned_partial_dir(partial_dir: &Path) -> Result<(), String> {
     let metadata = fs::symlink_metadata(partial_dir)
         .map_err(|error| format!("Temporärer Uploadordner ist nicht erreichbar: {error}"))?;
     if !metadata.is_dir() || metadata.file_type().is_symlink() || is_reparse_point(&metadata) {
-        return Err("Der reservierte .dmdc-Pfad ist kein sicherer DMDC-Ordner. Vorhandene Daten wurden nicht verändert.".into());
+        return Err("Der reservierte .ldtg-Pfad ist kein sicherer LDTG-Ordner. Vorhandene Daten wurden nicht verändert.".into());
     }
 
     let marker = partial_dir.join(PARTIAL_MARKER_NAME);
     let marker_metadata = fs::symlink_metadata(&marker).map_err(|_| {
-        "Im Upload-Eingang existiert bereits ein nicht von DMDC markierter .dmdc-Ordner. Vorhandene Daten wurden nicht verändert.".to_string()
+        "Im Upload-Eingang existiert bereits ein nicht von LDTG markierter .ldtg-Ordner. Vorhandene Daten wurden nicht verändert.".to_string()
     })?;
     if !marker_metadata.is_file()
         || marker_metadata.file_type().is_symlink()
         || is_reparse_point(&marker_metadata)
     {
-        return Err("Die Besitzmarkierung des DMDC-Uploadordners ist ungültig. Vorhandene Daten wurden nicht verändert.".into());
+        return Err("Die Besitzmarkierung des LDTG-Uploadordners ist ungültig. Vorhandene Daten wurden nicht verändert.".into());
     }
     let contents = fs::read(&marker).map_err(|error| {
-        format!("Die Besitzmarkierung des DMDC-Uploadordners konnte nicht gelesen werden: {error}")
+        format!("Die Besitzmarkierung des LDTG-Uploadordners konnte nicht gelesen werden: {error}")
     })?;
     if contents != PARTIAL_MARKER {
-        return Err("Die Besitzmarkierung des DMDC-Uploadordners stimmt nicht. Vorhandene Daten wurden nicht verändert.".into());
+        return Err("Die Besitzmarkierung des LDTG-Uploadordners stimmt nicht. Vorhandene Daten wurden nicht verändert.".into());
     }
     Ok(())
 }
 
 fn cleanup_owned_partials(partial_dir: &Path) -> Result<(), String> {
-    // The marker identifies DMDC's directory format, but it is public and therefore
+    // The marker identifies LDTG's directory format, but it is public and therefore
     // cannot prove ownership of an individual file. Live uploads are deleted through
     // their already-open handles; crash leftovers are deliberately preserved.
     validate_owned_partial_dir(partial_dir)

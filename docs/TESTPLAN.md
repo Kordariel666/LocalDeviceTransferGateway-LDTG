@@ -1,4 +1,4 @@
-# Abnahmeplan für DMDC v1
+# Abnahmeplan für LDTG v1
 
 ## Automatisiert
 
@@ -29,8 +29,8 @@ Dateiinhalte.
 ## Manuell vor Freigabe
 
 - Installation und Deinstallation auf Windows 10 und 11, jeweils mit angenommener und abgebrochener UAC-Abfrage.
-- Nach der Deinstallation prüfen, dass Konfiguration, Logs und Sentinel-Nutzdaten unter beiden DMDC-AppData-Bäumen erhalten bleiben, während die Firewallregel entfernt ist.
-- Regelprüfung nach Portänderung; Nutzung in einem von Windows als „Öffentlich“ markierten, aber in DMDC bestätigten Netz.
+- Nach der Deinstallation prüfen, dass Konfiguration, Logs und Sentinel-Nutzdaten unter beiden LDTG-AppData-Bäumen erhalten bleiben, während die Firewallregel entfernt ist.
+- Regelprüfung nach Portänderung; Nutzung in einem von Windows als „Öffentlich“ markierten, aber in LDTG bestätigten Netz.
 - Offline-WLAN ohne Internet mit Safari auf einem aktuellen iPhone und Chrome auf einem aktuellen Android-Gerät.
 - Zwei parallele Handysitzungen sowie gezieltes und vollständiges Trennen.
 - Unicode-/Nicht-BMP-Namen, Namenskollisionen, viele kleine Dateien, eine große Datei nahe dem Limit, Pause, Verbindungsabbruch und Fortsetzung innerhalb derselben offenen Dateiauswahl. Nach Seitenreload muss die Datei bewusst neu gewählt und als neuer Upload begonnen werden.

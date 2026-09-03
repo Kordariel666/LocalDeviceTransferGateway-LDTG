@@ -1,8 +1,8 @@
-# DMDC Entwicklungsroadmap
+# LDTG Entwicklungsroadmap
 
 Stand: 3. September 2026
 Ausgangsversion: 0.1.3  
-Ziel: DMDC schrittweise von einem sicherheitsgehärteten v1-Kern zu einer wartbaren, alltagstauglichen und veröffentlichungsreifen Anwendung ausbauen.
+Ziel: LDTG schrittweise von einem sicherheitsgehärteten v1-Kern zu einer wartbaren, alltagstauglichen und veröffentlichungsreifen Anwendung ausbauen.
 
 ## 1. Feste Leitplanken
 
@@ -314,7 +314,7 @@ Umgesetzt:
 
 - Die serialisierbaren Rust-DTOs in `domain` sind die maßgebliche Quelle für
   Desktop-, Mobile- und HTTP-Verträge. `ts-rs` leitet daraus deterministisch das
-  öffentliche `@dmdc/shared`-Modul ab; der frühere manuelle TypeScript-Bestand
+  öffentliche `@ldtg/shared`-Modul ab; der frühere manuelle TypeScript-Bestand
   wurde vollständig ersetzt.
 - Der Export umfasst Einstellungen, App-Snapshot, Netzwerk- und Firewallstatus,
   Sitzungen, Transfers, Freigabevalidierung sowie sämtliche strukturierten
@@ -759,7 +759,7 @@ Status: erfüllt am 3. September 2026 für R5.1.
 ## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
 
 Status: gestartet am 3. September 2026; P0 abgeschlossen, P1 technisch
-auditiert, aber durch drei dokumentierte Owner-Entscheidungen blockiert. Es gibt
+auditiert, aber durch zwei dokumentierte Owner-Entscheidungen blockiert. Es gibt
 weiterhin keine Veröffentlichungsfreigabe.
 
 Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
@@ -783,8 +783,10 @@ Der aktuelle P1-Nachweis liegt im
 [Repository-Audit](../qa/public-beta/repository-audit.md), im
 [Abhängigkeits-Lizenz-Audit](../qa/public-beta/dependency-license-audit.md) und
 in der [maschinenlesbaren Blockerliste](../qa/public-beta/blockers.json). Der
-Dependency-Teil ist abgeschlossen; offen bleiben Historienstrategie,
-Herkunftsbestätigung und die Entscheidung zum Kürzel `DMDC`.
+Dependency-Teil und die Namensentscheidung zu **LDTG – Local Device Transfer
+Gateway** sind abgeschlossen; offen bleiben Historienstrategie und
+Herkunftsbestätigung. Die Marken- und Kollisions-Vorprüfung steht in
+[`docs/BRANDING.md`](BRANDING.md).
 
 ## 11. Phase 6 – Strategische Transferfunktionen
 
@@ -797,7 +799,7 @@ Vorgehen:
 1. Protokollentwurf für eine persistierbare, zufällige Recovery-ID erstellen.
 2. Bereits übertragene Inhalte durch kryptografische Chunk-Hashes oder eine gleichwertige Inhaltsprüfung an die erneut ausgewählte Datei binden.
 3. Persistente Servermanifeste authentisieren und gegen Pfadmanipulation absichern.
-4. Absturzreste nur dann wiederverwenden oder löschen, wenn ihre DMDC-Eigentümerschaft eindeutig nachweisbar ist.
+4. Absturzreste nur dann wiederverwenden oder löschen, wenn ihre LDTG-Eigentümerschaft eindeutig nachweisbar ist.
 5. Wiederaufnahme nach Reload, Sitzungswechsel und optional Dienstneustart getrennt spezifizieren.
 6. Manipulations-, Kollisions-, Stromausfall- und Versionsmigrationstests ergänzen.
 
@@ -891,7 +893,7 @@ Vor der jeweiligen Phase ist eine bewusste Produktentscheidung nötig:
 2. Genügen schnell wechselbare Profile oder werden mehrere gleichzeitig sichtbare Freigaben benötigt?
 3. Muss Wiederaufnahme nur einen Seitenreload, auch eine neue Sitzung oder sogar einen Dienstneustart überstehen?
 4. Werden Ordnerstrukturen übertragen oder genügt ein begrenztes ZIP-Verfahren?
-5. Bleibt DMDC ein privates Windows-Werkzeug oder ist eine öffentliche, signierte Verteilung geplant?
+5. Bleibt LDTG ein privates Windows-Werkzeug oder ist eine öffentliche, signierte Verteilung geplant?
 6. Ist Transportverschlüsselung ein tatsächliches v2-Ziel oder bleibt das bestätigte LAN die dauerhafte Produktgrenze?
 
 Diese Entscheidungen ändern nicht die frühen Phasen 0 bis 2. Sie bestimmen erst Umfang und Reihenfolge der Phasen 3 bis 7.

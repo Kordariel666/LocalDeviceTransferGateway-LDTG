@@ -1,5 +1,5 @@
 {
-  "name": "@dmdc/desktop",
+  "name": "@ldtg/desktop",
   "version": "0.3.0-rc.1",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
-    "@dmdc/shared": "workspace:*",
+    "@ldtg/shared": "workspace:*",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-notification": "^2.4.0",

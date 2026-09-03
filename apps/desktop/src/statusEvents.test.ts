@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ServiceStatus } from "@dmdc/shared";
+import type { ServiceStatus } from "@ldtg/shared";
 import { applySessionsChanged, applyTransferChanged } from "./statusEvents";
 
 const running: ServiceStatus = {

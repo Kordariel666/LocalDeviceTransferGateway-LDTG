@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { SessionChangedEvent, TransferChangedEvent } from "@dmdc/shared";
+import type { SessionChangedEvent, TransferChangedEvent } from "@ldtg/shared";
 import { errorMessage, invoke, listen } from "./tauriClient";
 
 type LifecycleOptions = {

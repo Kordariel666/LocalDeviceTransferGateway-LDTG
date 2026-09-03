@@ -1,4 +1,4 @@
-# Aktuelles Bedrohungsmodell von DMDC v1
+# Aktuelles Bedrohungsmodell von LDTG v1
 
 Status: quellgestütztes Repository-Modell, aktualisiert am 3. September 2026
 
@@ -10,7 +10,7 @@ durch einen unabhängigen zweiten Agenten durchgeführt.
 
 ## 1. Überblick
 
-DMDC ist eine Windows-10/11-Tauri-Anwendung für kurzlebige Dateiübertragungen in
+LDTG ist eine Windows-10/11-Tauri-Anwendung für kurzlebige Dateiübertragungen in
 einem bestätigten lokalen Netzwerk. Ein vertrauenswürdiger lokaler Operator
 wählt Download- und/oder Uploadordner, Netzwerkschnittstelle und Port. Das
 Rust-Backend verankert die Wurzeln, bindet einen Axum-Dienst direkt an die
@@ -26,7 +26,7 @@ flowchart LR
     B -->|bindet ausgewählte IPv4| H[Axum HTTP]
     M[LAN-Browser] -->|Code, Cookie, CSRF, Datei-I/O| H
     H -->|read-only| R[Downloadwurzel]
-    H -->|add-only| U[Uploadwurzel und .dmdc]
+    H -->|add-only| U[Uploadwurzel und .ldtg]
     B -->|lokal, optional mit UAC| F[Windows-Firewall]
 ```
 
@@ -47,9 +47,9 @@ flowchart LR
 | Anmeldung | Zugangscode und Fehlversuche | neu pro Dienst; manuell lokal rotierbar | acht Dezimalstellen nur im Prozessspeicher | lokaler Operator sieht den Code; LAN-Client sendet ihn im Auth-Body | konstanter Vergleich; 10 Fehler/IP und 50 Fehler/dienstweit je 5 Minuten; begrenzte Datensätze | `src-tauri/src/service/state.rs:64-77`, `src-tauri/src/service/state/sessions.rs:27-124` |
 | Browsersitzung | Session- und CSRF-Token | durch erfolgreiche Anmeldung erzeugt | zufällige flüchtige Tokens im Dienstzustand; Session als HttpOnly-/SameSite-Cookie | Browser und Rust-Backend | Dienst- und IP-Bindung, CSRF bei Schreibzugriff, Idle-/Absolutablauf, lokaler Widerruf | `src-tauri/src/service/api/auth.rs:17-55`, `src-tauri/src/service/api/auth.rs:122-153`, `src-tauri/src/service/state/sessions.rs:136-245` |
 | Download | Downloadwurzel des aktiven Profils | lokale Einstellung beim Start; vollständig getrennt von Upload; nie vom LAN wählbar | kanonisierter, geöffneter Rootanker | authentisierte Browser lesen einzelne Dateien | read-only Handles, Enthaltensein, Reparse-/Namespace-Prüfung und Downloadlimits | `src-tauri/src/domain/settings.rs`, `src-tauri/src/domain/shares.rs`, `src-tauri/src/service/api/download.rs` |
-| Upload | Uploadwurzel des aktiven Profils und `.dmdc` | lokale Einstellung beim Start; nur lokales zulässiges Volume; nie vom LAN wählbar | kanonisierte Wurzel; serverseitige Partials und opake Zielnamen | authentisierte Browser schreiben neue Dateien; Rust veröffentlicht | kein Listing, Sitzungsbesitz, CSRF, exakter Offset, Budgets, Autoload-Sperren und No-Replace | `src-tauri/src/domain/settings.rs`, `src-tauri/src/domain/shares.rs`, `src-tauri/src/service/api/upload.rs` |
+| Upload | Uploadwurzel des aktiven Profils und `.ldtg` | lokale Einstellung beim Start; nur lokales zulässiges Volume; nie vom LAN wählbar | kanonisierte Wurzel; serverseitige Partials und opake Zielnamen | authentisierte Browser schreiben neue Dateien; Rust veröffentlicht | kein Listing, Sitzungsbesitz, CSRF, exakter Offset, Budgets, Autoload-Sperren und No-Replace | `src-tauri/src/domain/settings.rs`, `src-tauri/src/domain/shares.rs`, `src-tauri/src/service/api/upload.rs` |
 | Diagnoseexport | aggregierte Laufzeitdaten | lokal gewähltes Exportziel | Ziel ist Laufzeitwert; Inhalt enthält keine Pfade, Codes, Tokens oder Dateilisten | lokaler Operator | feste JSON-Projektion vor lokalem Schreiben | `src-tauri/src/lib.rs:704-748`; effektive Ziel-ACL ist Laufzeit-/OS-Kontext |
-| Firewall | Regel `DMDC Local Transfer` | aktueller Programmpfad und Dienstport | eingehend TCP, `LocalSubnet`, Profile `Any`, Edge Traversal blockiert | Windows-Firewall; lokaler Administrator bestätigt UAC | kanonischer System-PowerShell-Pfad, kodierter Befehl, anschließende Statusprüfung | `src-tauri/src/platform/mod.rs:206-298` |
+| Firewall | Regel `LDTG Local Transfer` | aktueller Programmpfad und Dienstport | eingehend TCP, `LocalSubnet`, Profile `Any`, Edge Traversal blockiert | Windows-Firewall; lokaler Administrator bestätigt UAC | kanonischer System-PowerShell-Pfad, kodierter Befehl, anschließende Statusprüfung | `src-tauri/src/platform/mod.rs:206-298` |
 
 ## 2. Bedrohungsmodell, Vertrauensgrenzen und Annahmen
 
@@ -158,7 +158,7 @@ bestätigten Schwachstellen.
 
 ## 4. Schweregradkalibrierung
 
-| Stufe | DMDC-spezifisches Beispiel | Abgrenzung oder Herabstufung |
+| Stufe | LDTG-spezifisches Beispiel | Abgrenzung oder Herabstufung |
 |---|---|---|
 | Kritisch | Nicht authentisierter LAN-Request führt zu beliebiger lokaler Codeausführung oder erlangt Windows-Administratorrechte | Nicht allein durch das Speichern einer externen Datei belegt; automatische Ausführung oder privilegierter Sink muss nachgewiesen sein |
 | Hoch | Auth-/Pfad-/Rootkontrolle lässt einen LAN-Client beliebige Dateien außerhalb einer Freigabe lesen oder überschreiben | Zugriff nur innerhalb einer bewusst freigegebenen Downloadwurzel oder add-only im Upload-Eingang ist autorisiertes Produktverhalten |

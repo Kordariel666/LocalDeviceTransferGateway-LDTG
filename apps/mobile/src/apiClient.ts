@@ -1,4 +1,4 @@
-import type { ApiError } from "@dmdc/shared";
+import type { ApiError } from "@ldtg/shared";
 
 export class HttpError extends Error {
   constructor(public status: number, public code: string, message: string) {

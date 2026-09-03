@@ -494,7 +494,7 @@ const cargoMetadataArgs = (filterPlatform = null) => [
 const cargoMetadata = JSON.parse(run("cargo", cargoMetadataArgs()));
 const windowsCargoMetadata = JSON.parse(run("cargo", cargoMetadataArgs("x86_64-pc-windows-msvc")));
 const cargoChecksums = cargoLockChecksums(cargoLockPath);
-const cargoRoot = cargoMetadata.packages.find((pkg) => pkg.name === "dmdc" && !pkg.source);
+const cargoRoot = cargoMetadata.packages.find((pkg) => pkg.name === "ldtg" && !pkg.source);
 const cargoRootNode = cargoMetadata.resolve.nodes.find((node) => node.id === cargoRoot.id);
 const cargoPackageScopes = cargoScopes(cargoMetadata, cargoRoot.id);
 const windowsCargoPackageScopes = cargoScopes(windowsCargoMetadata, cargoRoot.id);
@@ -562,14 +562,14 @@ const components = allPackages.map((pkg) => {
   } else if (pkg.checksumSha256) {
     hashes.push({ alg: "SHA-256", content: pkg.checksumSha256 });
   }
-  const properties = [{ name: "dmdc:ecosystem", value: pkg.ecosystem }, { name: "dmdc:direct", value: String(pkg.direct) }];
+  const properties = [{ name: "ldtg:ecosystem", value: pkg.ecosystem }, { name: "ldtg:direct", value: String(pkg.direct) }];
   if (pkg.ecosystem === "npm") {
-    properties.push({ name: "dmdc:scopes", value: pkg.scopes.join(",") || "lockfile-only" });
-    properties.push({ name: "dmdc:installed-on-audit-host", value: String(pkg.installedOnAuditHost) });
+    properties.push({ name: "ldtg:scopes", value: pkg.scopes.join(",") || "lockfile-only" });
+    properties.push({ name: "ldtg:installed-on-audit-host", value: String(pkg.installedOnAuditHost) });
   } else {
-    properties.push({ name: "dmdc:windows-resolved", value: String(pkg.windowsResolved) });
-    properties.push({ name: "dmdc:scopes", value: pkg.scopes.join(",") || "lockfile-only" });
-    properties.push({ name: "dmdc:windows-scopes", value: pkg.windowsScopes.join(",") || "not-resolved" });
+    properties.push({ name: "ldtg:windows-resolved", value: String(pkg.windowsResolved) });
+    properties.push({ name: "ldtg:scopes", value: pkg.scopes.join(",") || "lockfile-only" });
+    properties.push({ name: "ldtg:windows-scopes", value: pkg.windowsScopes.join(",") || "not-resolved" });
   }
   return {
     type: "library",
@@ -596,7 +596,7 @@ for (const node of cargoMetadata.resolve.nodes) {
   if (reference) dependencyMap.set(reference, new Set(node.dependencies.map((id) => cargoIdRefs.get(id)).filter(Boolean)));
 }
 const applicationManifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const applicationRef = `pkg:generic/dmdc@${encodeURIComponent(applicationManifest.version)}`;
+const applicationRef = `pkg:generic/ldtg@${encodeURIComponent(applicationManifest.version)}`;
 const directDependencies = new Set([
   ...[...pnpmLock.direct.keys()].map((key) => npmRefs.get(key)).filter(Boolean),
   ...cargoRootNode.dependencies.map((id) => cargoIdRefs.get(id)).filter(Boolean),
@@ -608,13 +608,13 @@ const sbom = {
   serialNumber: `urn:uuid:${run("git", ["rev-parse", "HEAD"]).slice(0, 8)}-0000-4000-8000-${fileSha256(pnpmLockPath).slice(0, 12)}`,
   version: 1,
   metadata: {
-    tools: { components: [{ type: "application", name: "DMDC public beta audit generator", version: "1" }] },
-    component: { type: "application", "bom-ref": applicationRef, name: "dmdc", version: applicationManifest.version },
+    tools: { components: [{ type: "application", name: "LDTG public beta audit generator", version: "1" }] },
+    component: { type: "application", "bom-ref": applicationRef, name: "ldtg", version: applicationManifest.version },
     properties: [
-      { name: "dmdc:source-revision", value: run("git", ["rev-parse", "HEAD"]) },
-      { name: "dmdc:pnpm-lock-sha256", value: fileSha256(pnpmLockPath) },
-      { name: "dmdc:cargo-lock-sha256", value: fileSha256(cargoLockPath) },
-      { name: "dmdc:status", value: "draft-not-for-release" },
+      { name: "ldtg:source-revision", value: run("git", ["rev-parse", "HEAD"]) },
+      { name: "ldtg:pnpm-lock-sha256", value: fileSha256(pnpmLockPath) },
+      { name: "ldtg:cargo-lock-sha256", value: fileSha256(cargoLockPath) },
+      { name: "ldtg:status", value: "draft-not-for-release" },
     ],
   },
   components,

@@ -12,17 +12,17 @@ Tatsachen vorausgesetzt.
 
 ## Erforderliche Bestätigungen
 
-- [ ] Ich habe den ursprünglichen DMDC-Quellcode, die Projektdokumentation und
+- [ ] Ich habe den ursprünglichen LDTG-Quellcode, die Projektdokumentation und
   die UI-Texte selbst erstellt oder besitze für sämtliche übernommenen Teile
   ausreichende Rechte für eine spätere Veröffentlichung unter wahlweise
   `GPL-3.0-only` oder `Apache-2.0`.
-- [ ] `assets/icon.svg` wurde von mir erstellt oder auf meine Veranlassung mit
-  einem Werkzeug erzeugt; es enthält kein fremdes Logo und darf unter der
-  später gewählten Projektlizenz weitergegeben werden.
+- [ ] `assets/ldtg-logo-lockup.png` und `assets/ldtg-app-icon.png` wurden auf
+  meine Veranlassung mit KI-Unterstützung erzeugt; sie enthalten kein fremdes
+  Logo und dürfen unter der später gewählten Projektlizenz weitergegeben werden.
 - [ ] Die Dateien unter `src-tauri/icons/**` wurden ausschließlich aus diesem
   freigabefähigen Quellicon erzeugt. Falls ein anderer Generator oder ein
   fremdes Quellasset beteiligt war, ist dies unten vollständig angegeben.
-- [ ] Die QA-Aufnahmen zeigen ausschließlich DMDC, von mir freigegebene
+- [ ] Die QA-Aufnahmen zeigen ausschließlich LDTG, von mir freigegebene
   Testordner/-profile und nicht mehr gültige Zugangsdaten. Sichtbare
   LAN-Adressen dürfen veröffentlicht werden; es sind keine fremden Namen,
   privaten Dateiinhalte oder sonstigen personenbezogenen Daten enthalten.
@@ -38,6 +38,11 @@ Hier müssen alle nicht vollständig bestätigbaren Punkte mit Quelle, Lizenz,
 Urheber, Verwendungszweck und gegebenenfalls Ersetzungsplan eingetragen werden:
 
 > Noch nicht ausgefüllt.
+
+Bereits festgehaltene Owner-Angabe vom 3. September 2026: Soweit bekannt wurde
+nichts aus anderen Projekten kopiert; Icons, Texte und weitere Bestandteile
+wurden mit KI-Unterstützung erstellt. Diese Teilangabe ersetzt noch nicht die
+Bestätigung aller vorstehenden Aussagen und der QA-Testdaten.
 
 Bestätigt von: _noch offen_
 

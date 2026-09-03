@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import type { NetworkInterfaceInfo, ShareSettings, TransferInfo } from "@dmdc/shared";
+import type { NetworkInterfaceInfo, ShareSettings, TransferInfo } from "@ldtg/shared";
 import { text } from "../i18n";
 import {
   estimateTransferTiming,

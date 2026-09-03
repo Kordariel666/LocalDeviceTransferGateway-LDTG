@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import type { AppSnapshot, TransferDirection, TransferInfo, TransferState } from "@dmdc/shared";
+import type { AppSnapshot, TransferDirection, TransferInfo, TransferState } from "@ldtg/shared";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -432,9 +432,9 @@ describe("Desktop-Dashboard", () => {
   it("zeigt eine Firewallregel erst nach bestätigter Backendprüfung als eingerichtet", async () => {
     const configured = {
       configured: true,
-      programPath: "C:\\Programme\\DMDC\\DMDC.exe",
+      programPath: "C:\\Programme\\LDTG\\LDTG.exe",
       port: 8765,
-      detail: "Firewallregel ist für DMDC und TCP-Port 8765 eingerichtet.",
+      detail: "Firewallregel ist für LDTG und TCP-Port 8765 eingerichtet.",
     };
     mocks.invoke.mockImplementation(async (command: string, args?: { settings?: unknown }) => {
       if (command === "get_app_snapshot") return structuredClone(currentSnapshot);
@@ -460,7 +460,7 @@ describe("Desktop-Dashboard", () => {
     currentSnapshot = structuredClone(snapshot);
     currentSnapshot.firewall = {
       configured: true,
-      programPath: "C:\\Programme\\DMDC\\DMDC.exe",
+      programPath: "C:\\Programme\\LDTG\\LDTG.exe",
       port: 8765,
       detail: "Firewallregel eingerichtet.",
     };

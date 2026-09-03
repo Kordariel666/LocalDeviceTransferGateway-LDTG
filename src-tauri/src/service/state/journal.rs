@@ -181,7 +181,7 @@ impl TransferServiceState {
     pub fn emit_network_lost(&self) {
         if let Some(app) = &self.app {
             if let Some(tray) = app.tray_by_id("main-tray") {
-                let _ = tray.set_tooltip(Some("DMDC – Netzwerk verloren, Dienst gestoppt"));
+                let _ = tray.set_tooltip(Some("LDTG – Netzwerk verloren, Dienst gestoppt"));
             }
         }
         self.emit(
@@ -193,7 +193,7 @@ impl TransferServiceState {
     pub fn emit_auto_stop(&self) {
         if let Some(app) = &self.app {
             if let Some(tray) = app.tray_by_id("main-tray") {
-                let _ = tray.set_tooltip(Some("DMDC – wegen Inaktivität gestoppt"));
+                let _ = tray.set_tooltip(Some("LDTG – wegen Inaktivität gestoppt"));
             }
         }
         self.emit(

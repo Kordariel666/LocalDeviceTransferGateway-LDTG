@@ -10,7 +10,7 @@ import type {
   ShareProfile,
   ShareValidation,
   TransferChangedEvent,
-} from "@dmdc/shared";
+} from "@ldtg/shared";
 import { text } from "./i18n";
 import {
   DiagnosticsPage,
@@ -41,7 +41,7 @@ import {
 type View = "overview" | "shares" | "transfers" | "security" | "diagnostics";
 type BusyAction = "start" | "stop" | "save" | "firewall" | "diagnostics" | "command" | null;
 
-const brandIconUrl = new URL("../../../assets/icon.svg", import.meta.url).href;
+const brandIconUrl = new URL("../../../assets/ldtg-ui-icon.png", import.meta.url).href;
 const batchQuietPeriodMs = 750;
 
 const emptyService: ServiceStatus = {
@@ -675,7 +675,7 @@ export function App() {
   async function exportDiagnostics() {
     const destination = await save({
       title: text.diagnosticTitle,
-      defaultPath: `DMDC-Diagnose-${new Date().toISOString().slice(0, 10)}.json`,
+      defaultPath: `LDTG-Diagnose-${new Date().toISOString().slice(0, 10)}.json`,
       filters: [{ name: text.diagnosticFilter, extensions: ["json"] }],
     });
     if (!destination) return;
@@ -753,7 +753,7 @@ export function App() {
       <aside className="sidebar">
         <div className="brand">
           <img src={brandIconUrl} alt="" />
-          <div><strong>DMDC</strong><span>{text.appSubtitle}</span></div>
+          <div><strong>LDTG</strong><span>{text.appSubtitle}</span></div>
         </div>
         <nav aria-label={text.mainNavigation}>
           {navigation.map((item) => (

@@ -4,7 +4,7 @@ Stand: 3. September 2026
 
 Auditierter Quellstand: `af632670b29346f1700f97e1bc00048712a00475`
 
-Ergebnis: **BLOCKIERT – technische Prüfung abgeschlossen, drei Owner-Entscheidungen offen**
+Ergebnis: **BLOCKIERT – technische Prüfung abgeschlossen, zwei Owner-Entscheidungen offen**
 
 Dieses Dokument prüft ausschließlich P1 des
 [Plans bis zur Veröffentlichungsentscheidung](../../docs/PUBLIC_BETA_PLAN.md).
@@ -28,13 +28,14 @@ SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
   Icons kann aus Git allein nicht lückenlos bewiesen werden, weil der
   Wurzelcommit bereits fast das vollständige Projekt importierte. Dafür fehlt
   eine Bestätigung des Rechteinhabers.
-- `DMDC` ist bereits eine stark belegte Abkürzung, insbesondere für das
-  US-amerikanische Defense Manpower Data Center. Ein exakter Registertreffer
-  für `DMDC` oder `Desktop Mobile Data Center` wurde im geprüften deutschen,
-  EU- und internationalen Markenbestand nicht gefunden; das ist keine formale
-  Markenfreigabe und beseitigt das Verwechslungs-/Auffindbarkeitsrisiko nicht.
+- Die frühere Bezeichnung wurde wegen eines deutlichen
+  Auffindbarkeits-/Verwechslungsrisikos ersetzt. Der Owner hat **LDTG – Local
+  Device Transfer Gateway** gewählt. Die wiederholte exakte Vorprüfung ergab
+  keinen offensichtlichen Konflikt mit einer Dateiübertragungssoftware; die
+  Abkürzung besitzt jedoch fachfremde Verwendungen. Das ist keine formale
+  Markenfreigabe.
 
-Das P1-Gate bleibt deshalb an `PB-01` bis `PB-03` aus
+Das P1-Gate bleibt deshalb an `PB-01` und `PB-02` aus
 [`blockers.json`](blockers.json) hängen.
 
 ## Prüfumfang und reproduzierbare Nachweise
@@ -121,9 +122,9 @@ Bis zu dieser Entscheidung ist die vorhandene Historie kein freigegebener
 | Gruppe | Befund | Herkunftsstatus |
 |---|---|---|
 | Quellcode, Projektdokumentation und UI-Texte | keine vendorten Fremdquellen erkannt; nahezu vollständig im Wurzelcommit importiert | Owner-Bestätigung ausstehend |
-| `assets/icon.svg` | einziges Marken-Quellasset, von Desktop und Mobile referenziert | Owner-Bestätigung ausstehend |
-| `src-tauri/icons/**` | PNG/ICO/ICNS sowie Android-/iOS-Varianten, visuell aus demselben Zeichen abgeleitet | Erzeugungsweg und Rechtebestätigung ausstehend |
-| `qa/*.png`, `qa/*.jpg` | Aufnahmen der DMDC-Oberflächen und zwei per `qa/make_comparison.py` erzeugte Vergleiche | Rechte-/Testdatenbestätigung ausstehend |
+| `assets/ldtg-logo-lockup.png`, `assets/ldtg-app-icon.png`, `assets/ldtg-ui-icon.png` | ausgewählte und abgeleitete LDTG-Markenassets, mit KI-Unterstützung erzeugt | Owner-Bestätigung ausstehend |
+| `src-tauri/icons/**` | mit der Tauri-CLI aus `assets/ldtg-app-icon.png` erzeugte PNG/ICO/ICNS- sowie Android-/iOS-Varianten | reproduzierbar; Owner-Bestätigung für das Quellicon ausstehend |
+| `qa/*.png`, `qa/*.jpg` | Aufnahmen der LDTG-Oberflächen und zwei per `qa/make_comparison.py` erzeugte Vergleiche | Rechte-/Testdatenbestätigung ausstehend |
 | `packages/shared/src/index.ts` | laut Dateikopf aus Rust-Verträgen erzeugt | im Repository reproduzierbar |
 | `src-tauri/gen/schemas/*.json` | Tauri-generierte Konfigurations-/Berechtigungsschemata | Fremdherkunft über Tauri; Notices aus Lizenzinventur ableitbar |
 | `pnpm-lock.yaml`, `src-tauri/Cargo.lock` | von pnpm beziehungsweise Cargo erzeugte Auflösung | reproduzierbare Paketmetadaten |
@@ -131,8 +132,8 @@ Bis zu dieser Entscheidung ist die vorhandene Historie kein freigegebener
 | mobile Webassets | aus eigenem Workspace gebaut und mit `rust-embed` in den Dienst eingebettet; keine externen Laufzeitressourcen | abhängig von Owner-Bestätigung für Projektquellen |
 
 Alle zehn QA-Oberflächen-/Vergleichsbilder wurden zusätzlich visuell geprüft.
-Erkennbar sind nur DMDC-Oberflächen, private LAN-Adressen, generische
-`C:\DMDC\...`-Testordner, ein Testprofil sowie Zugangscodes/QR-Codes. Namen,
+Erkennbar sind nur LDTG-Oberflächen, private LAN-Adressen, generische
+`C:\LDTG\...`-Testordner, ein Testprofil sowie Zugangscodes/QR-Codes. Namen,
 Benutzerprofile oder Dateiinhalte sind nicht sichtbar. Laut `qa/README.md`
 wurden die Codes nach den Laufzustandsaufnahmen durch Stoppen des Dienstes
 ungültig. Vor einer Veröffentlichung muss der Owner dennoch bestätigen, dass
@@ -146,26 +147,25 @@ kann Git keine Rechtekette vor dem Wurzelcommit belegen.
 
 Geprüft am 3. September 2026:
 
-- npm: kein exaktes Paket `dmdc`;
-- crates.io/Cargo: kein exakter Treffer für `dmdc`;
-- winget: kein exaktes Paket `DMDC`;
+- npm: kein exaktes Paket `ldtg`;
+- crates.io/Cargo: kein exakter Treffer für `ldtg`;
+- winget: kein exaktes Paket `LDTG`;
 - DPMAregister-Basissuche, exakte Begriffe, nationale deutsche Marken,
-  Unionsmarken und international registrierte Marken: weder `DMDC` noch
-  `Desktop Mobile Data Center` mit Treffer;
-- allgemeine Websuche: kein offensichtlicher exakter Produktnamenskonflikt für
-  `Desktop Mobile Data Center`, jedoch eine dominante anderweitige Nutzung der
-  Abkürzung `DMDC` durch das
-  [Defense Manpower Data Center](https://dwp.dmdc.mil/dwp/app/about/overview)
-  des US-Verteidigungsministeriums sowie weitere fachsprachliche Bedeutungen.
+  Unionsmarken und international registrierte Marken: weder `LDTG` noch
+  `Local Device Transfer Gateway` mit Treffer;
+- allgemeine Web- und GitHub-Suche: kein offensichtlicher exakter
+  Produktnamenskonflikt für `Local Device Transfer Gateway`; das Kürzel `LDTG`
+  wird fachfremd unter anderem als historische Logo-Design-Studio-Dateiendung
+  und als Schreibweise `LDTg` in der Neurowissenschaft verwendet.
 
 Die Registerprüfung erfolgte im offiziellen
 [DPMAregister](https://register.dpma.de/DPMAregister/marke/basis). Sie war eine
 reine Kollisions-Vorprüfung, keine Ähnlichkeitssuche, Klassenberatung oder
-anwaltliche Markenrecherche. Der volle Name wirkt deutlich unterscheidbarer als
-die alleinstehende Abkürzung. Vor P1-Abschluss muss der Owner entweder den
-Namen ändern oder das dokumentierte Such-/Verwechslungsrisiko bewusst
-akzeptieren und die öffentliche Darstellung konsequent mit dem vollen Namen
-führen.
+anwaltliche Markenrecherche. Der Owner hat die Umbenennung und das verbleibende
+Risiko am 3. September 2026 entschieden. Details und reproduzierbare Suchziele
+stehen in [`docs/BRANDING.md`](../../docs/BRANDING.md). `PB-03` ist damit
+abgeschlossen; die öffentliche Erstnennung führt Kürzel und vollen Namen
+gemeinsam.
 
 ## Gatebewertung
 

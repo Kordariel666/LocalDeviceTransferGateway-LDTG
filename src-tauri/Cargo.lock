@@ -957,43 +957,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dmdc"
-version = "0.3.0-rc.1"
-dependencies = [
- "async-stream",
- "axum",
- "base64 0.23.1",
- "chrono",
- "fs2",
- "hyper",
- "hyper-util",
- "if-addrs",
- "mime_guess",
- "percent-encoding",
- "rand 0.10.2",
- "rust-embed",
- "same-file",
- "serde",
- "serde_json",
- "subtle",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-notification",
- "tauri-plugin-single-instance",
- "tempfile",
- "tokio",
- "tower",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "ts-rs",
- "unicode-normalization",
- "uuid",
- "windows-sys 0.61.2",
-]
-
-[[package]]
 name = "dom_query"
 version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2194,6 +2157,43 @@ name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+
+[[package]]
+name = "ldtg"
+version = "0.3.0-rc.1"
+dependencies = [
+ "async-stream",
+ "axum",
+ "base64 0.23.1",
+ "chrono",
+ "fs2",
+ "hyper",
+ "hyper-util",
+ "if-addrs",
+ "mime_guess",
+ "percent-encoding",
+ "rand 0.10.2",
+ "rust-embed",
+ "same-file",
+ "serde",
+ "serde_json",
+ "subtle",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-notification",
+ "tauri-plugin-single-instance",
+ "tempfile",
+ "tokio",
+ "tower",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "ts-rs",
+ "unicode-normalization",
+ "uuid",
+ "windows-sys 0.61.2",
+]
 
 [[package]]
 name = "libappindicator"

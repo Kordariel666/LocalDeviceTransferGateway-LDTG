@@ -63,8 +63,8 @@ Erzeugte Hauptartefakte:
 
 - `apps/mobile/dist/index.html`
 - `apps/desktop/dist/index.html`
-- `src-tauri/target/release/dmdc.exe`
-- `src-tauri/target/release/bundle/nsis/DMDC_0.1.3_x64-setup.exe`
+- `src-tauri/target/release/ldtg.exe`
+- `src-tauri/target/release/bundle/nsis/LDTG_0.1.3_x64-setup.exe`
 
 ## Read-only Security-Verifikation gegen die ursprünglichen Angriffswege
 

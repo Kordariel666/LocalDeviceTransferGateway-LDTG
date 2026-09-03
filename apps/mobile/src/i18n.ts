@@ -1,7 +1,7 @@
 export const text = {
-  title: "DMDC Transfer",
+  title: "LDTG Transfer",
   loginTitle: "Mit deinem PC verbinden",
-  loginHint: "Gib den achtstelligen Code ein, der in DMDC auf dem PC angezeigt wird.",
+  loginHint: "Gib den achtstelligen Code ein, der in LDTG auf dem PC angezeigt wird.",
   localWarning: "Die Übertragung bleibt in deinem lokalen Netzwerk. Verwende sie nur in einem WLAN, dem du vertraust.",
   downloadTab: "Vom PC herunterladen",
   uploadTab: "Zum PC hochladen",

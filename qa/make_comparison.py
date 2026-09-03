@@ -9,7 +9,7 @@ QA_DIR = ROOT / "qa"
 
 
 def arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Erzeugt die aktuelle DMDC-Oberflächenübersicht.")
+    parser = argparse.ArgumentParser(description="Erzeugt die aktuelle LDTG-Oberflächenübersicht.")
     parser.add_argument("--reference", type=Path, help="Optionale visuelle Zielreferenz.")
     parser.add_argument(
         "--desktop",
@@ -17,10 +17,15 @@ def arguments() -> argparse.Namespace:
         default=QA_DIR / "desktop-running-1182x852.png",
     )
     parser.add_argument(
+        "--desktop-label",
+        default="Desktop - Dienst aktiv",
+    )
+    parser.add_argument(
         "--mobile",
         type=Path,
         default=QA_DIR / "mobile-login-390x844.png",
     )
+    parser.add_argument("--skip-mobile", action="store_true")
     parser.add_argument(
         "--output",
         type=Path,
@@ -34,12 +39,9 @@ def main() -> None:
     items: list[tuple[str, Path]] = []
     if options.reference:
         items.append(("Zielreferenz", options.reference.resolve()))
-    items.extend(
-        [
-            ("Desktop - Dienst aktiv", options.desktop.resolve()),
-            ("Mobile - Login - 390 x 844", options.mobile.resolve()),
-        ]
-    )
+    items.append((options.desktop_label, options.desktop.resolve()))
+    if not options.skip_mobile:
+        items.append(("Mobile - Login - 390 x 844", options.mobile.resolve()))
 
     missing = [str(path) for _, path in items if not path.is_file()]
     if missing:

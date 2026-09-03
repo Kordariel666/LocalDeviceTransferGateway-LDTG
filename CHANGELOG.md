@@ -1,12 +1,21 @@
 # Changelog
 
-Alle wesentlichen Änderungen an DMDC werden in dieser Datei dokumentiert.
+Alle wesentlichen Änderungen an LDTG werden in dieser Datei dokumentiert.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionsnummern folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
 Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+### Changed
+
+- Das Projekt heißt nun **LDTG – Local Device Transfer Gateway**. Apptitel,
+  Paketnamen, Protokollkennungen, Dokumentation sowie Plattformicons verwenden
+  die neue Bezeichnung konsistent.
+- Das neue Wortzeichen zeigt die Übertragung einer Datei vom `D` zum `G`; ein
+  kompaktes quadratisches Zeichen wird für App, Installer und Mobilansicht
+  verwendet.
 
 ## [0.3.0-rc.1] - 2026-09-03
 
@@ -33,7 +42,7 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Fensterbreiten in ein klar getrenntes zweizeiliges Layout.
 - Der Vertragscheck baut die von Rust eingebetteten Mobile-Webassets nun auch auf
   einem frischen Checkout vor dem Generatorlauf. Der Tauri-Entwicklungsstart
-  wählt außerdem trotz zusätzlichem Generator-Binary eindeutig die DMDC-App aus.
+  wählt außerdem trotz zusätzlichem Generator-Binary eindeutig die LDTG-App aus.
 
 ## [0.2.0-rc.1] - 2026-09-03
 

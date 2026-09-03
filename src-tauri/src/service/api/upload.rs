@@ -83,7 +83,7 @@ pub(super) fn upload_io_busy() -> ApiFailure {
     ApiFailure::new(
         StatusCode::TOO_MANY_REQUESTS,
         "UPLOAD_IO_BUSY",
-        "DMDC verarbeitet bereits die maximale Zahl blockierender Uploadvorgänge.",
+        "LDTG verarbeitet bereits die maximale Zahl blockierender Uploadvorgänge.",
     )
 }
 

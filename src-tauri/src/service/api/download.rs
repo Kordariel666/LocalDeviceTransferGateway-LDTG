@@ -262,7 +262,7 @@ pub(super) async fn download(
             let message = match scope {
                 "session" => "Diese Sitzung hat bereits zu viele gleichzeitige Downloads.",
                 "address" => "Von dieser Geräteadresse laufen bereits zu viele Downloads.",
-                _ => "DMDC verarbeitet bereits die maximale Zahl gleichzeitiger Downloads.",
+                _ => "LDTG verarbeitet bereits die maximale Zahl gleichzeitiger Downloads.",
             };
             ApiFailure::new(StatusCode::TOO_MANY_REQUESTS, "DOWNLOAD_LIMIT", message)
         })?;

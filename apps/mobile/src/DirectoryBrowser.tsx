@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { DirectoryResponse } from "@dmdc/shared";
+import type { DirectoryResponse } from "@ldtg/shared";
 import { text } from "./i18n";
 import { formatBytes } from "./presentation";
 

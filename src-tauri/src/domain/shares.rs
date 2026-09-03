@@ -246,7 +246,7 @@ fn validate_root(path: &Path, writable: bool) -> Result<PathBuf, String> {
         {
             return Err("Programm-, Arbeits-, PATH-, PowerShell-Modul-, Windows-Autostart- und Office-Autoload-Verzeichnisse dürfen nicht als Upload-Eingang verwendet werden.".into());
         }
-        let probe = canonical.join(format!(".dmdc-write-test-{}", uuid::Uuid::new_v4()));
+        let probe = canonical.join(format!(".ldtg-write-test-{}", uuid::Uuid::new_v4()));
         fs::write(&probe, b"test")
             .map_err(|_| "Der Uploadordner ist nicht beschreibbar.".to_string())?;
         fs::remove_file(probe)
@@ -574,7 +574,7 @@ pub fn is_hidden_or_managed(path: &Path, metadata: &fs::Metadata) -> bool {
     if path
         .file_name()
         .and_then(|name| name.to_str())
-        .is_some_and(|name| name == ".dmdc" || name.starts_with('.'))
+        .is_some_and(|name| name == ".ldtg" || name.starts_with('.'))
     {
         return true;
     }

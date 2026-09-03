@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import type { ApiError, DirectoryResponse, SessionResponse, UploadCreated } from "@dmdc/shared";
+import type { ApiError, DirectoryResponse, SessionResponse, UploadCreated } from "@ldtg/shared";
 import { api, HttpError } from "./apiClient";
 import { DirectoryBrowser } from "./DirectoryBrowser";
 import { text } from "./i18n";
@@ -20,7 +20,7 @@ import {
 
 type View = "download" | "upload";
 
-const brandIconUrl = new URL("../../../assets/icon.svg", import.meta.url).href;
+const brandIconUrl = new URL("../../../assets/ldtg-ui-icon.png", import.meta.url).href;
 
 class UploadInterrupted extends Error {}
 
@@ -165,7 +165,7 @@ export function App() {
     try {
       await api("/api/v1/logout", {
         method: "POST",
-        headers: { "X-DMDC-CSRF": currentSession.csrfToken },
+        headers: { "X-LDTG-CSRF": currentSession.csrfToken },
       });
     } catch (error) {
       setLoginError(text.logoutLocal(error instanceof Error ? error.message : "Netzwerkfehler"));
@@ -246,7 +246,7 @@ export function App() {
       xhr.withCredentials = true;
       xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
       xhr.setRequestHeader("Upload-Offset", String(offset));
-      xhr.setRequestHeader("X-DMDC-CSRF", currentSession.csrfToken);
+      xhr.setRequestHeader("X-LDTG-CSRF", currentSession.csrfToken);
       xhr.upload.onprogress = (event) => {
         const transferred = offset + event.loaded;
         updateQueue({
@@ -292,7 +292,7 @@ export function App() {
     if (!creation) {
       creation = api<UploadCreated>("/api/v1/uploads", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-DMDC-CSRF": sessionRef.current?.csrfToken ?? "" },
+        headers: { "Content-Type": "application/json", "X-LDTG-CSRF": sessionRef.current?.csrfToken ?? "" },
         body: JSON.stringify({ name: item.file.name, size: item.file.size, lastModified: item.file.lastModified, clientToken: item.id }),
       }).then((created) => {
         if (sessionRef.current?.serviceId === created.serviceId) {
@@ -325,7 +325,7 @@ export function App() {
     try {
       await api(`/api/v1/uploads/${encodeURIComponent(uploadId)}`, {
         method: "DELETE",
-        headers: { "X-DMDC-CSRF": currentSession.csrfToken },
+        headers: { "X-LDTG-CSRF": currentSession.csrfToken },
       });
     } catch { /* Best effort */ }
   }
@@ -377,7 +377,7 @@ export function App() {
         if (!currentSession) throw new HttpError(401, "SESSION_INVALID", "Sitzung ist nicht mehr gültig");
         try {
           result = await uploadApi<{ name: string }>(item, `/api/v1/uploads/${encodeURIComponent(created.uploadId)}/complete`, {
-            method: "POST", headers: { "X-DMDC-CSRF": currentSession.csrfToken },
+            method: "POST", headers: { "X-LDTG-CSRF": currentSession.csrfToken },
           });
           completionError = undefined;
           break;
@@ -517,7 +517,7 @@ export function App() {
       <header>
         <div className="mobile-wordmark">
           <img src={brandIconUrl} alt="" />
-          <div><strong>DMDC</strong><span>{text.localDirect}</span></div>
+          <div><strong>LDTG</strong><span>{text.localDirect}</span></div>
         </div>
         <button type="button" onClick={logout}>{text.disconnect}</button>
       </header>

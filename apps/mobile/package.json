@@ -1,5 +1,5 @@
 {
-  "name": "@dmdc/mobile",
+  "name": "@ldtg/mobile",
   "version": "0.3.0-rc.1",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
-    "@dmdc/shared": "workspace:*",
+    "@ldtg/shared": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

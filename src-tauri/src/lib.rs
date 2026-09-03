@@ -563,7 +563,7 @@ async fn start_service(
     }
     state.running.store(true, Ordering::Relaxed);
     if let Some(tray) = app.tray_by_id("main-tray") {
-        let _ = tray.set_tooltip(Some("DMDC – Dienst läuft"));
+        let _ = tray.set_tooltip(Some("LDTG – Dienst läuft"));
     }
     let _ = app.emit(
         "service-status-changed",
@@ -580,7 +580,7 @@ async fn stop_service(
 ) -> Result<(), CommandError> {
     stop_runtime(&state, force).await?;
     if let Some(tray) = app.tray_by_id("main-tray") {
-        let _ = tray.set_tooltip(Some("DMDC – Dienst gestoppt"));
+        let _ = tray.set_tooltip(Some("LDTG – Dienst gestoppt"));
     }
     let _ = app.emit(
         "service-status-changed",
@@ -805,13 +805,13 @@ async fn quit_app(
 fn install_tray(app: &tauri::App) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Öffnen", true, None::<&str>)?;
     let stop = MenuItem::with_id(app, "stop", "Dienst stoppen", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "DMDC beenden", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "LDTG beenden", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &stop, &quit])?;
     let mut tray = TrayIconBuilder::with_id("main-tray");
     if let Some(icon) = app.default_window_icon() {
         tray = tray.icon(icon.clone());
     }
-    tray.tooltip("DMDC – Desktop Mobile Data Center")
+    tray.tooltip("LDTG – Local Device Transfer Gateway")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -866,12 +866,12 @@ fn initialize_logging(log_dir: &std::path::Path) {
     if std::fs::create_dir_all(log_dir).is_err() {
         return;
     }
-    let file = tracing_appender::rolling::daily(log_dir, "dmdc.log");
+    let file = tracing_appender::rolling::daily(log_dir, "ldtg.log");
     let (writer, guard) = tracing_appender::non_blocking(file);
     let _ = tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "dmdc=info,tower_http=warn".into()),
+                .unwrap_or_else(|_| "ldtg=info,tower_http=warn".into()),
         )
         .with(
             tracing_subscriber::fmt::layer()
@@ -933,7 +933,7 @@ pub fn run() {
             quit_app,
         ])
         .run(tauri::generate_context!())
-        .expect("DMDC konnte nicht gestartet werden");
+        .expect("LDTG konnte nicht gestartet werden");
 }
 
 #[cfg(test)]
@@ -1012,7 +1012,7 @@ mod capability_tests {
     fn uninstaller_never_recursively_deletes_application_data() {
         let hook = include_str!("../windows/hooks.nsh");
         assert!(!hook.contains("RMDir /r"));
-        assert!(!hook.contains("$APPDATA\\de.dmdc.desktop"));
-        assert!(!hook.contains("$LOCALAPPDATA\\de.dmdc.desktop"));
+        assert!(!hook.contains("$APPDATA\\de.ldtg.desktop"));
+        assert!(!hook.contains("$LOCALAPPDATA\\de.ldtg.desktop"));
     }
 }

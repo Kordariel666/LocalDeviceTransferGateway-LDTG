@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SessionResponse } from "@dmdc/shared";
+import type { SessionResponse } from "@ldtg/shared";
 import { text } from "./i18n";
 import { estimateTransferTiming, formatBytes, formatDuration, formatRate } from "./presentation";
 import type { UploadItem, UploadQueueSummary } from "./uploadQueue";

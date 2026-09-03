@@ -36,7 +36,7 @@ pub(super) async fn method_not_allowed() -> ApiFailure {
     ApiFailure::new(
         StatusCode::METHOD_NOT_ALLOWED,
         "METHOD_NOT_ALLOWED",
-        "Diese Aktion wird von DMDC nicht angeboten.",
+        "Diese Aktion wird von LDTG nicht angeboten.",
     )
 }
 
@@ -113,7 +113,7 @@ pub(super) async fn request_guard(
                 ApiFailure::new(
                     StatusCode::FORBIDDEN,
                     "ORIGIN_REJECTED",
-                    "Die Anfrage stammt nicht von der DMDC-Seite.",
+                    "Die Anfrage stammt nicht von der LDTG-Seite.",
                 )
                 .into_response(),
             );
@@ -194,7 +194,7 @@ pub(super) async fn request_guard(
                     let message = if scope == "upload" {
                         "Für diese Upload-ID wird bereits ein Block verarbeitet."
                     } else {
-                        "DMDC verarbeitet bereits die maximale Zahl gleichzeitiger Uploadblöcke."
+                        "LDTG verarbeitet bereits die maximale Zahl gleichzeitiger Uploadblöcke."
                     };
                     return secure_response(
                         ApiFailure::new(

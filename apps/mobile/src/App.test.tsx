@@ -240,7 +240,7 @@ describe("mobile Oberfläche", () => {
       }))
       .mockResolvedValueOnce(json({ uploadId: "upload-a", offset: 0, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 }))
       .mockResolvedValueOnce(json({ uploadId: "upload-b", offset: 0, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 }));
-    localStorage.setItem("dmdc:dienst:gleich.bin:4:1", "stale-upload");
+    localStorage.setItem("ldtg:dienst:gleich.bin:4:1", "stale-upload");
 
     render(<App />);
     const picker = await screen.findByLabelText(/Dateien auswählen/);

@@ -11,7 +11,7 @@ if (-not (Test-Path -LiteralPath $cargo -PathType Leaf)) {
 }
 
 if (Get-Command link.exe -ErrorAction SilentlyContinue) {
-    $env:DMDC_TEST_RUNNER_MANIFEST = "1"
+    $env:LDTG_TEST_RUNNER_MANIFEST = "1"
     & $cargo test --manifest-path $manifest --lib
     exit $LASTEXITCODE
 }
@@ -30,6 +30,6 @@ if (-not (Test-Path -LiteralPath $vcvars -PathType Leaf)) {
     throw "vcvars64.bat wurde nicht gefunden: $vcvars"
 }
 
-$command = 'call "{0}" >nul && set "DMDC_TEST_RUNNER_MANIFEST=1" && "{1}" test --manifest-path "{2}" --lib' -f $vcvars, $cargo, $manifest
+$command = 'call "{0}" >nul && set "LDTG_TEST_RUNNER_MANIFEST=1" && "{1}" test --manifest-path "{2}" --lib' -f $vcvars, $cargo, $manifest
 & $env:ComSpec /d /s /c $command
 exit $LASTEXITCODE

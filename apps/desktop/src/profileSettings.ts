@@ -3,7 +3,7 @@ import type {
   LimitSettings,
   NetworkSettings,
   ShareProfile,
-} from "@dmdc/shared";
+} from "@ldtg/shared";
 
 export type EffectiveProfileSettings = LimitSettings & NetworkSettings & {
   port: number;

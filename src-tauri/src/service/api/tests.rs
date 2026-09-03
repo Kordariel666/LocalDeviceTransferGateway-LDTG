@@ -85,7 +85,7 @@ async fn session_headers_for(state: &TransferServiceState, address: Ipv4Addr) ->
         .create_session(IpAddr::V4(address), "Testbrowser".into())
         .await
         .unwrap();
-    (format!("dmdc_session={}", session.token), session.csrf)
+    (format!("ldtg_session={}", session.token), session.csrf)
 }
 
 async fn session_headers(state: &TransferServiceState) -> (String, String) {
@@ -438,7 +438,7 @@ async fn rejects_unknown_owned_patch_before_polling_its_authenticated_body() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     patch
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let response = router(state).oneshot(patch).await.unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
     assert_eq!(json(response).await["code"], "UPLOAD_NOT_FOUND");
@@ -492,10 +492,10 @@ async fn rejects_foreign_patch_before_polling_its_authenticated_body() {
     let mut patch = request(Method::PATCH, &format!("/api/v1/uploads/{id}"), body);
     patch.headers_mut().insert(
         header::COOKIE,
-        HeaderValue::from_str(&format!("dmdc_session={}", attacker.token)).unwrap(),
+        HeaderValue::from_str(&format!("ldtg_session={}", attacker.token)).unwrap(),
     );
     patch.headers_mut().insert(
-        "x-dmdc-csrf",
+        "x-ldtg-csrf",
         HeaderValue::from_str(&attacker.csrf).unwrap(),
     );
     let response = router(state).oneshot(patch).await.unwrap();
@@ -553,11 +553,11 @@ async fn rejects_parallel_patch_before_polling_a_second_body_for_the_same_upload
     let mut patch = request(Method::PATCH, &format!("/api/v1/uploads/{id}"), body);
     patch.headers_mut().insert(
         header::COOKIE,
-        HeaderValue::from_str(&format!("dmdc_session={}", session.token)).unwrap(),
+        HeaderValue::from_str(&format!("ldtg_session={}", session.token)).unwrap(),
     );
     patch
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&session.csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&session.csrf).unwrap());
     patch
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -618,11 +618,11 @@ async fn blocked_upload_io_does_not_delay_service_cleanup() {
     );
     patch.headers_mut().insert(
         header::COOKIE,
-        HeaderValue::from_str(&format!("dmdc_session={}", session.token)).unwrap(),
+        HeaderValue::from_str(&format!("ldtg_session={}", session.token)).unwrap(),
     );
     patch
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&session.csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&session.csrf).unwrap());
     patch
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -702,11 +702,11 @@ async fn dropped_chunk_waiter_keeps_permits_and_commits_durable_progress() {
     );
     patch.headers_mut().insert(
         header::COOKIE,
-        HeaderValue::from_str(&format!("dmdc_session={}", session.token)).unwrap(),
+        HeaderValue::from_str(&format!("ldtg_session={}", session.token)).unwrap(),
     );
     patch
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&session.csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&session.csrf).unwrap());
     patch
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -807,11 +807,11 @@ async fn failed_chunk_write_preserves_offset_budget_and_transfer_state() {
     );
     patch.headers_mut().insert(
         header::COOKIE,
-        HeaderValue::from_str(&format!("dmdc_session={}", session.token)).unwrap(),
+        HeaderValue::from_str(&format!("ldtg_session={}", session.token)).unwrap(),
     );
     patch
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&session.csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&session.csrf).unwrap());
     patch
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -1111,7 +1111,7 @@ async fn uploads_in_order_without_overwriting() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     create
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let created = json(app.clone().oneshot(create).await.unwrap()).await;
     let id = created["uploadId"].as_str().unwrap();
 
@@ -1125,7 +1125,7 @@ async fn uploads_in_order_without_overwriting() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     empty_chunk
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     empty_chunk
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -1143,7 +1143,7 @@ async fn uploads_in_order_without_overwriting() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     wrong_offset
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     wrong_offset
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("1"));
@@ -1162,7 +1162,7 @@ async fn uploads_in_order_without_overwriting() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     chunk
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     chunk
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -1181,7 +1181,7 @@ async fn uploads_in_order_without_overwriting() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     complete
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let completed = app.oneshot(complete).await.unwrap();
     assert_eq!(completed.status(), StatusCode::OK);
     let completed = json(completed).await;
@@ -1215,7 +1215,7 @@ async fn completes_zero_byte_upload() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     create
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let created = json(app.clone().oneshot(create).await.unwrap()).await;
     let id = created["uploadId"].as_str().unwrap();
 
@@ -1229,7 +1229,7 @@ async fn completes_zero_byte_upload() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     complete
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let completed = app.oneshot(complete).await.unwrap();
     assert_eq!(completed.status(), StatusCode::OK);
     let completed = json(completed).await;
@@ -1256,7 +1256,7 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     create
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let created = json(app.clone().oneshot(create).await.unwrap()).await;
     let id = created["uploadId"].as_str().unwrap().to_string();
 
@@ -1270,7 +1270,7 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     chunk
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     chunk
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -1290,7 +1290,7 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
             .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
         request
             .headers_mut()
-            .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+            .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
         request
     };
     let first = json(app.clone().oneshot(complete_request()).await.unwrap()).await;
@@ -1307,7 +1307,7 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     recreate
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let recreated = json(app.clone().oneshot(recreate).await.unwrap()).await;
     assert_eq!(recreated["uploadId"], id);
     assert_eq!(recreated["offset"], 4);
@@ -1330,7 +1330,7 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
     );
     changed_recreate
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&changed_csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&changed_csrf).unwrap());
     let changed_recreated = json(app.oneshot(changed_recreate).await.unwrap()).await;
     assert_eq!(changed_recreated["uploadId"], id);
     assert_eq!(changed_recreated["offset"], 4);
@@ -1338,7 +1338,7 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
         fs::read_dir(temp.path())
             .unwrap()
             .flatten()
-            .filter(|entry| entry.file_name() != ".dmdc")
+            .filter(|entry| entry.file_name() != ".ldtg")
             .count(),
         1
     );
@@ -1367,7 +1367,7 @@ async fn rejects_tiny_nonfinal_upload_chunks() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     create
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let created = json(app.clone().oneshot(create).await.unwrap()).await;
     let id = created["uploadId"].as_str().unwrap();
 
@@ -1381,7 +1381,7 @@ async fn rejects_tiny_nonfinal_upload_chunks() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     chunk
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     chunk
         .headers_mut()
         .insert("upload-offset", HeaderValue::from_static("0"));
@@ -1413,7 +1413,7 @@ async fn limits_incomplete_uploads_per_client_address() {
             .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
         create
             .headers_mut()
-            .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+            .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
         assert_eq!(
             app.clone().oneshot(create).await.unwrap().status(),
             StatusCode::OK
@@ -1434,7 +1434,7 @@ async fn limits_incomplete_uploads_per_client_address() {
         .insert(header::COOKIE, HeaderValue::from_str(&cookie).unwrap());
     rejected
         .headers_mut()
-        .insert("x-dmdc-csrf", HeaderValue::from_str(&csrf).unwrap());
+        .insert("x-ldtg-csrf", HeaderValue::from_str(&csrf).unwrap());
     let response = app.oneshot(rejected).await.unwrap();
     assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
     assert_eq!(json(response).await["code"], "UPLOAD_CLIENT_LIMIT");

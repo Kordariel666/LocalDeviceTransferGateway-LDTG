@@ -66,7 +66,7 @@ input:focus-visible,
   height: 54px;
   margin-bottom: 22px;
   border-radius: 10px;
-  filter: grayscale(1) sepia(1) saturate(4.5) hue-rotate(344deg) brightness(1.04);
+  object-fit: cover;
 }
 
 .eyebrow {
@@ -172,7 +172,7 @@ input:focus-visible,
 }
 
 .mobile-wordmark { min-width: 0; display: flex; align-items: center; gap: 10px; }
-.mobile-wordmark > img { width: 36px; height: 36px; flex: none; border-radius: 7px; filter: grayscale(1) sepia(1) saturate(4.5) hue-rotate(344deg) brightness(1.04); }
+.mobile-wordmark > img { width: 36px; height: 36px; flex: none; border-radius: 7px; object-fit: cover; }
 .mobile-wordmark > div { min-width: 0; display: grid; gap: 1px; }
 .mobile-wordmark strong { font-size: 1rem; letter-spacing: .02em; }
 .mobile-wordmark span { color: var(--muted); font-size: .64rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

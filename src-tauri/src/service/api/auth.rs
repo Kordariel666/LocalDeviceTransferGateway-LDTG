@@ -11,7 +11,7 @@ pub(super) fn cookie_token(headers: &HeaderMap) -> Option<&str> {
         .ok()?
         .split(';')
         .map(str::trim)
-        .find_map(|part| part.strip_prefix("dmdc_session="))
+        .find_map(|part| part.strip_prefix("ldtg_session="))
 }
 
 pub(super) async fn authorized(
@@ -36,7 +36,7 @@ pub(super) async fn authorized(
     })?;
     if csrf {
         let supplied = headers
-            .get("x-dmdc-csrf")
+            .get("x-ldtg-csrf")
             .and_then(|value| value.to_str().ok())
             .unwrap_or("");
         if supplied
@@ -145,7 +145,7 @@ pub(super) async fn auth(
     response.headers_mut().insert(
         header::SET_COOKIE,
         HeaderValue::from_str(&format!(
-            "dmdc_session={}; Path=/; HttpOnly; SameSite=Strict",
+            "ldtg_session={}; Path=/; HttpOnly; SameSite=Strict",
             session.token
         ))
         .expect("generated cookie is valid"),
@@ -178,7 +178,7 @@ pub(super) async fn logout(
     let mut response = StatusCode::NO_CONTENT.into_response();
     response.headers_mut().insert(
         header::SET_COOKIE,
-        HeaderValue::from_static("dmdc_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"),
+        HeaderValue::from_static("ldtg_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"),
     );
     Ok(response)
 }

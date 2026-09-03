@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AppSettings } from "@dmdc/shared";
+import type { AppSettings } from "@ldtg/shared";
 import {
   deleteActiveProfile,
   duplicateActiveProfile,

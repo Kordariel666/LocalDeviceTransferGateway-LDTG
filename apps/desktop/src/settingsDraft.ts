@@ -1,4 +1,4 @@
-import type { AppSettings, ShareValidation } from "@dmdc/shared";
+import type { AppSettings, ShareValidation } from "@ldtg/shared";
 import { text } from "./i18n";
 import { activeProfile, effectiveProfileSettings } from "./profileSettings";
 

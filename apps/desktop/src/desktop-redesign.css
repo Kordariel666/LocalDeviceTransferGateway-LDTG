@@ -75,7 +75,7 @@ select:focus-visible {
   width: 46px;
   height: 46px;
   border-radius: 9px;
-  filter: grayscale(1) sepia(1) saturate(4.5) hue-rotate(344deg) brightness(1.04);
+  object-fit: cover;
 }
 
 .brand div { display: grid; gap: 2px; }

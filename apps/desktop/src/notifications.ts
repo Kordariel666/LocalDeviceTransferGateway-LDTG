@@ -3,7 +3,7 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
-import type { TransferChangedEvent, TransferState } from "@dmdc/shared";
+import type { TransferChangedEvent, TransferState } from "@ldtg/shared";
 
 export type BatchNotificationOutcome = "complete" | "failed";
 export type BatchSettlement = BatchNotificationOutcome | "cancelled";
@@ -54,18 +54,18 @@ export function trackTransferNotification(
 function notificationContent(kind: DesktopNotificationKind): { title: string; body: string } {
   if (kind === "complete") {
     return {
-      title: "DMDC · Batch abgeschlossen",
+      title: "LDTG · Batch abgeschlossen",
       body: "Alle Übertragungen des aktuellen Batches wurden abgeschlossen.",
     };
   }
   if (kind === "failed") {
     return {
-      title: "DMDC · Batch fehlgeschlagen",
+      title: "LDTG · Batch fehlgeschlagen",
       body: "Mindestens eine Übertragung des aktuellen Batches ist fehlgeschlagen.",
     };
   }
   return {
-    title: "DMDC · Netzwerkverbindung verloren",
+    title: "LDTG · Netzwerkverbindung verloren",
     body: "Der lokale Transferdienst wurde beendet, weil das verwendete Netzwerk nicht mehr verfügbar ist.",
   };
 }

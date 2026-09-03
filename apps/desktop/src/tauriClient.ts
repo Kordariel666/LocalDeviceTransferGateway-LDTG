@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { CommandError } from "@dmdc/shared";
+import type { CommandError } from "@ldtg/shared";
 import { text } from "./i18n";
 
 export { invoke, listen };

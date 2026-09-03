@@ -120,7 +120,7 @@ Source-available-, proprietäre oder unbekannte Lizenzdeklaration.
 Die fünf MPL-Cargo-Pakete besitzen in den geprüften Quellpaketen keinen an die
 Quelldateien angehängten Exhibit-B-Hinweis „Incompatible With Secondary
 Licenses“. Eine GPL-Kombination bleibt trotzdem an die MPL-2.0-Regeln gebunden;
-die MPL-Dateien werden nicht stillschweigend zu DMDC-Projektcode.
+die MPL-Dateien werden nicht stillschweigend zu LDTG-Projektcode.
 
 ## Vereinbarkeit der beiden Projektlizenzpfade
 
@@ -138,7 +138,7 @@ ausdrücklich führen.
 ### `Apache-2.0`
 
 Die permissiven Abhängigkeiten sind mit einer Apache-2.0-Lizenz des eigenen
-DMDC-Codes kombinierbar. MPL-2.0-Dateien bleiben unter MPL-2.0; eine
+LDTG-Codes kombinierbar. MPL-2.0-Dateien bleiben unter MPL-2.0; eine
 Apache-lizenzierte größere Arbeit ist möglich, darf die MPL-Dateipflichten aber
 nicht überdecken. `AND`-Ausdrücke sowie Apache-`NOTICE`-Dateien müssen zusätzlich
 vollständig übernommen werden.
