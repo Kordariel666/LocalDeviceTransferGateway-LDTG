@@ -8,6 +8,17 @@ die Versionsnummern folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
+## [0.2.0-rc.2] - 2026-09-03
+
+### Fixed
+
+- Zugangscode und Aktionsschaltflächen überlagern sich in einem nicht maximierten
+  Desktopfenster nicht mehr. Die Verbindungs-Karte wechselt dafür bei mittleren
+  Fensterbreiten in ein klar getrenntes zweizeiliges Layout.
+- Der Vertragscheck baut die von Rust eingebetteten Mobile-Webassets nun auch auf
+  einem frischen Checkout vor dem Generatorlauf. Der Tauri-Entwicklungsstart
+  wählt außerdem trotz zusätzlichem Generator-Binary eindeutig die DMDC-App aus.
+
 ## [0.2.0-rc.1] - 2026-09-03
 
 ### Changed
