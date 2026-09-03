@@ -24,7 +24,7 @@ Diese Eigenschaften gelten für alle Phasen als unveränderliche Abnahmekriterie
 - 9 Desktop- und 28 Mobile-Tests bestehen.
 - TypeScript-Typprüfung, `cargo fmt --check` und Clippy mit `-D warnings` bestehen.
 - Beide Produktions-Webbuilds bestehen.
-- Der verifizierte Ausgangsstand ist im Git-Commit `d4e4751` und Tag `v0.1.3`
+- Der verifizierte Ausgangsstand ist im bereinigten Git-Commit `0102600` und Tag `v0.1.3`
   gesichert; nachfolgende Arbeit wird in thematischen Commits fortgeführt.
 - Der abgeschlossene Stand der Phasen 1 bis 4 wird als `0.2.0-rc.1` für die
   manuelle Installations- und Bedienprüfung gebaut. Der finale Tag `v0.2.0`
@@ -759,7 +759,7 @@ Status: erfüllt am 3. September 2026 für R5.1.
 ## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
 
 Status: gestartet am 3. September 2026; P0 abgeschlossen, P1 technisch
-auditiert, aber durch zwei dokumentierte Owner-Entscheidungen blockiert. Es gibt
+auditiert, aber durch eine dokumentierte Owner-Bestätigung blockiert. Es gibt
 weiterhin keine Veröffentlichungsfreigabe.
 
 Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
@@ -784,8 +784,8 @@ Der aktuelle P1-Nachweis liegt im
 [Abhängigkeits-Lizenz-Audit](../qa/public-beta/dependency-license-audit.md) und
 in der [maschinenlesbaren Blockerliste](../qa/public-beta/blockers.json). Der
 Dependency-Teil und die Namensentscheidung zu **LDTG – Local Device Transfer
-Gateway** sind abgeschlossen; offen bleiben Historienstrategie und
-Herkunftsbestätigung. Die Marken- und Kollisions-Vorprüfung steht in
+Gateway** sowie die bereinigte Historienstrategie sind abgeschlossen; offen
+bleibt die Herkunftsbestätigung. Die Marken- und Kollisions-Vorprüfung steht in
 [`docs/BRANDING.md`](BRANDING.md).
 
 ## 11. Phase 6 – Strategische Transferfunktionen

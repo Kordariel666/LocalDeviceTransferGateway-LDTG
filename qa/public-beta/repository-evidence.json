@@ -1,60 +1,54 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "af632670b29346f1700f97e1bc00048712a00475",
+  "sourceRevision": "a523770d8c20ae0695763acbb25c0e32fd552926",
+  "refScope": "explicit-publication-refs",
   "refs": [
-    "refs/codex/turn-diffs/captures/1788437114516/e260aa71-f003-4833-81f6-c32ce4cdbae7/base\t0f5f8abca765126598d8cf1ceb99c64e3b05e249",
-    "refs/heads/codex/public-beta-p1\taf632670b29346f1700f97e1bc00048712a00475",
-    "refs/heads/main\taf632670b29346f1700f97e1bc00048712a00475",
-    "refs/remotes/origin/HEAD\taf632670b29346f1700f97e1bc00048712a00475",
-    "refs/remotes/origin/main\taf632670b29346f1700f97e1bc00048712a00475",
-    "refs/remotes/origin/pr/1\tda2043392aafa47a85887af48dd55d6d29664480",
-    "refs/remotes/origin/pr/2\t7052611ad1a42eddd3ea665de2628198dfbb1730",
-    "refs/remotes/origin/pr/3\tb1659320169dd45f9df94ff691c95f0e738aa679",
-    "refs/remotes/origin/pr/4\t0211965b70c7f1830e9ca6c8b5ab97122ec6268d",
-    "refs/remotes/origin/pr/5\t32b2f4e53a7c35e72bdb21dbdc4de7244332a65d",
-    "refs/remotes/origin/pr/6\t2192def6be173cb11ce0e7795ab5732309fa50fa",
-    "refs/remotes/origin/pr/7\t9bb6cbd4c451e3fa97974cc270083828bc1078c9",
-    "refs/remotes/origin/pr/8\t049341520cd564bb26e45c2f8842457539d6d30c",
-    "refs/remotes/origin/pr/9\t1754ed3279284bd204043cd1e656c2d22b32e73a",
-    "refs/tags/v0.1.3\t2d28f17b38f9b842ed7d8017e4f41e41fbe0e13f",
-    "refs/tags/v0.2.0-rc.1\t134a1621830e171b85a80aa68da25c16d9308320",
-    "refs/tags/v0.2.0-rc.2\t4e686dbc375e680cfe5a24c05e04923023b4a480"
+    "refs/heads/main\ta523770d8c20ae0695763acbb25c0e32fd552926",
+    "refs/tags/v0.1.3\t60f58d76029d4ea9b75c680d381db3f31fa4c91c",
+    "refs/tags/v0.2.0-rc.1\t0d4a5cd63fbe6f81835dae937f1bd886c4098847",
+    "refs/tags/v0.2.0-rc.2\t7d27a173aefea7a6fab3129d08070007a1b40e81"
   ],
-  "commitCount": 39,
-  "trackedFiles": 178,
-  "trackedBytes": 4255534,
-  "reachableObjects": 848,
-  "uniqueBlobs": 503,
-  "largestBlobBytes": 528331,
+  "commitCount": 34,
+  "trackedFiles": 192,
+  "trackedBytes": 10595210,
+  "reachableObjects": 988,
+  "uniqueBlobs": 629,
+  "largestBlobBytes": 1117268,
   "blobsAtLeastFiveMiB": 0,
   "identities": [
     {
       "role": "author",
-      "name": "dependabot[bot]",
-      "emailSha256": "bd5a8d6c673b738d52b0ac42a110045f3f964b3ebfc1d60ea805af743b1dc0e6",
+      "name": "Kordariel666",
+      "emailSha256": "58c392e9ace4cd728694394096059d84054975ddd87261e93bfea0d42e2a6e4b",
       "domain": "users.noreply.github.com",
-      "commits": 9
-    },
-    {
-      "role": "author",
-      "name": "Kordariel666",
-      "emailSha256": "7ecf4d21aa481f873b7eae0482dd8b7e3f03fa177336be7fee6853edb7e07b36",
-      "domain": "gmail.com",
-      "commits": 30
-    },
-    {
-      "role": "committer",
-      "name": "GitHub",
-      "emailSha256": "3c205d8fc749f72977b9331e3179773c315bb1f4860c366de2abe9ec9337730b",
-      "domain": "github.com",
-      "commits": 9
+      "commits": 34
     },
     {
       "role": "committer",
       "name": "Kordariel666",
-      "emailSha256": "7ecf4d21aa481f873b7eae0482dd8b7e3f03fa177336be7fee6853edb7e07b36",
-      "domain": "gmail.com",
-      "commits": 30
+      "emailSha256": "58c392e9ace4cd728694394096059d84054975ddd87261e93bfea0d42e2a6e4b",
+      "domain": "users.noreply.github.com",
+      "commits": 34
+    }
+  ],
+  "taggers": [
+    {
+      "ref": "refs/tags/v0.1.3",
+      "name": "Kordariel666",
+      "emailSha256": "58c392e9ace4cd728694394096059d84054975ddd87261e93bfea0d42e2a6e4b",
+      "domain": "users.noreply.github.com"
+    },
+    {
+      "ref": "refs/tags/v0.2.0-rc.1",
+      "name": "Kordariel666",
+      "emailSha256": "58c392e9ace4cd728694394096059d84054975ddd87261e93bfea0d42e2a6e4b",
+      "domain": "users.noreply.github.com"
+    },
+    {
+      "ref": "refs/tags/v0.2.0-rc.2",
+      "name": "Kordariel666",
+      "emailSha256": "58c392e9ace4cd728694394096059d84054975ddd87261e93bfea0d42e2a6e4b",
+      "domain": "users.noreply.github.com"
     }
   ],
   "historyPatternCounts": {
@@ -66,10 +60,34 @@
     "jwt": 0,
     "credentialUrl": 0,
     "genericSecretAssignment": 0,
-    "personalPath": 5,
-    "emailLike": 100
+    "personalPath": 0,
+    "emailLike": 704
   },
   "images": [
+    {
+      "path": "assets/ldtg-app-icon.png",
+      "bytes": 837866,
+      "sha256": "c5e11ed2223d01cca82bc4cb1f0329cec0c4c0e45ef7a0e7df9968e8bcd5fd08",
+      "width": 1254,
+      "height": 1254,
+      "metadataMarkers": []
+    },
+    {
+      "path": "assets/ldtg-logo-lockup.png",
+      "bytes": 556824,
+      "sha256": "675838122fcf6b1a9e9ed958035ead1ab22a19e8e297f88189b21f88b0a684e1",
+      "width": 1536,
+      "height": 1024,
+      "metadataMarkers": []
+    },
+    {
+      "path": "assets/ldtg-ui-icon.png",
+      "bytes": 11835,
+      "sha256": "e85a9ea1ed474967595253480f820cb3200c5485e49a0cea7ad05f4fc270423a",
+      "width": 128,
+      "height": 128,
+      "metadataMarkers": []
+    },
     {
       "path": "qa/desktop-network-running-1182x852.png",
       "bytes": 397594,
@@ -127,6 +145,30 @@
       "metadataMarkers": []
     },
     {
+      "path": "qa/ldtg-branding-comparison.png",
+      "bytes": 269139,
+      "sha256": "309582efe6f1c71c25a653ace2dbfee232ef296aa589153397ee6e221f089d48",
+      "width": 1360,
+      "height": 900,
+      "metadataMarkers": []
+    },
+    {
+      "path": "qa/ldtg-branding-desktop.png",
+      "bytes": 101806,
+      "sha256": "3e5773dd384138a6f63e2622a93840c28d287fca121d047691ed7b2dfd0134e1",
+      "width": null,
+      "height": null,
+      "metadataMarkers": []
+    },
+    {
+      "path": "qa/ldtg-branding-focused.png",
+      "bytes": 178161,
+      "sha256": "90d41bd69ded132757c92272d73f1e9c780018984f5a5ba7aca02b3a5b3ee592",
+      "width": 1200,
+      "height": 430,
+      "metadataMarkers": []
+    },
+    {
       "path": "qa/mobile-login-390x844.png",
       "bytes": 109754,
       "sha256": "6abd0273c3f7a28e28162cce124c0337767b7fe7eb1f392b2638c92d12e3a0e6",
@@ -152,384 +194,384 @@
     },
     {
       "path": "src-tauri/icons/128x128.png",
-      "bytes": 3583,
-      "sha256": "d2e1c81f8bd2b94fd006d960f33ba147bbd480c4d8953495a095f60e92e403f1",
+      "bytes": 11835,
+      "sha256": "e85a9ea1ed474967595253480f820cb3200c5485e49a0cea7ad05f4fc270423a",
       "width": 128,
       "height": 128,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/128x128@2x.png",
-      "bytes": 7109,
-      "sha256": "5a489493627ebee9b4a2474c10f7d3a3e893c42ebd1fdf7040e7ed09dd067550",
+      "bytes": 47601,
+      "sha256": "9157838df9327fd6d6ef5e8c08947918364268b3cb2ebf48b21e2aea88fb279e",
       "width": 256,
       "height": 256,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/32x32.png",
-      "bytes": 965,
-      "sha256": "5eed58bc4f9c7ff6a2a7f8f9611da15fee58d3df368d637512a44acb01c68273",
+      "bytes": 1446,
+      "sha256": "a0b93d035af7120ffa5576c6e0940e1da1dc563c2f1a529bf13cfc590fd20cea",
       "width": 32,
       "height": 32,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/64x64.png",
-      "bytes": 1852,
-      "sha256": "78a75e6c71018278371bf2e2ac8f2be026299952338239ca528b296176719986",
+      "bytes": 3753,
+      "sha256": "f215ea17db6b1d62ad7c6255b046893138475b9ef01dfe72b07fcade1420227b",
       "width": 64,
       "height": 64,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square107x107Logo.png",
-      "bytes": 3043,
-      "sha256": "69adaa7b667ed26fbbc11dd014d62ced5446882110ab77d76a44b979d41d87cc",
+      "bytes": 8365,
+      "sha256": "8e8e4d8fd130a16318bf538607faf12da682abc5d6b5a5d42c172e468bf4421b",
       "width": 107,
       "height": 107,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square142x142Logo.png",
-      "bytes": 3999,
-      "sha256": "bbb6ca141ae4dda3bad53b2dc8335a3cfcb09a51a8f3828b24497164295367cf",
+      "bytes": 14417,
+      "sha256": "e12fd1c435896def2965fbfe2c49dc35325f789f9914977a3566142b9e14e77b",
       "width": 142,
       "height": 142,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square150x150Logo.png",
-      "bytes": 4075,
-      "sha256": "eb0885a88e97162279fb4770128a1a4e0b45408ecbc306776fbbed14a9f9f20d",
+      "bytes": 16164,
+      "sha256": "b0b3acc99362db68217170303bb645706b2f9fc6df35d36e3fc3ac47b0b174fe",
       "width": 150,
       "height": 150,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square284x284Logo.png",
-      "bytes": 7961,
-      "sha256": "d603fbc8f5d674e234a77be3163a95ef4af8a8bc19b76c798d21770dac179fbf",
+      "bytes": 58813,
+      "sha256": "18f21b4bc7137446f318502d7f9cc002d3d9b5e8cb3bb0ba90026fd8376e9a94",
       "width": 284,
       "height": 284,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square30x30Logo.png",
-      "bytes": 1002,
-      "sha256": "0028001cf2e4b33ecf44fdbd5f5ff1f41b38d21529c736187ca6963b8c93b38f",
+      "bytes": 1382,
+      "sha256": "526eb7ef1555f000657e38df250f3159a3e44ff9f715512b3e79ece2d012697c",
       "width": 30,
       "height": 30,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square310x310Logo.png",
-      "bytes": 8446,
-      "sha256": "c3150b343676d2a008fb2699906353e0b9a9be887bd0b2a1178bcaafad9024d7",
+      "bytes": 70621,
+      "sha256": "5cac34a58a652feb5a125eb5dd2a697ddf9c7a3548b0e1617806617a5580294e",
       "width": 310,
       "height": 310,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square44x44Logo.png",
-      "bytes": 1284,
-      "sha256": "77ddc240fed5d007085a36f43d56dc15796817a8da8d16040076df6084fd1e24",
+      "bytes": 2189,
+      "sha256": "106e338ce08f6b1df7e1d32baebcdab50f789a7435d00cd01f18fad676282aab",
       "width": 44,
       "height": 44,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square71x71Logo.png",
-      "bytes": 2123,
-      "sha256": "ee3b813aef6d62bd10f546e841e3517226fdf130d78f28baca96822c371de5e0",
+      "bytes": 4345,
+      "sha256": "71d72b65204684b686b271068876f3741fa4aea92d446ff74f4db2ada1718e61",
       "width": 71,
       "height": 71,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/Square89x89Logo.png",
-      "bytes": 2500,
-      "sha256": "17dac884c2aef75d4f171655054c6710985f03253818ad9fb711f50344383c7f",
+      "bytes": 6137,
+      "sha256": "1d7e9e68bda37803e9ecb61731de484bdec9ead778bb25c1e4f46365d0f2a02b",
       "width": 89,
       "height": 89,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/StoreLogo.png",
-      "bytes": 1520,
-      "sha256": "0258569a5078c680370b46da7f52dd3c21d0827915649ce429d37a06a207c97b",
+      "bytes": 2638,
+      "sha256": "ff61cae2ef729f0e958eb515c17ccf9a0ec92ed7a8b35d943c9211756b553e1e",
       "width": 50,
       "height": 50,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-hdpi/ic_launcher.png",
-      "bytes": 2722,
-      "sha256": "4a644738be751a88ed416c8c6764011ddf584b3294786b68d6c043f0bb76f896",
+      "bytes": 2197,
+      "sha256": "0c18461f04837980d4317825fcb6b85735bda844ee0d9013db183e3f7a0e5ae4",
       "width": 49,
       "height": 49,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-hdpi/ic_launcher_foreground.png",
-      "bytes": 4500,
-      "sha256": "9f27fff14f5af4161287aae568f1d11995af098453427a9259cd3a4c329c8cc1",
+      "bytes": 18814,
+      "sha256": "b8143fadf7e914981d08030d6da595a4792e8841ae7c8b122e8fb1715cfcbdd5",
       "width": 162,
       "height": 162,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-hdpi/ic_launcher_round.png",
-      "bytes": 2406,
-      "sha256": "4e96f3cdf284866027caa49c9f2377bf6b96b582e0ab118962127c1a236bc51e",
+      "bytes": 2401,
+      "sha256": "2dde817ba344aa2cf48ec8e782e814af1d3b78dc62a414b7284083ae94d20ed6",
       "width": 49,
       "height": 49,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-mdpi/ic_launcher.png",
-      "bytes": 2564,
-      "sha256": "c45ac16f16898de403a80292485f0437fac6ae025fcca6651e41fbb3f2c59470",
+      "bytes": 2189,
+      "sha256": "e6a8ae0f20c08cbde9da15487f3ae9f264a9218b8e54c9a8d676732c892c7a9d",
       "width": 48,
       "height": 48,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-mdpi/ic_launcher_foreground.png",
-      "bytes": 3105,
-      "sha256": "804cf9ec8c3536d7b862e8a3321d456852bf3fec6b0865f06cf9c2191d46519d",
+      "bytes": 8693,
+      "sha256": "55f44c55a58d696eb1881b10844532a5f2b8b128fe90fb4436536d562d21d46f",
       "width": 108,
       "height": 108,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-mdpi/ic_launcher_round.png",
-      "bytes": 2252,
-      "sha256": "9e4828218e5105fa06f44b78d9331016b9d30d46e4459877f54a4b2ef1265458",
+      "bytes": 2236,
+      "sha256": "32b361e1570e12671d470f50fe142bc2804ea8a3c938a01e3b00afa3f3586e86",
       "width": 48,
       "height": 48,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xhdpi/ic_launcher.png",
-      "bytes": 5312,
-      "sha256": "9348074385ca78789c37292e83a6195c62a7389f1574cdcf4bb1f6e548525b68",
+      "bytes": 5901,
+      "sha256": "1cc4eefb839461cc17f0d58b74a60ac7f9219d2b3be5893a254bad5a987240e9",
       "width": 96,
       "height": 96,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xhdpi/ic_launcher_foreground.png",
-      "bytes": 5954,
-      "sha256": "bc99c692d2107c673085d1d5a627b8a88441d5a72c0481c36ac664ebe8d37fd1",
+      "bytes": 33585,
+      "sha256": "7d68584eb418e26ade5e9af3dea55de75d26d7fdf9575de97bb73dc5ec9efc31",
       "width": 216,
       "height": 216,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xhdpi/ic_launcher_round.png",
-      "bytes": 4499,
-      "sha256": "850e705e0cc9349e279e3200962232ee62f6f7d27214140bc1086403f74d8f10",
+      "bytes": 5789,
+      "sha256": "8aadc7bcd088d8c1ecb4dfa35a2abf864e44d1b093a322a892fe9cc009a9eed0",
       "width": 96,
       "height": 96,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xxhdpi/ic_launcher.png",
-      "bytes": 8042,
-      "sha256": "75dc83a227e8ca10df905706182e405e501f9497a414b8313b643d5d18719b08",
+      "bytes": 11894,
+      "sha256": "7810bf25ace7f15c53e2124b5d8058357a81fb1bee4cc6ea2f660cd6f9cec774",
       "width": 144,
       "height": 144,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_foreground.png",
-      "bytes": 9088,
-      "sha256": "d2a92de5ec2f5a7355d393bbae38fc20113a61d9c2c0845f4d91531795d4af7b",
+      "bytes": 77007,
+      "sha256": "f081439c145a7b421321be9d498afd016fdb5d6eadcb64af91f7a792aa364220",
       "width": 324,
       "height": 324,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_round.png",
-      "bytes": 6889,
-      "sha256": "e46015b3207330a0ffd3a90a197255845117c24b0e498f1d62d0c51df580540f",
+      "bytes": 11903,
+      "sha256": "b7f81f17dcfb8d3cc3c1ba458414c0cafc494ab27279522eaebe9c5b671bb41c",
       "width": 144,
       "height": 144,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher.png",
-      "bytes": 10455,
-      "sha256": "496f06ba24d5239f3ad952a3e5c01b05f9058e19c6904530a8a3df0c91b82092",
+      "bytes": 20511,
+      "sha256": "40ff1c5e95cbac3f38b54a5a4505a9a338ba58b8e87039b2ecc5ef92b89fb60f",
       "width": 192,
       "height": 192,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png",
-      "bytes": 12527,
-      "sha256": "91dac36ebe302dfa8b85909a45c235beaeffa933142b00bc6a80737716079b8e",
+      "bytes": 137108,
+      "sha256": "56f9235ea4c311b9943f8946fedcd8f05928b5f3b2b92ec54b6370722bbd65c8",
       "width": 432,
       "height": 432,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_round.png",
-      "bytes": 9115,
-      "sha256": "505830be427c0de42c2ca21f7fe41f55ee7111a4709f16080f884f46cdab8f4d",
+      "bytes": 20842,
+      "sha256": "a869b72433d167a0e2ae45f6553e379e6b20f65e107bcec4910a836fefd27dba",
       "width": 192,
       "height": 192,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/icon.png",
-      "bytes": 15276,
-      "sha256": "3f98f47ae7edda961067a227f7020f742d84ee857d26c9fe51e190049897cffa",
+      "bytes": 190661,
+      "sha256": "bee3be8e20d03423cedd6fcd9a04e0805d7c8d3e5992add39f81412b0c64fdab",
       "width": 512,
       "height": 512,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-20x20@1x.png",
-      "bytes": 742,
-      "sha256": "3a76560448002a004c38b8b1fb1d92e85b96d6f8f1de5145613716405c95e30a",
+      "bytes": 797,
+      "sha256": "46cb8fe606309033cc07ecb64220b6aa9af1c8ad38a8b3da3b35c52f5756d5f1",
       "width": 20,
       "height": 20,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-20x20@2x-1.png",
-      "bytes": 1247,
-      "sha256": "e9272a08714725ec796d119ee4d2666c8192de196e7e2fd5227e76a634acb644",
+      "bytes": 1925,
+      "sha256": "b4e765594ec3988f7696ef3beac8b52da4cacc0eef8308387b32380bec15f956",
       "width": 40,
       "height": 40,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-20x20@2x.png",
-      "bytes": 1247,
-      "sha256": "e9272a08714725ec796d119ee4d2666c8192de196e7e2fd5227e76a634acb644",
+      "bytes": 1925,
+      "sha256": "b4e765594ec3988f7696ef3beac8b52da4cacc0eef8308387b32380bec15f956",
       "width": 40,
       "height": 40,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-20x20@3x.png",
-      "bytes": 1827,
-      "sha256": "c00187a7be1222870a7f76b7460d00b4b3df42e215b6bf5a12717ac44a1e2aa0",
+      "bytes": 3338,
+      "sha256": "5b4b395b253c41f143ae2e5a5786dafee0f050f50f02f1c73d086cffe2d14767",
       "width": 60,
       "height": 60,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-29x29@1x.png",
-      "bytes": 920,
-      "sha256": "1fa174ebf6f946fcbd7a77c49a18f6f5e3cf27ab32b7e05baa8b630438176ef8",
+      "bytes": 1291,
+      "sha256": "f616e6a37b6a7ab381f3821fa4e1828a4f24d1b110ef7e619741e5c059b4d889",
       "width": 29,
       "height": 29,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-29x29@2x-1.png",
-      "bytes": 1738,
-      "sha256": "8a3fa1ec90df8d2f002a48e6d2e9cae23fd16f211aab4b7aab94d5459d4e2d9b",
+      "bytes": 3163,
+      "sha256": "f18f1b382c4038e7e9d3bde72d9d54c1938c170e152ed2906974d6b98433bf7b",
       "width": 58,
       "height": 58,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-29x29@2x.png",
-      "bytes": 1738,
-      "sha256": "8a3fa1ec90df8d2f002a48e6d2e9cae23fd16f211aab4b7aab94d5459d4e2d9b",
+      "bytes": 3163,
+      "sha256": "f18f1b382c4038e7e9d3bde72d9d54c1938c170e152ed2906974d6b98433bf7b",
       "width": 58,
       "height": 58,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-29x29@3x.png",
-      "bytes": 2480,
-      "sha256": "feca6c1ca1afcd1e928cd7085815cf282389769a7b7784d9956c95b8d3144a3d",
+      "bytes": 5955,
+      "sha256": "aab34fc51986304f43f1f1d31cee4759f10ebedf62a90d8d5e5c478c8ee2248c",
       "width": 87,
       "height": 87,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-40x40@1x.png",
-      "bytes": 1247,
-      "sha256": "e9272a08714725ec796d119ee4d2666c8192de196e7e2fd5227e76a634acb644",
+      "bytes": 1925,
+      "sha256": "b4e765594ec3988f7696ef3beac8b52da4cacc0eef8308387b32380bec15f956",
       "width": 40,
       "height": 40,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-40x40@2x-1.png",
-      "bytes": 2337,
-      "sha256": "3621532de22ab94cef9293ece01d7a2b7a45ca6c18c6e833b6ab775767289896",
+      "bytes": 5219,
+      "sha256": "5ac297dcb31e4db10c72bdc1d0fccf79d88f4dd977f526c7d81f5d9a2d87dfd2",
       "width": 80,
       "height": 80,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-40x40@2x.png",
-      "bytes": 2337,
-      "sha256": "3621532de22ab94cef9293ece01d7a2b7a45ca6c18c6e833b6ab775767289896",
+      "bytes": 5219,
+      "sha256": "5ac297dcb31e4db10c72bdc1d0fccf79d88f4dd977f526c7d81f5d9a2d87dfd2",
       "width": 80,
       "height": 80,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-40x40@3x.png",
-      "bytes": 3326,
-      "sha256": "fb80dc6377d90e605c14488b4c2976a431c41bde3562f17f892abe8c1b78ad96",
+      "bytes": 10544,
+      "sha256": "fa1493131d0613c1c439930af0b8621f403b4526bc551a987bda6e93c7eecdd2",
       "width": 120,
       "height": 120,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-512@2x.png",
-      "bytes": 36866,
-      "sha256": "2b604085c01b6550f4ac0605ca46785c30bb1d9d3b72cbbfef2eaa236e743597",
+      "bytes": 619952,
+      "sha256": "53dd9abfc5796bf956d1af92c0708ccfec2bcd75cc085c9f42f3b1b67be6621a",
       "width": 1024,
       "height": 1024,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-60x60@2x.png",
-      "bytes": 3326,
-      "sha256": "fb80dc6377d90e605c14488b4c2976a431c41bde3562f17f892abe8c1b78ad96",
+      "bytes": 10544,
+      "sha256": "fa1493131d0613c1c439930af0b8621f403b4526bc551a987bda6e93c7eecdd2",
       "width": 120,
       "height": 120,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-60x60@3x.png",
-      "bytes": 5034,
-      "sha256": "d1de27f2585a72a3f30aa8fbaf4bc6d73df6c27ca01e40ce565ac88100071dd9",
+      "bytes": 23090,
+      "sha256": "5438138e64592b4fa5770cd8fa13cfef103782837d6b6bcf3efed2452d6f1bb4",
       "width": 180,
       "height": 180,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-76x76@1x.png",
-      "bytes": 2285,
-      "sha256": "48aff9404fe08b79bb0321e8d495f1914c23f0f75a38de4bdc7bc877a5178913",
+      "bytes": 4769,
+      "sha256": "941f90f190bc7e40128639ffeb7181ad78c210c8dc9b6708cca6d237c3ed7fbb",
       "width": 76,
       "height": 76,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-76x76@2x.png",
-      "bytes": 4225,
-      "sha256": "77297faaa6a19fed23f20433e625de450ebf44e9edde64d09743255371e01bdf",
+      "bytes": 16514,
+      "sha256": "7f0211efd28b9fd6feec518073b452cdede8220242b10a910350e320461e9bb9",
       "width": 152,
       "height": 152,
       "metadataMarkers": []
     },
     {
       "path": "src-tauri/icons/ios/AppIcon-83.5x83.5@2x.png",
-      "bytes": 4515,
-      "sha256": "bc1f447595b89f836bce2e23c67c86485ec9493eafda8610e0478ee9f5931393",
+      "bytes": 19764,
+      "sha256": "f0d69893722769b0db37184284106ecc902b784a3cb298719dd97ff2538f14db",
       "width": 167,
       "height": 167,
       "metadataMarkers": []

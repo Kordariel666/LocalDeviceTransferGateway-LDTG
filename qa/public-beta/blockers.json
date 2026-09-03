@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "auditedSourceRevision": "af632670b29346f1700f97e1bc00048712a00475",
+  "auditedSourceRevision": "a523770d8c20ae0695763acbb25c0e32fd552926",
   "status": "blocked",
   "scope": "P1 repository, provenance and dependency-license audit only",
   "constraints": {
@@ -13,37 +13,13 @@
   },
   "blockers": [
     {
-      "id": "PB-01",
-      "title": "Public-history strategy for personal metadata is undecided",
-      "owner": "repository owner",
-      "severity": "high",
-      "blocksP1": true,
-      "evidence": [
-        "qa/public-beta/repository-evidence.json#identities",
-        "qa/public-beta/repository-evidence.json#historyPatternCounts",
-        "qa/public-beta/repository-audit.md#git-historie-und-datenschutz"
-      ],
-      "facts": [
-        "Historic commits and annotated tags expose a personal email address.",
-        "Historic patches contain personal absolute user/tool paths.",
-        "The current working tree redacts the remaining personal profile reference.",
-        "Future commits in this repository use the configured GitHub noreply address."
-      ],
-      "ownerDecisionRequired": [
-        "accept the historic disclosure",
-        "rewrite every intended public branch and tag after a separate private backup and explicit approval",
-        "publish a new/squashed sanitized history while retaining the old history privately"
-      ],
-      "completionEvidence": "Documented owner decision plus a fresh all-ref scan of exactly the refs intended for publication"
-    },
-    {
       "id": "PB-02",
       "title": "Pre-import provenance and asset rights are not attested",
       "owner": "repository owner",
       "severity": "high",
       "blocksP1": true,
       "evidence": [
-        "git root commit d4e4751d673cc0202b048089d87d506c0dcfe981",
+        "git root commit 0102600da4d7738984c52218e9c17a4637b8275c",
         "qa/public-beta/provenance-attestation.md",
         "qa/public-beta/repository-audit.md#assets-texte-und-erzeugte-dateien"
       ],
@@ -61,6 +37,21 @@
     }
   ],
   "resolved": [
+    {
+      "id": "PB-01",
+      "resolution": "rewrote every intended public branch and release tag after a separate verified private backup",
+      "decidedBy": "repository owner",
+      "decidedOn": "2026-09-03",
+      "evidence": [
+        "qa/public-beta/repository-evidence.json#refs",
+        "qa/public-beta/repository-evidence.json#identities",
+        "qa/public-beta/repository-evidence.json#taggers",
+        "qa/public-beta/repository-evidence.json#historyPatternCounts",
+        "qa/public-beta/repository-audit.md#git-historie-und-datenschutz",
+        "verified external private bundle sha256 a10b3ed6b1da32eeb0c46cd02321cfe14348035c54b6fdd648ad4d57b1eef7d3"
+      ],
+      "residualRisk": "Old provider-side pull-request or cache refs are not publication refs; they must not be carried into a public repository and require a separate provider-side reachability check before visibility changes."
+    },
     {
       "id": "PB-03",
       "resolution": "renamed to LDTG – Local Device Transfer Gateway before public preparation",

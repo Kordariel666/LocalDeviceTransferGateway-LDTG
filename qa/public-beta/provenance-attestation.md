@@ -5,7 +5,7 @@ Stand: 3. September 2026
 Status: **nicht bestätigt**
 
 Diese Erklärung schließt die Herkunftslücke, die Git wegen des nahezu
-vollständigen Imports im Wurzelcommit `d4e4751d673cc0202b048089d87d506c0dcfe981`
+vollständigen Imports im bereinigten Wurzelcommit `0102600da4d7738984c52218e9c17a4637b8275c`
 nicht selbst belegen kann. Das Markieren einer Aussage ist eine bewusste
 Bestätigung des Repositoryinhabers; der Audit hat die Aussagen nicht als
 Tatsachen vorausgesetzt.

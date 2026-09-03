@@ -95,7 +95,7 @@ Abhängigkeitsprüfung und Beiträge und würde die SignPath-Eignung gefährden.
 | Paket | Status | Ziel | Abhängigkeit | Größe | Ergebnis/Gate |
 |---|---|---|---|---|---|
 | P0 | abgeschlossen | Umfang einfrieren und Entscheidungsregeln festhalten | Phase 5.1 | S | Plan ist verbindlich und verlinkt |
-| P1 | blockiert | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | technische Prüfung abgeschlossen; zwei Owner-Entscheidungen offen |
+| P1 | blockiert | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | technische Prüfung abgeschlossen; eine Owner-Bestätigung offen |
 | P2 | offen | Sicherheits-, Datenschutz- und Supportversprechen schärfen | P1 | M | öffentliche Aussagen entsprechen dem Code |
 | P3 | offen | Releasepipeline und Herkunftsnachweise härten | P1 | M–L | lokaler/privater Release-Dry-Run reproduzierbar |
 | P4 | offen | Reale Installations- und Geräteabnahme durchführen | P2–P3 | L | Abnahmematrix und priorisierte Befunde vollständig |
@@ -130,13 +130,15 @@ Status: abgeschlossen am 3. September 2026.
 
 ## 7. P1 – Repository- und Lizenz-Audit
 
-Status: technische Prüfung am 3. September 2026 abgeschlossen; Gate durch
-`PB-01` und `PB-02` blockiert. Die Namensentscheidung `PB-03` ist mit der
+Status: technische Prüfung am 3. September 2026 abgeschlossen; Gate nur noch
+durch `PB-02` blockiert. Die Historienentscheidung `PB-01` wurde nach
+verifiziertem privatem Vollbackup mit einem Rewrite von `main`, dem
+Vorbereitungsbranch und den drei Release-Tags umgesetzt. Die Namensentscheidung
+`PB-03` ist mit der
 Umbenennung in **LDTG – Local Device Transfer Gateway** und der dokumentierten
-[Kollisions-Vorprüfung](BRANDING.md) abgeschlossen. Offen sind die
-Zielstrategie für persönliche Metadaten in der Git-Historie und die
+[Kollisions-Vorprüfung](BRANDING.md) abgeschlossen. Offen ist die
 Herkunftsbestätigung vor dem Wurzelcommit. Es erfolgten keine Veröffentlichung,
-Lizenzaktivierung, Historienumschreibung oder Anmeldung.
+Lizenzaktivierung oder Anmeldung.
 
 ### 7.1 Herkunft und Rechte
 
@@ -196,11 +198,11 @@ Lizenzaktivierung, Historienumschreibung oder Anmeldung.
 Gatebewertung vom 3. September 2026: **nicht erfüllt**. Der
 Abhängigkeitsanteil ist mit 857 inventarisierten Paketversionen, null unbekannten
 Lizenzdeklarationen und ableitbaren Notices abgeschlossen. Der bereinigte
-Arbeitsbaum besitzt keinen offenen Secret-Befund. Die bestehende Historie ist
-aber ohne Owner-Entscheidung nicht als öffentlicher Zielstand freigegeben;
-außerdem fehlt die Herkunftsbestätigung. Die Namensrisiko-Entscheidung ist
-abgeschlossen. Nach Abschluss von `PB-01` und `PB-02` muss der Audit für genau
-die zur Veröffentlichung vorgesehenen Refs erneut laufen.
+Arbeitsbaum besitzt keinen offenen Secret-Befund. `main` und die drei
+Release-Tags wurden nach privatem Vollbackup neu geschrieben und anschließend
+als exakte Veröffentlichungs-Refs mit null persönlichen Pfad- oder
+Identitätstreffern geprüft. Die Historien- und Namensrisiko-Entscheidungen sind
+abgeschlossen; es fehlt nur die Herkunftsbestätigung `PB-02`.
 
 ## 8. P2 – Sicherheits-, Datenschutz- und Supportgrenzen
 

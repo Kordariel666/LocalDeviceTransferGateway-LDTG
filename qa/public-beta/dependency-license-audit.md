@@ -2,7 +2,7 @@
 
 Stand: 3. September 2026
 
-Auditierter Quellstand: `af632670b29346f1700f97e1bc00048712a00475`
+Auditierter Quellstand: `a523770d8c20ae0695763acbb25c0e32fd552926`
 
 Ergebnis: **Abhängigkeitsanteil des P1-Gates erfüllt; kein Projektlizenzentscheid**
 
@@ -31,8 +31,8 @@ pnpm audit:public-beta:online
 |---|---|
 | [`dependency-licenses.json`](dependency-licenses.json) | vollständige versionsgenaue Lizenz-, Herkunfts-, Scope-, Hash- und Notice-Inventur |
 | [`sbom.cdx.json`](sbom.cdx.json) | CycloneDX 1.6 SBOM-Entwurf mit PURLs, Hashes und Abhängigkeitskanten |
-| `pnpm-lock.yaml` | SHA-256 `7019f5e2240e5e72806d2dbd69ef01170b08659ac2e6075f68fc82788d2b72d5` |
-| `src-tauri/Cargo.lock` | SHA-256 `3d068ef7833c58e6cf8b1290a17eaf6c8b3edec47077e18284b9329bb8aa658d` |
+| `pnpm-lock.yaml` | SHA-256 `95af3687f770be22de3aff4693c25c7f8de5f7882a500726a298b77186fcdaa3` |
+| `src-tauri/Cargo.lock` | SHA-256 `a5eb92fc2dff06c8ca035f290345e731825fe38072a8ed4831cf32bc345856e4` |
 
 Der Audit bricht ab, wenn ein Lockfile nicht geparst werden kann, Cargo die
 gesperrte Auflösung nicht bestätigt, npm-Metadaten fehlen oder ein Paket keine
@@ -191,5 +191,5 @@ Bündel werden erst nach Projektlizenz- und Releaseentscheidung festgeschrieben.
   Paketquellen ableitbar; finales Bündel noch nicht aktiviert**.
 - SignPath: **kein Dependency-Blocker erkannt, Gesamteignung noch offen**.
 
-Damit ist der Abhängigkeitsanteil von P1 geschlossen. P1 insgesamt bleibt wegen
-der drei Repository-/Owner-Blocker aus [`blockers.json`](blockers.json) offen.
+Damit ist der Abhängigkeitsanteil von P1 geschlossen. P1 insgesamt bleibt nur
+wegen der Herkunftsbestätigung `PB-02` aus [`blockers.json`](blockers.json) offen.

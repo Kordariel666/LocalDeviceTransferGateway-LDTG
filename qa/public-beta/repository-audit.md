@@ -2,9 +2,9 @@
 
 Stand: 3. September 2026
 
-Auditierter Quellstand: `af632670b29346f1700f97e1bc00048712a00475`
+Auditierter Quellstand: `a523770d8c20ae0695763acbb25c0e32fd552926`
 
-Ergebnis: **BLOCKIERT – technische Prüfung abgeschlossen, zwei Owner-Entscheidungen offen**
+Ergebnis: **BLOCKIERT – technische Prüfung abgeschlossen, eine Owner-Bestätigung offen**
 
 Dieses Dokument prüft ausschließlich P1 des
 [Plans bis zur Veröffentlichungsentscheidung](../../docs/PUBLIC_BETA_PLAN.md).
@@ -13,16 +13,16 @@ SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
 
 ## Kurzurteil
 
-- Im Arbeitsbaum und in allen lokal erreichbaren Git-Objekten wurden keine
-  bekannten Token-, Schlüssel- oder Zugangsdatenmuster gefunden. Ein
+- Im Arbeitsbaum und in den vier ausdrücklich vorgesehenen öffentlichen Refs
+  wurden keine bekannten Token-, Schlüssel- oder Zugangsdatenmuster gefunden. Ein
   Regex-Audit ersetzt keine mathematische Garantie, liefert für den geprüften
   Stand aber keinen Secret-Befund.
-- Der aktuelle Arbeitsbaum enthält nach einer lokalen Textredaktion keinen
-  absoluten persönlichen Benutzerprofilpfad. Die alte Git-Historie enthält
-  weiterhin eine persönliche Commit-/Tag-E-Mail-Adresse und frühere absolute
-  Benutzer- und Werkzeugpfade.
+- Nach dem vom Owner gewählten destruktiven Rewrite enthalten `main` und die drei
+  Release-Tags weder persönliche Commit-/Tag-E-Mail-Adressen noch absolute
+  Benutzer- oder Werkzeugpfade. Sämtliche 34 Commit-Identitäten und drei
+  annotierten Tagger verwenden die konfigurierte GitHub-noreply-Adresse.
 - Es wurden keine eingecheckten ausführbaren Fremdbinärdateien, Archive, Fonts,
-  PDFs oder WebAssembly-Dateien gefunden. Die 58 PNG/JPEG-Dateien enthalten
+  PDFs oder WebAssembly-Dateien gefunden. Die 64 PNG/JPEG-Dateien enthalten
   keine erkannten Text-, EXIF- oder Kommentarmetadatenblöcke.
 - Die Herkunft des Quellcodes, des Logos und der aus dem Logo abgeleiteten
   Icons kann aus Git allein nicht lückenlos bewiesen werden, weil der
@@ -35,44 +35,43 @@ SignPath noch kostenpflichtige Dienste. R5.2 und Phase 6 bleiben pausiert.
   Abkürzung besitzt jedoch fachfremde Verwendungen. Das ist keine formale
   Markenfreigabe.
 
-Das P1-Gate bleibt deshalb an `PB-01` und `PB-02` aus
-[`blockers.json`](blockers.json) hängen.
+Das P1-Gate bleibt deshalb nur noch an `PB-02` aus
+[`blockers.json`](blockers.json) hängen. `PB-01` und `PB-03` sind abgeschlossen.
 
 ## Prüfumfang und reproduzierbare Nachweise
 
 Der maschinenlesbare Nachweis
 [`repository-evidence.json`](repository-evidence.json) wurde mit
 [`scripts/public-beta-audit.mjs`](../../scripts/public-beta-audit.mjs) erzeugt.
-Geprüft wurden der Arbeitsbaum, alle mit `git rev-list --objects --all`
-erreichbaren Objekte, lokale Branch-/Remote-/Tag-Refs, der vollständige Patch-
-Verlauf sowie alle eingecheckten PNG-/JPEG-Dateien.
+Geprüft wurden der Arbeitsbaum und genau die für eine spätere Veröffentlichung
+vorgesehenen Refs `main`, `v0.1.3`, `v0.2.0-rc.1` und `v0.2.0-rc.2`, deren
+vollständiger Patchverlauf und alle eingecheckten PNG-/JPEG-Dateien. Der lokale
+Vorbereitungsbranch besitzt denselben bereinigten Tip wie `main`.
 
 Wesentliche Kennzahlen des Ausgangsstands:
 
 | Merkmal | Ergebnis |
 |---|---:|
-| lokal erreichbare Commits über alle Refs | 39 |
-| geprüfte Refs | 17 |
-| eingecheckte Dateien | 178 |
-| Größe der eingecheckten Dateien | 4.252.726 Bytes |
-| erreichbare Git-Objekte / eindeutige Blobs | 848 / 503 |
-| größter Blob | 528.331 Bytes |
+| erreichbare Commits über die öffentlichen Ziel-Refs | 34 |
+| geprüfte Refs | 4 |
+| eingecheckte Dateien | 192 |
+| Größe der eingecheckten Dateien | 10.595.210 Bytes |
+| erreichbare Git-Objekte / eindeutige Blobs | 988 / 629 |
+| größter Blob | 1.117.268 Bytes |
 | Blobs ab 5 MiB | 0 |
-| geprüfte PNG/JPEG-Dateien | 58 |
+| geprüfte PNG/JPEG-Dateien | 64 |
 
-Die 17 Refs umfassen `main`, den Audit-Branch, `origin/main`, neun lokale
-Dependabot-PR-Refs, drei Tags und einen lokalen Codex-Diff-Capture-Ref. Ein
-späterer öffentlicher Push darf nur die bewusst ausgewählten Branches und Tags
-enthalten; lokale Werkzeugrefs gehören nicht in den Zielzustand.
+Remote-Tracking-, Dependabot-PR-, Codex-Werkzeug- und temporäre Rewrite-Refs sind
+bewusst nicht Teil dieses Veröffentlichungsscans. Sie sind nicht zu pushen und
+werden nicht in einen neuen öffentlichen Remote übernommen.
 
 Ausgeführt beziehungsweise ausgewertet wurden unter anderem:
 
 ```powershell
-git rev-list --objects --all
+git rev-list --objects refs/heads/main refs/tags/v0.1.3 refs/tags/v0.2.0-rc.1 refs/tags/v0.2.0-rc.2
 git cat-file --batch-check="%(objectname) %(objecttype) %(objectsize)"
-git log --all -p --no-ext-diff --no-textconv
-git for-each-ref
-pnpm audit:public-beta
+git log -p --no-ext-diff --no-textconv refs/heads/main refs/tags/v0.1.3 refs/tags/v0.2.0-rc.1 refs/tags/v0.2.0-rc.2
+node scripts/public-beta-audit.mjs --public-ref=refs/heads/main --public-ref=refs/tags/v0.1.3 --public-ref=refs/tags/v0.2.0-rc.1 --public-ref=refs/tags/v0.2.0-rc.2
 ```
 
 ## Git-Historie und Datenschutz
@@ -86,36 +85,24 @@ Der Musterscan über den vollständigen, lokal erreichbaren Patchverlauf ergab:
 | JWT-Muster | 0 |
 | Zugangsdaten in URLs | 0 |
 | generische Secret-Zuweisungen | 0 |
-| persönliche absolute Pfade | 5 Mustertreffer |
-| E-Mail-ähnliche Zeichenfolgen | 100 Mustertreffer |
+| persönliche absolute Pfade | 0 |
+| E-Mail-ähnliche Zeichenfolgen | 704 Mustertreffer |
 
 Die Zahlen zählen Vorkommen in wiederholten Patches und sind keine Anzahl
-eindeutiger Probleme. Die persönlichen Pfadtreffer gehen auf zwei historische
-Sachverhalte zurück: einen inzwischen redigierten Benutzerprofilbezug in
-`docs/RE_AUDIT_REPORT_2026-08-30.md` und frühere fest eingetragene
-Benutzer-/Werkzeugpfade in `qa/make_comparison.py`. Die aktuelle Fassung des
-Skripts besitzt solche Pfade nicht.
+eindeutiger Probleme. Die verbleibenden E-Mail-Treffer stammen aus öffentlichen
+Dependency-Metadaten, Beispielen und GitHub-noreply-Identitäten; die persönliche
+Adresse besitzt im Zielscan null Treffer. Der maschinenlesbare Nachweis speichert
+Commit- und Tagger-Adressen nur als SHA-256-Fingerabdruck und Domain.
 
-Die E-Mail-Treffer enthalten öffentliche Dependency-Beispiele und
-GitHub-Adressen, vor allem aber die persönliche Adresse in 30
-Autor-/Committer-Identitäten sowie in annotierten Tags. Der maschinenlesbare
-Nachweis speichert davon nur SHA-256-Fingerabdruck und Domain, nicht die Adresse
-selbst. Für künftige Commits ist lokal im Repository die GitHub-noreply-Adresse
-konfiguriert. Diese lokale Einstellung ändert die bestehende Historie nicht und
-ersetzt nicht die optionale GitHub-Kontoeinstellung zum Verbergen der Adresse
-oder Blockieren versehentlicher Pushes.
-
-Vor einem Historien-Rewrite sind gemäß Plan eine getrennte Sicherung und eine
-ausdrückliche Freigabe erforderlich. Zulässige Owner-Entscheidungen sind:
-
-1. die bestehenden Offenlegungen bewusst akzeptieren;
-2. nach privater Sicherung alle vorgesehenen öffentlichen Branches und Tags
-   kontrolliert umschreiben;
-3. einen neuen beziehungsweise gesquashten öffentlichen Verlauf aus dem
-   bereinigten Arbeitsbaum beginnen und die bisherige Historie privat halten.
-
-Bis zu dieser Entscheidung ist die vorhandene Historie kein freigegebener
-öffentlicher Git-Stand.
+Vor dem Rewrite wurde ein vollständiges privates Git-Bundle außerhalb des
+Repositorys erzeugt und mit `git bundle verify` geprüft. Es umfasst 19 damalige
+Refs, ist 8.736.205 Bytes groß und besitzt SHA-256
+`a10b3ed6b1da32eeb0c46cd02321cfe14348035c54b6fdd648ad4d57b1eef7d3`.
+Anschließend wurden `main`, der Vorbereitungsbranch und alle drei Release-Tags
+kontrolliert umgeschrieben. Alte Remote-PR- und Werkzeugrefs bleiben nur private
+Altstände; bei Nutzung des bestehenden GitHub-Repositorys muss vor einer
+Öffentlichschaltung zusätzlich sichergestellt werden, dass providerseitige
+Pull-Request-/Cache-Refs nicht öffentlich erreichbar werden.
 
 ## Assets, Texte und erzeugte Dateien
 
@@ -131,7 +118,7 @@ Bis zu dieser Entscheidung ist die vorhandene Historie kein freigegebener
 | Fonts | nur lokale Systemfont-Fallbacks, kein `@font-face`, keine Fontdatei | nichts wird gebündelt |
 | mobile Webassets | aus eigenem Workspace gebaut und mit `rust-embed` in den Dienst eingebettet; keine externen Laufzeitressourcen | abhängig von Owner-Bestätigung für Projektquellen |
 
-Alle zehn QA-Oberflächen-/Vergleichsbilder wurden zusätzlich visuell geprüft.
+Alle 13 QA-Oberflächen-/Vergleichsbilder wurden zusätzlich visuell geprüft.
 Erkennbar sind nur LDTG-Oberflächen, private LAN-Adressen, generische
 `C:\LDTG\...`-Testordner, ein Testprofil sowie Zugangscodes/QR-Codes. Namen,
 Benutzerprofile oder Dateiinhalte sind nicht sichtbar. Laut `qa/README.md`
@@ -174,7 +161,7 @@ gemeinsam.
 | kein ungeklärtes fremdes/proprietäres Artefakt | blockiert | Herkunftsbestätigung für Projektquellen, Logo, Icons und QA-Testdaten fehlt |
 | ausgelieferte Abhängigkeiten mit bekannter kompatibler Lizenz | erfüllt | 857 Pakete inventarisiert, 0 ohne deklarierte Lizenz; siehe Lizenz-Audit |
 | erforderliche Drittanbieterhinweise ableitbar | erfüllt mit Auslieferungsauflage | Lizenz-/Notice-Dateien und Prüfsummen sind inventarisiert; das finale Notice-Bündel entsteht erst nach Lizenzentscheidung |
-| keine Secrets oder privaten Nutzdaten im vorgesehenen öffentlichen Git-Stand | blockiert | bereinigter Arbeitsbaum unauffällig, aber Zielstrategie für E-Mail-/Pfadspuren in der Historie fehlt |
+| keine Secrets oder privaten Nutzdaten im vorgesehenen öffentlichen Git-Stand | erfüllt | exakter Scan von `main` und drei Tags: 0 Secret-, 0 persönliche Pfad- und 0 persönliche Identitätstreffer; privates Vollbackup verifiziert |
 
 P1 ist daher **nicht abgeschlossen**. P2, P3, R5.2, Phase 6, Lizenzaktivierung,
 SignPath und Veröffentlichung werden durch dieses Audit weder begonnen noch

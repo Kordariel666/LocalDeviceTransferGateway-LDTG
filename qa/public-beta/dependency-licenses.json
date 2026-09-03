@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "generator": "scripts/public-beta-audit.mjs",
-  "sourceRevision": "af632670b29346f1700f97e1bc00048712a00475",
+  "sourceRevision": "a523770d8c20ae0695763acbb25c0e32fd552926",
   "lockfiles": {
     "pnpm": {
       "path": "pnpm-lock.yaml",
-      "sha256": "7019f5e2240e5e72806d2dbd69ef01170b08659ac2e6075f68fc82788d2b72d5",
+      "sha256": "95af3687f770be22de3aff4693c25c7f8de5f7882a500726a298b77186fcdaa3",
       "packages": 305
     },
     "cargo": {
       "path": "src-tauri/Cargo.lock",
-      "sha256": "3d068ef7833c58e6cf8b1290a17eaf6c8b3edec47077e18284b9329bb8aa658d",
+      "sha256": "a5eb92fc2dff06c8ca035f290345e731825fe38072a8ed4831cf32bc345856e4",
       "packages": 552
     }
   },
@@ -856,7 +856,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -871,8 +871,8 @@
           "ppc64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==",
       "noticeFiles": []
     },
@@ -884,7 +884,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -899,8 +899,8 @@
           "arm"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-kXXoiPVVGQcnIYGOeaovwOURpniDBpSq4A03qkQ+BMQqtGG6HYap3xne9C1O1yo4TR3qxlCX5IqqmX6fFo2Lqg==",
       "noticeFiles": []
     },
@@ -912,7 +912,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -927,8 +927,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-5YfKeeI8qWfBZIX+u2xZC3Zlb3Os/gLS2sbEKM+I4ZOcsWmHS2WLysCcQZDAFRslDUU5Oiq44gf6PYN1vGwG5A==",
       "noticeFiles": []
     },
@@ -940,7 +940,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -955,8 +955,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-O387ite7SzUyCcy3JQX4P4bLtEA7bLLkx+esve5JHnyYfNTxcVpXZo9jhdB0lTKN44gztELTdU7nS8Nr16Fs1Q==",
       "noticeFiles": []
     },
@@ -968,7 +968,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -983,8 +983,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-n4KqkOQrraxHJcgjM1RvwbigfQKIKJVpM7xp+KsxiyUSrRdIXnt73VhrPAx0fV44hgfmIVKjxMN9J1t5jySVkw==",
       "noticeFiles": []
     },
@@ -996,7 +996,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1011,8 +1011,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-uq6suIWYP37qzGddBKPw5QEQPi6HiLGsO7UmkpfyaYNQ3D+rN6w6WfwH+nuqcGXWvawGwxOEroO4YGnFh95azw==",
       "noticeFiles": []
     },
@@ -1024,7 +1024,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1039,8 +1039,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-n+I0BTSRIoy+d6RPKnEVwql5UwBJolytvY4mAOIEJorKlqgPII8ix6slVVrfZ5Tnj7glIZvloylbB/EJPMWEXw==",
       "noticeFiles": []
     },
@@ -1052,7 +1052,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1067,8 +1067,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-78XJTJkvPs0kz2w61301PJjXl4g7q3JqiYMZ/M/yVI73EHBrCRTgkhu9oqG7vPqq+a/yadEW8aD+agKlk5xrmg==",
       "noticeFiles": []
     },
@@ -1080,7 +1080,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1095,8 +1095,8 @@
           "arm"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-XlDnu2q5yoqems+xay6wSAcg9DDD7K9RLKZEBOMZm3ckNpJBvOX20tSfby8KfrrhINDyv9V2YVZKY/SpoGJI8w==",
       "noticeFiles": []
     },
@@ -1108,7 +1108,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1123,8 +1123,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-pW4AC0P3it8c7do9MVM4p51FzHzdM/TZrerurgRcHJ2WTa1VQ1CIq18xncfpBJw4ojkiZZrKW2yIBWBP92j6Ug==",
       "noticeFiles": []
     },
@@ -1136,7 +1136,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1151,8 +1151,8 @@
           "ia32"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-CYbnj78HsIeA+DhgUKgFCfvNsTHFhMMrinUrMZpDXJXKN8T3XViTZ/+wtHeVxEWY8ewSzTFN+nRmSwO2tZaLUQ==",
       "noticeFiles": []
     },
@@ -1164,7 +1164,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1179,8 +1179,8 @@
           "loong64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-buwkd8nsph4R+ajRvw0qM5Hja/TXQow3ptzWO2EbG/cqcIkHloRrdlBtQlshyYGTNFvfkfJ5tpPLVkY4DtsPfQ==",
       "noticeFiles": []
     },
@@ -1192,7 +1192,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1207,8 +1207,8 @@
           "mips64el"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-ZVykbDyk7519VwiNb9Lcj9m8XM6v5V9uKPvrEMkkEedVewf+0itkhahp4HDpgERXhwLRpWFypsGbG/J8s0QjJA==",
       "noticeFiles": []
     },
@@ -1220,7 +1220,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1235,8 +1235,8 @@
           "ppc64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-CAXl+Dtd9UUuJd8pKKdwh6MLm3MUMiqMPmhZ3tTSXPqfyQ3vDl6R5hZdZ/kYojK4ofXtdfSv1tFq8XzWx3heNQ==",
       "noticeFiles": []
     },
@@ -1248,7 +1248,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1263,8 +1263,8 @@
           "riscv64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-GeXCej4IQtU1B+QlDV8W/RRvbzI3O/Stss+/bCXv4lZls5WGRtu2a+3JkA3i4qIUlMXpcHebWpF8AkJhATowuA==",
       "noticeFiles": []
     },
@@ -1276,7 +1276,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1291,8 +1291,8 @@
           "s390x"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-3H1weTYZPxt/WOhByszQZybS9w5lKzUn1FDMsgEChbHWQwHYQQRfBxgCcZvPhjHfKyJjIievvMmEUawJrdY9Dg==",
       "noticeFiles": []
     },
@@ -1304,7 +1304,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1319,8 +1319,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-4xTZr1FUmSoQW4XIWmit3tzQrUTZM+N3P0XV8xROKYF50XfI7xeO90+1bZvNwxIufQ9hDQVRJH5YhgPVF8A/HQ==",
       "noticeFiles": []
     },
@@ -1332,7 +1332,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1347,8 +1347,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-sSATRjPeDBg3pdgHoQfoYBob11Kk1FGa9lui5RIHZCoCkJa9QKlvl3/vKz2usCmYYjs7ymJR/2Nnsqe+Hjt5nw==",
       "noticeFiles": []
     },
@@ -1360,7 +1360,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1375,8 +1375,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-lqnzCV+mM0gIADaKihiCg6ifgfU2L3h5E33rNQBN1Y4MaVGnzryzmvvf7UHxprpQdE8hpqLolJ9Rl+SkIRDpyw==",
       "noticeFiles": []
     },
@@ -1388,7 +1388,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1403,8 +1403,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-AL2qJILH7lNjrDmCQDvdxMfAUIv8KMNZOvrwAQ8i8//ntL9FflhOyMJ8OZSMBb8/AWXe3/5v5S20y3zCoZWKoQ==",
       "noticeFiles": []
     },
@@ -1416,7 +1416,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1431,8 +1431,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-QtiuPytchRyC4rwUKhexJdQKvDuZ6hWloi3igqPQNUJCS1/v9EiO3UTOXR6A3FoMo4fnAKbWJdqaIwhOzh8qEw==",
       "noticeFiles": []
     },
@@ -1444,7 +1444,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1459,8 +1459,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-WkhYDmpTjLvGlScA1rwjRUmhl4k8oXR3cIbtqWmELgU/dFeHHlEllxDvdWcNJV9rbzCexB5vz8gtNewWLgCT7Q==",
       "noticeFiles": []
     },
@@ -1472,7 +1472,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1487,8 +1487,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-GPMSkTOtMnv2U2F8gxe4Io6qmVs+YKyp832Etqqxr0hFngmXQ3rzwytelm3GIn7T4VviRUlf3sOgBOiTdvaf7g==",
       "noticeFiles": []
     },
@@ -1500,7 +1500,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1515,8 +1515,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-PIhhEkE9uPBleRBrQEJpUn7MBnibZzbGzYWPmY3x+YoVg/95zbjB4CxPPOQ8l5tYYM4mMaCthF8/1DIfBQQyWQ==",
       "noticeFiles": []
     },
@@ -1528,7 +1528,7 @@
       "licenseDeclared": "MIT",
       "license": "MIT",
       "author": null,
-      "homepage": "https://github.com/evanw/esbuild#readme",
+      "homepage": null,
       "repository": "https://github.com/evanw/esbuild",
       "direct": false,
       "directScopes": [],
@@ -1543,8 +1543,8 @@
           "ia32"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-YmJbfTlvU7Sdn9BB+4PRES4oB6pxgS37MAONj+hBr/cpXS1aBPKXxNnDbu+QCWPj0o9dgyxeq79g6c5P8KeuYA==",
       "noticeFiles": []
     },
@@ -2176,8 +2176,8 @@
           "arm"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-b+jTcARdTiFLI6jB4a5XjTm0RWd6KcRfQj/I2356fxUZemiho9zQLxo0RtCuMDAyKcLo6cEltkgbQp6d1+sjjQ==",
       "noticeFiles": []
     },
@@ -2204,8 +2204,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-lkWU8ZJaRk9q3CIEY1Tc7vIFALp3Xw5NfGJo2hQg5oIqNgxWi1zI+IiDEK3r70BF5Dzol1tcXsnzsRc8NLhG+Q==",
       "noticeFiles": []
     },
@@ -2232,8 +2232,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-dgR56NYnvAszm7Ob1B2/Vn0e8bUQYZH2UjVaMMtMVOCKFSfjhfLmuA/9+O+F+ajUdG6B/bSssrKW6JJYASa8jA==",
       "noticeFiles": []
     },
@@ -2260,8 +2260,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-vpVxFvUCFioJqug7OTvqptkc4yb8UX0AwfDmJpaR/0sWz+BUmqSVAf7c8JkUgnN8YLspb4a/N6NhTyMAmdyQ7Q==",
       "noticeFiles": []
     },
@@ -2288,8 +2288,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-h1wG6Y6K3JlRswxsI64qQJqBAy4vrLuHgRbc8CZMGSWTOFRY6ghMApM1NKzB2I0n5xV1fjkE18SuVl2QpLeNpA==",
       "noticeFiles": []
     },
@@ -2316,8 +2316,8 @@
           "arm"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-tbCiqub0q2MVWJKgF5PoAlNWCtQydiOYSLIkd8sByqK/6MMYLJRcSXSYodqYtd0O+Fw7QaVmKKlS4oL94YRZ0w==",
       "noticeFiles": []
     },
@@ -2344,8 +2344,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-oxK9+baEBPhZG5HB4URY+uU04zJWeZlH6Tb9rB5DK4DF9XR1uXNLXt5Q5ZsugTKayNCNLhkcwz/ye74hRI98dg==",
       "noticeFiles": []
     },
@@ -2372,8 +2372,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-muWCk27FVBEZtv0MsK8gnfSmgczA8KQ0uRVJbTABKhkRfQc38aUrcb7fhi3BNiyseFmgcRsoMfQsSNJ+DbZdSw==",
       "noticeFiles": []
     },
@@ -2400,8 +2400,8 @@
           "ppc64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-eWDoSfU7Co2qj3vgB3Dt4lj1mG6CoWbcJQkRMP3XJplyCMtuaq3LHvPFjS9QIPvMGWVadJC04Xiy0IdcVPtnwQ==",
       "noticeFiles": []
     },
@@ -2428,8 +2428,8 @@
           "s390x"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-2bWNjRSIayvupRKxXUY2tWG9fYdoUlTqWywHRvE8Eq3GvuQ+f2HeIkve697fIt+IQs/PV8yFsdWuhp1aJ1PdnA==",
       "noticeFiles": []
     },
@@ -2456,8 +2456,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-KekI0gS0wLxe1UBSQSjenBVwou/JkcQPDzBPICGZjxUv9k3RteHDPBQaiOicZUFKRIH2wKEimGwVpnJsbPzu7w==",
       "noticeFiles": []
     },
@@ -2484,8 +2484,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-TvtPnfVr+HtyGiDmPK4VWmlNm7QhNNAcK5Q9A7aOXsI8545yCyaoMaicXrFZ72JzeYjaUVk7yT243zT0jzjFKQ==",
       "noticeFiles": []
     },
@@ -2512,8 +2512,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-iOo0VEay2XFhaCcH0sps5XIimkSuOnNaZrf6+ZkoSOQBJPKNU48RkmJv0/lSpipexu5P+ouFgafe5IGr/DiQfg==",
       "noticeFiles": []
     },
@@ -2540,8 +2540,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-y5NTmmasMS455JlOCO4ZM9krIchv3Mvm1crL1iUPGOPgEzSkves9n0SdC5Sjz6+qWDFhd8/JpfWMH8NSWNHe+A==",
       "noticeFiles": []
     },
@@ -2724,8 +2724,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-1ryOF3ZhpZ/nemHV5zVwBQBz9jDGKmKPvWPADOhc83ig0P4bMc2iER4NbC6r9sjeIZ6RVQ4g3RZIYvezhcl4TQ==",
       "noticeFiles": []
     },
@@ -2752,8 +2752,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-uFsGQAAfuyz1k/yGLmkWfkBlgKAqZfxqlHmLWx81QU27RJWfmbNHCIq8T8w1e+VClleIuZUjpHWfoE4E3DLo3A==",
       "noticeFiles": []
     },
@@ -2780,8 +2780,8 @@
           "arm"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-IaHZn5CdBL21oUmjiVOS1ctw6Ip1O0pjp70FwOWmYz1myWe0SY96ZIj2FYf7pT0m8bI2h/hrs5ZbEXXh44/MkQ==",
       "noticeFiles": []
     },
@@ -2808,8 +2808,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-N41/ukTRVe6XSuUTESuFdGeOW2i7k62tK+6gHK5Kd5/q5RPvvi19GaWAVPPb9u95HSGmTChSolBfzynUsssFaA==",
       "noticeFiles": []
     },
@@ -2836,8 +2836,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-v277UnT/fB64xAfSroL5N3Km3tLmvATWqJJw/wRI+g6o+HkeD0slyE7gOhNs1MbjE41R7bQOTxMVoL3aomUJmw==",
       "noticeFiles": []
     },
@@ -2864,8 +2864,8 @@
           "riscv64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-qqgNkQ2u1yZHxjhxsZaxUtRDW8dIqIYm33rx/mzwQv0SfY9x1B+iraj8vWeFiXjjSVVhEMepXSOts1TqPzvXNQ==",
       "noticeFiles": []
     },
@@ -2892,8 +2892,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-2VRNWl84FOH0m2giiDkO2h0QXlcMJeX+zJDpI5kDIQAx6s+geF3v48F4DXfJez4GS/FdoDGnPnw1C2iYGbQ7bQ==",
       "noticeFiles": []
     },
@@ -2920,8 +2920,8 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-o9GyhYor/nc7xarmwDE3ka2szuW3uuZzXjHWh64Q8YX5AtSgxdQkFWzrY4O8KiGtVNvFBI14H3Q49Qj5TOIP/A==",
       "noticeFiles": []
     },
@@ -2948,8 +2948,8 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-ld5Ehb598m0VkYyylRPNeCFsBe/km0jxis6KgMpl3IGY6I/i1RwQXO05I1AsXUXO2WC6AvB/Lw4qTf/asiuEiQ==",
       "noticeFiles": []
     },
@@ -2976,8 +2976,8 @@
           "ia32"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-12Hxi0XX/H5VFxO/bGgHkFWhml9VMgEOu9CidjeCeTNQ1l6fpUlbiGgSP7CLI3PFtW9/FfbeHieZ+kyWK5H7CA==",
       "noticeFiles": []
     },
@@ -5512,10 +5512,15 @@
         ],
         "cpu": []
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "2a8a5d6197bb97a018b8a190dd3ed853d750ca87c8e80c17aad41d6c6ff448e1"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6360,7 +6365,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6375,10 +6380,15 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-gEpRTalKdosp4Bb8qWtc2iOgE5SeIHlpS1up9bFq2wAyYhl1UdTObYiHe98zEM9SQvSoqQZ1IQD0JNpg3Ml5pg==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6388,7 +6398,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6403,10 +6413,15 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-Sciaz8eenNTKn9b3t7+xr0ipTp9YxKQY4npwQ3mrRuL0BAVHBLyZxofhaKBAVtzmtRZ/zTyo0/to4B1uWG/Djg==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6416,7 +6431,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6431,10 +6446,15 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-Z5UPAxzrjlWNNyGy6i65cJzzvgJ5D3T6wMvs+gWpY9d7qRhANrxqAp6LhxIgZhWEw18RfJTGcRxjuLIBr+m8XQ==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6444,7 +6464,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6459,10 +6479,15 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-QQM/Ti/hQajJwCY+RiWuCZ9sdtI/XQk7nDK5vC8kkdwixezOlDgvDx7+RT+QjK6FcFT4MpsuoBnHIo/O3StRRg==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6472,7 +6497,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6487,10 +6512,15 @@
           "arm"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-N7FVBe6iS24MlM6R/4RBTxGhQheZGs7tiQ9U32UtF75NzP5Q7xWPRqLBCKxlRQRk3rY1jCIPLzx7WzOhuUIRLQ==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6500,7 +6530,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6515,10 +6545,15 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-j2v/itmy4HlNxlc6voKXYgBqNi0Ng2LShg4z7GufpEgs05P+2suBVyi9I6YHq5uoVFx9ETin3eCEhLVyXGQnKg==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6528,7 +6563,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6543,10 +6578,15 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-yiO5ROMuYQgXbC60yjZU5CYSFZGKXL0HFATXt9mHJn1+zW55oCtMI9NfcVhYLMFDL7gV7oBPon/EmMMGg2OvtQ==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6556,7 +6596,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6571,10 +6611,15 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-ar+Ju7LmcN0Jo4FpL4hpFybwNG9/3A/Br5KW2n2jyODg3MEZXaDYADdemoNS+BDNfMgKvylJLj4S5tyRActuAg==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6584,7 +6629,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6599,10 +6644,15 @@
           "x64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-RYiYbkokw0trfKqqzfF55lginwEPrD3OJDfTuJzFs1MK6iFnDenaz1fqLLtX4ITG3OktJQXOeTaw1awrBAlZPw==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
@@ -6612,7 +6662,7 @@
       "licenseDeclared": "MPL-2.0",
       "license": "MPL-2.0",
       "author": null,
-      "homepage": "https://github.com/parcel-bundler/lightningcss#readme",
+      "homepage": null,
       "repository": "https://github.com/parcel-bundler/lightningcss",
       "direct": false,
       "directScopes": [],
@@ -6627,10 +6677,15 @@
           "arm64"
         ]
       },
-      "installedOnAuditHost": false,
-      "metadataSource": "registry.npmjs.org",
+      "installedOnAuditHost": true,
+      "metadataSource": "installed-package",
       "integrity": "sha512-1K+MPfLSFVpphzpdbfkhlWk6wBrTObBzS2T6db10PNOZgR9GoVsAWzwNyuhUYYbTp23j+4RrncfujZ4uAzXvwA==",
-      "noticeFiles": []
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ]
     },
     {
       "ecosystem": "npm",
