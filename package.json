@@ -7,6 +7,8 @@
     "dev": "pnpm tauri dev",
     "build": "pnpm tauri build",
     "build:web": "pnpm --filter @dmdc/mobile build && pnpm --filter @dmdc/desktop build",
+    "audit:public-beta": "node scripts/public-beta-audit.mjs",
+    "audit:public-beta:online": "node scripts/public-beta-audit.mjs --online",
     "check": "pnpm contracts:check && pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm build:web && pnpm test:rust:prepared && cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
     "contracts:check": "pnpm --filter @dmdc/mobile build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/contracts.ps1 -Mode Check",
     "contracts:generate": "pnpm --filter @dmdc/mobile build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/contracts.ps1 -Mode Generate",
