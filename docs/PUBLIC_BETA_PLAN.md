@@ -95,7 +95,7 @@ Abhängigkeitsprüfung und Beiträge und würde die SignPath-Eignung gefährden.
 | Paket | Status | Ziel | Abhängigkeit | Größe | Ergebnis/Gate |
 |---|---|---|---|---|---|
 | P0 | abgeschlossen | Umfang einfrieren und Entscheidungsregeln festhalten | Phase 5.1 | S | Plan ist verbindlich und verlinkt |
-| P1 | offen | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | keine ungeklärte Veröffentlichungsblockade |
+| P1 | blockiert | Repository, Herkunft und Fremdlizenzen auditieren | P0 | M | technische Prüfung abgeschlossen; drei Owner-Entscheidungen offen |
 | P2 | offen | Sicherheits-, Datenschutz- und Supportversprechen schärfen | P1 | M | öffentliche Aussagen entsprechen dem Code |
 | P3 | offen | Releasepipeline und Herkunftsnachweise härten | P1 | M–L | lokaler/privater Release-Dry-Run reproduzierbar |
 | P4 | offen | Reale Installations- und Geräteabnahme durchführen | P2–P3 | L | Abnahmematrix und priorisierte Befunde vollständig |
@@ -129,6 +129,12 @@ Status: abgeschlossen am 3. September 2026.
 - Arbeitsumfang, Nichtziele, Kostenlimit und Freigabegrenze sind widerspruchsfrei.
 
 ## 7. P1 – Repository- und Lizenz-Audit
+
+Status: technische Prüfung am 3. September 2026 abgeschlossen; Gate durch
+`PB-01` bis `PB-03` blockiert. Offen sind die Zielstrategie für persönliche
+Metadaten in der Git-Historie, die Herkunftsbestätigung vor dem Wurzelcommit und
+die bewusste Entscheidung zum stark belegten Kürzel `DMDC`. Es erfolgten keine
+Veröffentlichung, Lizenzaktivierung, Historienumschreibung oder Anmeldung.
 
 ### 7.1 Herkunft und Rechte
 
@@ -167,10 +173,14 @@ Status: abgeschlossen am 3. September 2026.
 
 ### Ergebnisse
 
-- `qa/public-beta/repository-audit.md`
-- `qa/public-beta/dependency-license-audit.md`
-- maschinenlesbare Lizenzinventur und SBOM-Entwurf
-- Liste aller Blocker mit Eigentümer, Schweregrad und Erledigungsnachweis
+- [Repository-, Herkunfts- und Datenschutz-Audit](../qa/public-beta/repository-audit.md)
+- [Abhängigkeits- und Lizenz-Audit](../qa/public-beta/dependency-license-audit.md)
+- [maschinenlesbare Lizenzinventur](../qa/public-beta/dependency-licenses.json)
+  und [CycloneDX-1.6-SBOM-Entwurf](../qa/public-beta/sbom.cdx.json)
+- [maschinenlesbarer Repositorynachweis](../qa/public-beta/repository-evidence.json)
+- [Blockerliste](../qa/public-beta/blockers.json) mit Eigentümer, Schweregrad,
+  Entscheidungsmöglichkeiten und Erledigungsnachweis
+- [noch unbestätigte Herkunftserklärung](../qa/public-beta/provenance-attestation.md)
 
 ### Gate P1
 
@@ -179,6 +189,15 @@ Status: abgeschlossen am 3. September 2026.
 - Erforderliche Drittanbieterhinweise sind vollständig ableitbar.
 - Es befinden sich keine Geheimnisse oder privaten Nutzdaten im vorgesehenen
   öffentlichen Git-Stand.
+
+Gatebewertung vom 3. September 2026: **nicht erfüllt**. Der
+Abhängigkeitsanteil ist mit 857 inventarisierten Paketversionen, null unbekannten
+Lizenzdeklarationen und ableitbaren Notices abgeschlossen. Der bereinigte
+Arbeitsbaum besitzt keinen offenen Secret-Befund. Die bestehende Historie ist
+aber ohne Owner-Entscheidung nicht als öffentlicher Zielstand freigegeben; ebenso
+fehlen Herkunftsbestätigung und Namensrisiko-Entscheidung. Nach deren Abschluss
+muss der Audit für genau die zur Veröffentlichung vorgesehenen Refs erneut
+laufen.
 
 ## 8. P2 – Sicherheits-, Datenschutz- und Supportgrenzen
 

@@ -225,7 +225,7 @@ Der abgeschlossene Standard-Sicherheitslauf trägt die ID `572a7323-cf9d-442b-87
 | `pnpm typecheck` | bestanden | Desktop und Mobile jeweils `tsc -b --pretty false`. Der erste Lauf fand `node` nicht, weil die isolierte Runner-PATH den gebündelten Node-Pfad nicht enthielt; mit explizitem Workspace-Node lief er fehlerfrei. Kein Produktfehler. |
 | `pnpm test` | bestanden | Desktop: 1 Datei, 7/7 Tests. Mobile: 1 Datei, 5/5 Tests. Der erste Lauf scheiterte nur an der Dateisandbox beim Laden der Vite-Konfiguration; außerhalb dieser Einschränkung bestanden beide Suiten. |
 | `pnpm test:rust` / Wrapper | bestanden | 53/53 Rust-Tests, 0 fehlgeschlagen, 0 ignoriert. |
-| `cargo fmt --all -- --check` | bestanden | Exitcode 0. Die Runner-Warnung, `<USER_PROFILE>` nicht kanonisieren zu können, stammt aus der Sandbox und zeigt keinen Formatfehler. |
+| `cargo fmt --all -- --check` | bestanden | Exitcode 0. Die Runner-Warnung, das Benutzerprofil nicht kanonisieren zu können, stammt aus der Sandbox und zeigt keinen Formatfehler. |
 | `cargo clippy --all-targets --all-features -- -D warnings` | bestanden | Exitcode 0, keine Clippy-/Quellwarnung. Dieselbe Sandbox-Kanonisierungswarnung wie oben. |
 | `pnpm build:web` | bestanden | Mobile: 30 Module; Desktop: 35 Module; beide Vite-Produktionsbuilds erfolgreich. |
 | `pnpm build` | bestanden | Release-Binary gebaut und NSIS erfolgreich ausgeführt. Die MSVC-Linkerausgabe zur Erstellung von `.dll.lib` und `.dll.exp` wurde von Cargo als `linker_messages`-Warnung weitergereicht, enthielt aber keinen Code- oder Linkfehler. |

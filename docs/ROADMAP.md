@@ -758,8 +758,9 @@ Status: erfüllt am 3. September 2026 für R5.1.
 
 ## 10a. Entscheidungsprogramm P – Private Nutzung oder öffentliche Beta
 
-Status: gestartet am 3. September 2026; P0 abgeschlossen, P1 als nächstes und
-noch keine Veröffentlichungsfreigabe.
+Status: gestartet am 3. September 2026; P0 abgeschlossen, P1 technisch
+auditiert, aber durch drei dokumentierte Owner-Entscheidungen blockiert. Es gibt
+weiterhin keine Veröffentlichungsfreigabe.
 
 Vor Phase 6 werden ausgewählte Arbeiten der Release-Härtung vorgezogen, damit
 nicht auf Verdacht weitere Funktionen entstehen. Der detaillierte
@@ -777,6 +778,13 @@ nicht auf Verdacht weitere Funktionen entstehen. Der detaillierte
 Bis zu diesem Gate bleibt das Repository privat, die Projektlizenz ungesetzt,
 das Kostenlimit bei null Euro und jede externe Veröffentlichung oder Anmeldung
 gesondert zustimmungspflichtig. R5.2 und Phase 6 sind solange pausiert.
+
+Der aktuelle P1-Nachweis liegt im
+[Repository-Audit](../qa/public-beta/repository-audit.md), im
+[Abhängigkeits-Lizenz-Audit](../qa/public-beta/dependency-license-audit.md) und
+in der [maschinenlesbaren Blockerliste](../qa/public-beta/blockers.json). Der
+Dependency-Teil ist abgeschlossen; offen bleiben Historienstrategie,
+Herkunftsbestätigung und die Entscheidung zum Kürzel `DMDC`.
 
 ## 11. Phase 6 – Strategische Transferfunktionen
 

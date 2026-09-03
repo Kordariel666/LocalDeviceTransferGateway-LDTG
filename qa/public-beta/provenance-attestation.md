@@ -1,0 +1,47 @@
+# P1-Herkunftsbestätigung (Entwurf)
+
+Stand: 3. September 2026
+
+Status: **nicht bestätigt**
+
+Diese Erklärung schließt die Herkunftslücke, die Git wegen des nahezu
+vollständigen Imports im Wurzelcommit `d4e4751d673cc0202b048089d87d506c0dcfe981`
+nicht selbst belegen kann. Das Markieren einer Aussage ist eine bewusste
+Bestätigung des Repositoryinhabers; der Audit hat die Aussagen nicht als
+Tatsachen vorausgesetzt.
+
+## Erforderliche Bestätigungen
+
+- [ ] Ich habe den ursprünglichen DMDC-Quellcode, die Projektdokumentation und
+  die UI-Texte selbst erstellt oder besitze für sämtliche übernommenen Teile
+  ausreichende Rechte für eine spätere Veröffentlichung unter wahlweise
+  `GPL-3.0-only` oder `Apache-2.0`.
+- [ ] `assets/icon.svg` wurde von mir erstellt oder auf meine Veranlassung mit
+  einem Werkzeug erzeugt; es enthält kein fremdes Logo und darf unter der
+  später gewählten Projektlizenz weitergegeben werden.
+- [ ] Die Dateien unter `src-tauri/icons/**` wurden ausschließlich aus diesem
+  freigabefähigen Quellicon erzeugt. Falls ein anderer Generator oder ein
+  fremdes Quellasset beteiligt war, ist dies unten vollständig angegeben.
+- [ ] Die QA-Aufnahmen zeigen ausschließlich DMDC, von mir freigegebene
+  Testordner/-profile und nicht mehr gültige Zugangsdaten. Sichtbare
+  LAN-Adressen dürfen veröffentlicht werden; es sind keine fremden Namen,
+  privaten Dateiinhalte oder sonstigen personenbezogenen Daten enthalten.
+- [ ] Es existieren keine außerhalb des Repositorys kopierten Code-, Text-,
+  Design- oder Datenbestandteile, die in diesem Audit nicht genannt sind.
+- [ ] Soweit generative oder andere Assistenzwerkzeuge verwendet wurden, darf
+  ich deren Ergebnis nach den für mich geltenden Bedingungen veröffentlichen,
+  und ich habe keine erkennbar fremden geschützten Bestandteile übernommen.
+
+## Abweichungen und Quellen
+
+Hier müssen alle nicht vollständig bestätigbaren Punkte mit Quelle, Lizenz,
+Urheber, Verwendungszweck und gegebenenfalls Ersetzungsplan eingetragen werden:
+
+> Noch nicht ausgefüllt.
+
+Bestätigt von: _noch offen_
+
+Datum/Commit: _noch offen_
+
+Diese Bestätigung aktiviert keine Projektlizenz und ist keine
+Veröffentlichungsfreigabe.

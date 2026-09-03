@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "auditedSourceRevision": "af632670b29346f1700f97e1bc00048712a00475",
+  "status": "blocked",
+  "scope": "P1 repository, provenance and dependency-license audit only",
+  "constraints": {
+    "recurringCostEur": 0,
+    "licenseActivated": false,
+    "published": false,
+    "signPathStarted": false,
+    "r5_2Paused": true,
+    "phase6Paused": true
+  },
+  "blockers": [
+    {
+      "id": "PB-01",
+      "title": "Public-history strategy for personal metadata is undecided",
+      "owner": "repository owner",
+      "severity": "high",
+      "blocksP1": true,
+      "evidence": [
+        "qa/public-beta/repository-evidence.json#identities",
+        "qa/public-beta/repository-evidence.json#historyPatternCounts",
+        "qa/public-beta/repository-audit.md#git-historie-und-datenschutz"
+      ],
+      "facts": [
+        "Historic commits and annotated tags expose a personal email address.",
+        "Historic patches contain personal absolute user/tool paths.",
+        "The current working tree redacts the remaining personal profile reference.",
+        "Future commits in this repository use the configured GitHub noreply address."
+      ],
+      "ownerDecisionRequired": [
+        "accept the historic disclosure",
+        "rewrite every intended public branch and tag after a separate private backup and explicit approval",
+        "publish a new/squashed sanitized history while retaining the old history privately"
+      ],
+      "completionEvidence": "Documented owner decision plus a fresh all-ref scan of exactly the refs intended for publication"
+    },
+    {
+      "id": "PB-02",
+      "title": "Pre-import provenance and asset rights are not attested",
+      "owner": "repository owner",
+      "severity": "high",
+      "blocksP1": true,
+      "evidence": [
+        "git root commit d4e4751d673cc0202b048089d87d506c0dcfe981",
+        "qa/public-beta/provenance-attestation.md",
+        "qa/public-beta/repository-audit.md#assets-texte-und-erzeugte-dateien"
+      ],
+      "facts": [
+        "The root commit imports almost the entire application and its assets.",
+        "Git therefore cannot prove authorship or tool/source provenance before that commit.",
+        "No obvious vendored binary, font or unrelated foreign asset was found in the current tree."
+      ],
+      "ownerDecisionRequired": [
+        "complete the provenance attestation",
+        "list every exception with source and license",
+        "replace or remove any item that cannot be cleared"
+      ],
+      "completionEvidence": "Committed owner attestation with no unresolved exception, or replacement/removal evidence for each exception"
+    },
+    {
+      "id": "PB-03",
+      "title": "DMDC acronym collision/searchability risk is undecided",
+      "owner": "repository owner",
+      "severity": "medium",
+      "blocksP1": true,
+      "evidence": [
+        "qa/public-beta/repository-audit.md#namens--und-offensichtliche-konfliktprüfung"
+      ],
+      "facts": [
+        "No exact npm, crates.io, winget or combined DPMAregister mark hit was found for the checked exact terms.",
+        "DMDC is nevertheless a strongly established acronym, prominently used by the US Defense Manpower Data Center.",
+        "The check is not a formal trademark clearance."
+      ],
+      "ownerDecisionRequired": [
+        "rename before public preparation",
+        "accept the documented risk and consistently lead with the full name Desktop Mobile Data Center"
+      ],
+      "completionEvidence": "Recorded owner decision; if renamed, updated artifacts and a repeated exact-name conflict check"
+    }
+  ],
+  "dependencyLicenseBlockers": []
+}
