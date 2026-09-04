@@ -2,7 +2,8 @@
 
 Stand: 4. September 2026
 Status: **P6 bestanden; `0.3.0-rc.2` nach der Repository-Bereinigung erneut
-lokal gebaut, aber nicht veröffentlicht, getaggt oder signiert**
+lokal gebaut, privat getaggt und als private GitHub-Prerelease vorbereitet,
+aber nicht öffentlich freigegeben oder signiert**
 
 ## Festgelegter Kandidat
 
@@ -11,7 +12,7 @@ lokal gebaut, aber nicht veröffentlicht, getaggt oder signiert**
 | Produkt | LDTG – Local Device Transfer Gateway |
 | Version | `0.3.0-rc.2` |
 | Quellcommit des Installers | `4956cd3de88d6d5d5cff6c3653a71d9695a60c32` |
-| vorgesehener Tag | `v0.3.0-rc.2` – nicht angelegt |
+| Tag | `v0.3.0-rc.2` – angelegt, gepusht und auf den Quellcommit gebunden |
 | Windows-Artefakt | `LDTG_0.3.0-rc.2_x64-setup.exe`, 3.708.085 Bytes |
 | Installer SHA-256 | `7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c` |
 | SBOM SHA-256 | `6cb9766a383b6fca5e5c3e947022f187cd8598d4fdd0fcaa61c57be00eb8fdb4` |
@@ -21,7 +22,7 @@ lokal gebaut, aber nicht veröffentlicht, getaggt oder signiert**
 | Copyright-Pseudonym | `Kordariel666` |
 | Beiträge | zunächst nur Issues, keine Pull Requests |
 | Kosten | 0 Euro im lokalen Dry-Run; keine Verpflichtung eingerichtet |
-| Veröffentlichung | nein; Repositorysichtbarkeit und Remotes bleiben unverändert |
+| Veröffentlichung | private GitHub-Prerelease erstellt; Repository bleibt privat |
 
 Der exakte Quellcommit und alle Artefakthashes werden absichtlich vom privaten
 Releasepfad in `build-manifest.json` und `SHA256SUMS.txt` geschrieben. Ein
@@ -41,8 +42,9 @@ diese commitgebundenen Ausgabedateien sind deshalb die maßgebliche P6-Evidenz.
 - SignPath: nur Vorprüfung; kein Antrag, Zertifikat, Token oder Versprechen;
 - Build: sauberer Commit, feste Toolchains und Lockfiles, vollständiges Gate,
   frischer NSIS-Build, Buildlog, SBOM, Manifest und SHA-256-Prüfsummen;
-- Veröffentlichungsentwurf: `docs/RELEASE_NOTES_0.3.0-rc.2.md`; kein Befehl im
-  Dry-Run kann pushen, taggen, signieren oder einen Release anlegen.
+- Veröffentlichungstext: `docs/RELEASE_NOTES_0.3.0-rc.2.md`; kein Befehl im
+  Dry-Run kann pushen, taggen, signieren oder einen Release anlegen. Die später
+  ausdrücklich freigegebene private Vorbereitung erfolgte getrennt.
 
 ## Build- und Prüfergebnis
 
@@ -59,7 +61,8 @@ Der lokale Clean-Commit-Dry-Run vom 4. September 2026 bestand von Commit
 - SBOM, Buildlog, Projektlizenz, Project-Notice und die Notices für 344
   ausgelieferte Laufzeitkomponenten liegen als getrennte gehashte Dateien vor;
 - der Build hinterließ den eingecheckten Quellbaum unverändert;
-- auf dem Quellcommit liegt kein Tag.
+- während des Dry-Runs lag auf dem Quellcommit kein Tag; der annotierte Tag
+  `v0.3.0-rc.2` wurde erst nach der manuellen Abnahme angelegt und gepusht.
 
 ## Manuelle Kernabnahme und finaler Neuaufbau
 
@@ -116,11 +119,14 @@ Fehler im Kerntransfer blockiert P6 dagegen unmittelbar.
 
 ## Veröffentlichungsgrenze
 
-Nach bestandenem P6 bleibt der Zustand unveröffentlicht. Tag, Push,
-Repositorysichtbarkeit, GitHub Release, Private Vulnerability Reporting und ein
-späterer SignPath-Antrag sind externe Zustandsänderungen und erfordern jeweils
-die im archivierten `docs/archive/project-history/PUBLIC_BETA_PLAN.md`
-vorgesehene ausdrückliche Entscheidung. Bis
-dahin gilt weder ein öffentliches Supportversprechen noch eine Signaturzusage.
-Die noch offene Entscheidung ist in
+Nach bestandenem P6 gab der Owner Commit, Push, den auf den Quellcommit
+gebundenen Tag und eine private GitHub-Prerelease ausdrücklich frei. Diese
+Vorbereitung wurde am 4. September 2026 abgeschlossen; alle sieben
+Releaseanhänge sind vorhanden. Das Repository bleibt privat und damit besteht
+noch kein öffentliches Supportversprechen.
+
+Nur der Sichtbarkeitswechsel einschließlich der unmittelbar anschließenden
+Prüfung von Private Vulnerability Reporting sowie ein eventueller späterer
+SignPath-Antrag bleiben externe Zustandsänderungen. Die noch offene öffentliche
+Entscheidung ist in
 [`docs/PUBLICATION_DECISION.md`](../../docs/PUBLICATION_DECISION.md) vorbereitet.

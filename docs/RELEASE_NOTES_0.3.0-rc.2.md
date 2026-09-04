@@ -1,7 +1,7 @@
-# LDTG 0.3.0-rc.2 – Entwurf der Release-Notes
+# LDTG 0.3.0-rc.2 – Release-Notes
 
 Stand: 4. September 2026
-Status: **unveröffentlichter, unsignierter Public-Beta-Kandidat**
+Status: **private, unsignierte Prerelease; noch nicht öffentlich freigegeben**
 
 LDTG – Local Device Transfer Gateway überträgt Dateien direkt zwischen einem
 Windows-PC und einem Handy im selben ausdrücklich vertrauten lokalen Netzwerk.
@@ -26,8 +26,8 @@ externen Dienst hoch.
 ## Geprüfter Kernumfang
 
 Die P4-Basis dieses Kandidaten wurde in den folgenden realen Kernpfaden
-geprüft. Der frisch gebaute `0.3.0-rc.2`-Installer erhält vor einer möglichen
-Veröffentlichung zusätzlich die in P6 festgelegte kurze Wiederholungsabnahme.
+geprüft. Der finale `0.3.0-rc.2`-Installer bestand zusätzlich die in P6
+festgelegte kurze Wiederholungsabnahme.
 
 - Windows 11 25H2, x64;
 - Installation, Reparaturinstallation, Firewallwechsel zwischen Port 8765 und
@@ -81,8 +81,9 @@ zunächst nicht geöffnet. Vertrauliche Sicherheitsmeldungen dürfen nicht in ei
   `6cb9766a383b6fca5e5c3e947022f187cd8598d4fdd0fcaa61c57be00eb8fdb4`
 - Authenticode: `NotSigned`
 
-Diese Datei bleibt bis zu einer gesonderten Veröffentlichungsentscheidung ein
-Entwurf. Ein Downloadlink wird erst bei einer tatsächlich freigegebenen
-Veröffentlichung ergänzt. Die gezielte Microsoft-Defender-Prüfung genau des
-oben gehashten finalen Installers wurde am 4. September 2026 ohne Fund
-abgeschlossen.
+Die [GitHub-Prerelease](https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG/releases/tag/v0.3.0-rc.2)
+mit Installer, Prüfsummen, SBOM, Buildmanifest und Lizenznachweisen ist im
+privaten Repository vorbereitet. Sie wird erst durch eine gesonderte
+Entscheidung zur öffentlichen Repositorysichtbarkeit allgemein zugänglich. Die
+gezielte Microsoft-Defender-Prüfung genau des oben gehashten finalen Installers
+wurde am 4. September 2026 ohne Fund abgeschlossen.

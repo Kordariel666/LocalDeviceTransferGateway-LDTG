@@ -146,5 +146,6 @@ ausdrücklichen Genehmigung.
 - Öffentliche Identität und Beitragsmodus: **erfüllt**.
 
 P5 ist abgeschlossen. `licenseActivated` ist in `blockers.json` auf `true`
-gesetzt; `published` und `signPathStarted` bleiben auf `false`. P6 ist der
-nächste interne Schritt.
+gesetzt. Nach dem später bestandenen P6 wurden Tag und private Prerelease
+vorbereitet; `published` bleibt bis zum öffentlichen Sichtbarkeitswechsel und
+`signPathStarted` bis zu einer gesonderten Entscheidung auf `false`.

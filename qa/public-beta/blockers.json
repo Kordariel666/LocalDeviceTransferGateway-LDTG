@@ -3,7 +3,7 @@
   "auditedSourceRevision": "8d15035c68ab4f66912e4e1795e6e8e2944513ac",
   "p2BaseRevision": "950e4301a61bbef79d4ecca3ed81b646baa356ca",
   "status": "p6_passed",
-  "scope": "P0 through P6 passed for the unpublished, unsigned 0.3.0-rc.2 candidate; the separate publication decision is next",
+  "scope": "P0 through P6 passed; the unsigned 0.3.0-rc.2 tag and private GitHub prerelease are prepared while the repository remains private",
   "constraints": {
     "recurringCostEur": 0,
     "licenseActivated": true,
@@ -16,9 +16,12 @@
     "betaCandidateSourceRevision": "4956cd3de88d6d5d5cff6c3653a71d9695a60c32",
     "betaCandidateInstallerSha256": "7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c",
     "published": false,
+    "repositoryVisibility": "private",
+    "releaseTagCreated": true,
+    "privateGitHubPrereleaseCreated": true,
     "signPathStarted": false,
     "r5_2Paused": true,
-    "phase6Paused": true
+    "phase6Paused": false
   },
   "blockers": [],
   "resolved": [

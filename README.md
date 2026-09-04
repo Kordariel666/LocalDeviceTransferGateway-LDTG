@@ -95,7 +95,7 @@ src-tauri/platform Windows-Firewall- und Netzwerkcode
 ## Dokumentation
 
 Der [Dokumentationsindex](docs/README.md) trennt Bedienung, technische Referenz,
-Release-Unterlagen und historische Nachweise. Der aktuelle Release-Entwurf steht
+Release-Unterlagen und historische Nachweise. Der aktuelle Release-Nachweis steht
 in [docs/RELEASE_NOTES_0.3.0-rc.2.md](docs/RELEASE_NOTES_0.3.0-rc.2.md).
 
 Fehlerberichte und Funktionsvorschläge sind nach einer Veröffentlichung über

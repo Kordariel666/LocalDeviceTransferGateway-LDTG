@@ -1,7 +1,8 @@
 # Public-Beta-Nachweise P0–P6
 
 Dieser Ordner enthält die abgeschlossene interne Vorbereitung des
-unveröffentlichten Kandidaten `0.3.0-rc.2`. Die Dateien sind Nachweise und keine
+nicht öffentlich freigegebenen Kandidaten `0.3.0-rc.2`. Tag und private
+GitHub-Prerelease sind vorbereitet. Die Dateien sind Nachweise und keine
 zusätzliche Bedienungsanleitung.
 
 ## Lesbare Zusammenfassungen
@@ -12,7 +13,7 @@ zusätzliche Bedienungsanleitung.
 - [P3: private Releasepipeline](p3-release-pipeline.md)
 - [P4: Windows- und Android-Kernabnahme](p4-real-device-matrix.md)
 - [P5: Lizenz, Beiträge und SignPath](p5-license-contribution-signpath.md)
-- [P6: unveröffentlichter Releasekandidat](p6-release-candidate.md)
+- [P6: privater Releasekandidat](p6-release-candidate.md)
 - [Herkunftsbestätigung](provenance-attestation.md)
 
 ## Maschinenlesbare Nachweise

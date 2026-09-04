@@ -44,8 +44,11 @@ Die noch offene Entscheidung steht in
 - `COMMERCIAL-DISCOVERY`: Veröffentlichung für einen getrennten Geschäfts- und
   Lizenzweg anhalten.
 
-Ohne ausdrückliches `GO-APACHE` werden weder Repositorysichtbarkeit noch Tag,
-GitHub Release, Signierung oder externe Dienste verändert.
+Tag und private GitHub-Prerelease wurden nach ausdrücklicher Owner-Bestätigung
+für den geprüften Kandidaten vorbereitet. Das Repository bleibt privat. Der
+einzige noch ausstehende Veröffentlichungsschritt ist ein gesondertes
+`GO-APACHE` für den Sichtbarkeitswechsel; Signierung, SignPath und
+kostenpflichtige Dienste bleiben davon unberührt.
 
 ## Nach einer möglichen Beta
 
