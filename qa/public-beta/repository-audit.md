@@ -24,9 +24,21 @@ absichtlich erhalten.
 
 Zusätzlich wurden eine kurze Repositorybeschreibung und thematisch passende
 GitHub-Topics gesetzt sowie das ungenutzte Projects-Feature deaktiviert.
-Repository, Tag und Prerelease bleiben privat. Der nachfolgende P1-Nachweis
-bildet weiterhin bewusst den damaligen Auditzeitpunkt vor der Tagbereinigung ab
-und wird nicht rückwirkend umgedeutet.
+Nach dem `GO-APACHE` des Owners wurde das Repository am 4. September 2026
+öffentlich gestellt. Pull Requests sind deaktiviert; Issues und die beiden
+datensparsamen Issue-Formulare bleiben aktiv. Private Vulnerability Reporting,
+Dependabot-Sicherheitswarnungen und automatische Sicherheitsupdates, Secret
+Scanning samt Push Protection sowie der Schutz von `main` gegen Löschen und
+Force-Push wurden aktiviert und zurückgelesen. Der nachfolgende P1-Nachweis
+bildet weiterhin bewusst den damaligen Auditzeitpunkt vor der Tagbereinigung und
+Veröffentlichung ab und wird nicht rückwirkend umgedeutet.
+
+Der erste Dependabot-Scan meldete `glib 0.18.5` aus dem
+plattformübergreifenden Cargo-Lockfile. `cargo tree` bestätigte, dass diese
+GTK/WebKit-Abhängigkeit beim einzigen unterstützten Ziel
+`x86_64-pc-windows-msvc` nicht Teil des Abhängigkeitsbaums ist. Hinweis 1 wurde
+deshalb mit der nachprüfbaren Begründung `not_used` geschlossen; offene
+Dependabot- und Secret-Scanning-Funde wurden anschließend erneut geprüft.
 
 ## Kurzurteil
 

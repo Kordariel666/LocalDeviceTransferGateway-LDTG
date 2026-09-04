@@ -53,8 +53,10 @@ Der Owner hat bestätigt:
 Die gesonderte Bestätigung zum öffentlichen Sichtbarkeitswechsel wurde im
 Anschluss an die letzte Freigabeprüfung am 4. September 2026 erteilt.
 
-Private Vulnerability Reporting, Branch-Schutz und die kostenlosen
-GitHub-Sicherheitsfunktionen werden unmittelbar nach dem Sichtbarkeitswechsel
-aktiviert und geprüft. Ein eventueller SignPath-Antrag bleibt eine spätere,
-separat zu genehmigende Entscheidung. Die öffentliche Beta erzeugt keine
+Nach dem Sichtbarkeitswechsel wurden Private Vulnerability Reporting,
+Dependabot-Sicherheitswarnungen und automatische Sicherheitsupdates, Secret
+Scanning samt Push Protection sowie der Schutz von `main` aktiviert und über
+die GitHub-API zurückgelesen. Pull Requests sind entsprechend dem Issues-only-
+Modus deaktiviert. Ein eventueller SignPath-Antrag bleibt eine spätere, separat
+zu genehmigende Entscheidung. Die öffentliche Beta erzeugt keine
 kostenpflichtige Verpflichtung.
