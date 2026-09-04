@@ -10,14 +10,30 @@ Dieses Dokument prüft ausschließlich P1 des
 [Plans bis zur Veröffentlichungsentscheidung](../../docs/archive/project-history/PUBLIC_BETA_PLAN.md).
 Es veröffentlicht nichts und autorisiert weder SignPath noch kostenpflichtige
 Dienste. Die separat gewählte Projektlizenz ist Apache-2.0; R5.2 und Phase 6
-bleiben pausiert.
+waren zu diesem damaligen P1-Auditzeitpunkt noch pausiert.
+
+## Nachträgliche GitHub-Aufräumung
+
+Nach P6 löschte der Owner am 4. September 2026 die drei historischen
+DMDC-Tags `v0.1.3`, `v0.2.0-rc.1` und `v0.2.0-rc.2` lokal und aus dem privaten
+GitHub-Repository. Als einziger Release-Tag verbleibt `v0.3.0-rc.2`; er zeigt
+weiterhin auf den unveränderten Quellcommit
+`4956cd3de88d6d5d5cff6c3653a71d9695a60c32`. Die normale `main`-Historie und
+die für Upgrades erforderliche Erkennung der alten Firewallregel bleiben
+absichtlich erhalten.
+
+Zusätzlich wurden eine kurze Repositorybeschreibung und thematisch passende
+GitHub-Topics gesetzt sowie das ungenutzte Projects-Feature deaktiviert.
+Repository, Tag und Prerelease bleiben privat. Der nachfolgende P1-Nachweis
+bildet weiterhin bewusst den damaligen Auditzeitpunkt vor der Tagbereinigung ab
+und wird nicht rückwirkend umgedeutet.
 
 ## Kurzurteil
 
-- Im Arbeitsbaum und in den vier ausdrücklich vorgesehenen öffentlichen Refs
-  wurden keine bekannten Token-, Schlüssel- oder Zugangsdatenmuster gefunden. Ein
-  Regex-Audit ersetzt keine mathematische Garantie, liefert für den geprüften
-  Stand aber keinen Secret-Befund.
+- Im Arbeitsbaum und in den zum Auditzeitpunkt vier ausdrücklich vorgesehenen
+  öffentlichen Refs wurden keine bekannten Token-, Schlüssel- oder
+  Zugangsdatenmuster gefunden. Ein Regex-Audit ersetzt keine mathematische
+  Garantie, liefert für den geprüften Stand aber keinen Secret-Befund.
 - Nach dem vom Owner gewählten destruktiven Rewrite enthalten der vorgesehene
   Quellcommit und die drei Release-Tags keine persönlichen
   Commit-/Tag-E-Mail-Adressen. Sämtliche 47 Commit-Identitäten und drei
@@ -109,9 +125,12 @@ kontrolliert umgeschrieben. Der bereinigte `main`-Tip und die drei neuen
 Tagobjekte wurden am 3. September 2026 mit exakten Force-with-Lease-Altwerten auf
 das weiterhin private GitHub-Repository übertragen und dort zurückgelesen; das
 Repository wurde anschließend in `LocalDeviceTransferGateway-LDTG` umbenannt.
-Alte Remote-PR- und Werkzeugrefs bleiben private Altstände. Vor einer
-Öffentlichschaltung muss zusätzlich sichergestellt werden, dass providerseitige
-Pull-Request-/Cache-Refs nicht öffentlich erreichbar werden.
+Zehn geschlossene providerseitige Dependabot-PR-Refs und ihre Aktionshistorie
+bleiben Bestandteil des bestehenden GitHub-Repositoryverlaufs. Sie sind keine
+Branch- oder Tag-Refs und lassen sich durch die gezielte Tagbereinigung nicht
+entfernen. Eine vollständig spurenfreie Veröffentlichung würde ein neues
+Repository und eine erneute Releasebindung erfordern; dieser Weg wurde zugunsten
+der normalen, nachvollziehbaren Projekthistorie nicht gewählt.
 
 ## Assets, Texte und erzeugte Dateien
 
