@@ -36,7 +36,8 @@ Veröffentlichung zusätzlich die in P6 festgelegte kurze Wiederholungsabnahme.
   Deinstallation und Neuinstallation;
 - Android 16 mit Firefox: Anmeldung, Textdatei vom PC laden und öffnen, Bild zum
   PC hochladen sowie Sitzung in beiden Richtungen trennen;
-- gezielte Prüfung des gehärteten Installers mit Microsoft Defender ohne Fund.
+- gezielte Prüfung des finalen Installers mit dem oben genannten SHA-256-Hash
+  am 4. September 2026 mit Microsoft Defender ohne Fund.
 
 ## Bekannte Grenzen
 
@@ -82,5 +83,6 @@ zunächst nicht geöffnet. Vertrauliche Sicherheitsmeldungen dürfen nicht in ei
 
 Diese Datei bleibt bis zu einer gesonderten Veröffentlichungsentscheidung ein
 Entwurf. Ein Downloadlink wird erst bei einer tatsächlich freigegebenen
-Veröffentlichung ergänzt. Vor diesem Schritt wird genau der oben gehashte
-Installer noch einmal gezielt mit Microsoft Defender geprüft.
+Veröffentlichung ergänzt. Die gezielte Microsoft-Defender-Prüfung genau des
+oben gehashten finalen Installers wurde am 4. September 2026 ohne Fund
+abgeschlossen.

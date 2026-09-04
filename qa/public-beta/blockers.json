@@ -33,9 +33,10 @@
         "final installer sha256 7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c",
         "manual acceptance source revision a70c1612f2c673b0be7cede2676b851ae134eccd",
         "manual acceptance installer sha256 1cc647a3db9eb874bf620efba58c9e57310ab756ebc8d943715f059f5c4cb9fc",
-        "owner confirmation and Windows Installed Apps screenshot on 2026-09-04"
+        "owner confirmation and Windows Installed Apps screenshot on 2026-09-04",
+        "owner-confirmed targeted Microsoft Defender scan of the final installer hash without a finding on 2026-09-04"
       ],
-      "residualRisk": "The final candidate is unsigned and has no public-download SmartScreen reputation; because the non-byte-identical rebuild followed documentation and release-tool-only changes, its exact hash still requires a targeted Defender scan before a later publication GO. The explicitly accepted P4 platform, stress and accessibility evidence gaps remain disclosed in the release notes."
+      "residualRisk": "The final candidate is unsigned and has no public-download SmartScreen reputation; future Defender signatures can change independently of the completed targeted scan. The explicitly accepted P4 platform, stress and accessibility evidence gaps remain disclosed in the release notes."
     },
     {
       "id": "PB-09",

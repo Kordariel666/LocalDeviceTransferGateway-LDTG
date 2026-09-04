@@ -92,9 +92,11 @@ ausgelieferte Laufzeitinhalt sind deshalb unverändert; die Funktionsabnahme mus
 nicht wiederholt werden.
 
 Der finale NSIS-Installer ist wegen der dokumentierten, nicht bytegleichen
-Buildgrenzen trotzdem eine neue Binärdatei. Vor einem späteren `GO-APACHE` ist
-daher noch eine gezielte Microsoft-Defender-Prüfung genau dieses finalen Hashes
-erforderlich. Dieser manuelle Schritt ist keine Veröffentlichungsfreigabe.
+Buildgrenzen trotzdem eine neue Binärdatei. Der Owner prüfte deshalb am
+4. September 2026 genau den finalen Installer mit SHA-256
+`7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c`
+gezielt mit Microsoft Defender; die Prüfung meldete keinen Fund. Dieser
+manuelle Schritt ist keine Veröffentlichungsfreigabe.
 
 ## Bereits akzeptierte Restrisiken
 

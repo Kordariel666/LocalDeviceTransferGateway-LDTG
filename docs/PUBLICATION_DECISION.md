@@ -38,8 +38,8 @@ keine bloße Veröffentlichungsentscheidung.
 
 Der Owner bestätigt in einem eigenen Schritt:
 
-1. eine gezielte Microsoft-Defender-Prüfung genau des oben gehashten finalen
-   Installers ohne Fund;
+1. die am 4. September 2026 ohne Fund abgeschlossene gezielte
+   Microsoft-Defender-Prüfung genau des oben gehashten finalen Installers;
 2. den betrachteten Commit und Installerhash;
 3. Apache-2.0 und `Kordariel666` als öffentliche Angaben;
 4. den Issues-only-Beitragsmodus;
