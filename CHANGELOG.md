@@ -28,9 +28,9 @@ Geplante Änderungen und deren Reihenfolge stehen in [`docs/ROADMAP.md`](docs/RO
   Alias-IP-Adressen desselben physischen Peers, Diagnoseexporte vermeiden
   sensitive Netzwerkkennungen und der Uninstaller entfernt aktuelle wie
   historische Firewallregeln fail-closed.
-- Der für eine mögliche öffentliche Beta akzeptierte Supportumfang bleibt bis
-  zu einem späteren `GO` unwirksam und ist auf die neueste Beta, Windows 11 25H2
-  sowie real in P4 bestandene aktuelle Mobilkombinationen begrenzt.
+- Der für die öffentliche Beta aktivierte Supportumfang ist auf die neueste
+  Beta, Windows 11 25H2 sowie real in P4 bestandene aktuelle
+  Mobilkombinationen begrenzt.
 
 ### Added
 

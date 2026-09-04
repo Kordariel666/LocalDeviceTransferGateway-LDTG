@@ -2,10 +2,10 @@
 
 ## Unterstützter Umfang
 
-Die vorgeschlagene öffentliche Beta unterstützt ausschließlich ihren neuesten
-veröffentlichten Stand auf Windows 11 25H2 mit aktuellen Sicherheitsupdates und
-WebView2. Der genaue Browser-/Gerätestand wird erst mit der realen P4-Abnahme
-eingefroren; bis dahin ist dies kein Veröffentlichungs- oder Supportversprechen.
+Die öffentliche Beta unterstützt ausschließlich ihren neuesten veröffentlichten
+Stand auf Windows 11 25H2 mit aktuellen Sicherheitsupdates und WebView2. Als
+real geprüfte Mobilkombination ist Android 16 mit Firefox dokumentiert; andere
+Mobilgeräte und Browser sind nicht als getestet oder unterstützt zugesichert.
 Windows 10 und ältere beziehungsweise bereits abgekündigte Windows-11-Stände
 gehören nicht zum zugesagten Beta-Umfang. Sicherheitsmeldungen sollten sich auf
 den aktuellen Stand des Hauptzweigs beziehen.
@@ -46,15 +46,10 @@ Der `.ldtg`-Arbeitsordner ist kein öffentlicher Eigentumsnachweis. Laufende Upl
 
 ## Meldung
 
-Das Repository ist derzeit privat und besitzt noch keinen öffentlichen
-Meldekanal. Solange das so bleibt, dürfen ausschließlich bereits berechtigte
-Mitwirkende einen privaten GitHub Security Advisory im Repository eröffnen.
-
-Vor einer öffentlichen Beta muss GitHubs **Private Vulnerability Reporting**
-aktiviert und der Link
-<https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG/security/advisories/new>
-praktisch geprüft werden. Erst dann gilt er als externer vertraulicher Kanal. Ein
-öffentliches Issue ist kein Ersatz für vertrauliche Exploitdetails.
+GitHubs **Private Vulnerability Reporting** ist der vertrauliche Meldeweg für
+externe Sicherheitsmeldungen:
+<https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG/security/advisories/new>.
+Ein öffentliches Issue ist kein Ersatz für vertrauliche Exploitdetails.
 
 Bitte keine ungeprüften Details öffentlich veröffentlichen. Eine Meldung sollte
 betroffene Version, reproduzierbare Schritte, erwartetes und tatsächliches

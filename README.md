@@ -7,9 +7,11 @@ Windows-PC und Mobilgeräten im selben lokalen Netzwerk. Die Desktop-App stellt
 ausgewählte Ordner bereit; auf dem Handy genügt ein Browser. Es gibt kein
 Cloudkonto und keinen externen Datei-Upload.
 
-Aktueller Stand: `0.3.0-rc.2` ist als unsignierter Public-Beta-Kandidat geprüft,
-aber noch nicht öffentlich freigegeben. Deshalb gibt es derzeit keinen
-offiziellen öffentlichen Download.
+Aktueller Stand: `0.3.0-rc.2` ist als unsignierte öffentliche Beta
+freigegeben. Der offizielle Download samt Prüfsummen, SBOM und Lizenznachweisen
+steht in der
+[GitHub-Prerelease](https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG/releases/tag/v0.3.0-rc.2)
+bereit.
 
 ## Funktionen
 
@@ -98,8 +100,8 @@ Der [Dokumentationsindex](docs/README.md) trennt Bedienung, technische Referenz,
 Release-Unterlagen und historische Nachweise. Der aktuelle Release-Nachweis steht
 in [docs/RELEASE_NOTES_0.3.0-rc.2.md](docs/RELEASE_NOTES_0.3.0-rc.2.md).
 
-Fehlerberichte und Funktionsvorschläge sind nach einer Veröffentlichung über
-Issues willkommen. Pull Requests sind zunächst nicht geöffnet; siehe
+Fehlerberichte und Funktionsvorschläge sind über Issues willkommen. Pull
+Requests sind zunächst deaktiviert; siehe
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Lizenz

@@ -1,11 +1,11 @@
-# Support für eine mögliche öffentliche Beta
+# Support für die öffentliche Beta
 
 Stand: 4. September 2026
-Status: **PB-04 am 3. September 2026 akzeptiert; noch kein wirksames Supportversprechen**
+Status: **für die öffentliche Beta seit 4. September 2026 wirksam**
 
-Dieser Rahmen wird erst mit einer späteren ausdrücklichen
-Veröffentlichungsfreigabe wirksam. Das Repository bleibt derzeit privat; es gibt
-keine öffentliche Beta und keinen externen Supportkanal.
+Dieser Rahmen gilt für die öffentliche LDTG-Beta. GitHub Issues dienen für
+gewöhnliche Fehlerberichte und Funktionsvorschläge; vertrauliche
+Sicherheitsmeldungen gehören in GitHub Private Vulnerability Reporting.
 
 ## Akzeptierter Umfang
 
@@ -59,10 +59,9 @@ Solange die Beta ausdrücklich als aktiv geführt wird:
   als nicht unterstützt kennzeichnen;
 - nur den neuesten Beta-Stand als unterstützt darstellen.
 
-Diese Mindestweise ist mit PB-04 als Produktentscheidung akzeptiert, aber keine
-bereits abgegebene Dauerzusage. Sie wird nur zusammen mit einer späteren
-ausdrücklichen Veröffentlichungsfreigabe und einem klaren Ende des Beta-Status
-aktiviert.
+Diese Mindestweise wurde mit PB-04 als Produktentscheidung akzeptiert und mit
+der öffentlichen Freigabe am 4. September 2026 aktiviert. Sie bleibt auf die
+Dauer der ausdrücklich aktiven Beta begrenzt.
 
 ## Ende oder Pause des Projekts
 
@@ -74,5 +73,6 @@ zurückgerufen werden; der Hinweis darf daher nicht nur in einem neuen Release
 stehen.
 
 Entscheidung `PB-04` vom 3. September 2026: Der Owner akzeptiert diesen engen
-Umfang samt monatlicher Best-effort-Prüfung und geordnetem Archivierungsweg für
-den Fall einer später ausdrücklich freigegebenen öffentlichen Beta.
+Umfang samt monatlicher Best-effort-Prüfung und geordnetem Archivierungsweg.
+Mit `GO-APACHE` vom 4. September 2026 wurde der Rahmen für die öffentliche Beta
+wirksam.

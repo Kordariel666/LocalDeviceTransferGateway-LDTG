@@ -12,7 +12,7 @@ den Arbeitsbaum geprüft; der dauerhafte Nachweis steht unter
 ## 1. Überblick
 
 LDTG ist eine Tauri-Anwendung für kurzlebige Dateiübertragungen in einem
-bestätigten lokalen Netzwerk. Für eine mögliche öffentliche Beta ist Windows 11
+bestätigten lokalen Netzwerk. Für die öffentliche Beta ist Windows 11
 25H2 als enger unterstützter Desktopstand vorgeschlagen. Ein vertrauenswürdiger lokaler Operator
 wählt Download- und/oder Uploadordner, Netzwerkschnittstelle und Port. Das
 Rust-Backend verankert die Wurzeln, bindet einen Axum-Dienst direkt an die
@@ -121,7 +121,7 @@ flowchart LR
 
 ### Annahmen, bewusste Grenzen und R4.3-Entscheidung
 
-- Für eine mögliche öffentliche Beta ist ausschließlich Windows 11 25H2 mit
+- Für die öffentliche Beta ist ausschließlich Windows 11 25H2 mit
   current-user-NSIS vorgeschlagen; Browser-/Geräteversionen werden erst durch P4
   belegt. Code-Signing, Auto-Update und öffentliche Veröffentlichung sind noch
   nicht Teil des aktuellen Produkts (`src-tauri/tauri.conf.json`).

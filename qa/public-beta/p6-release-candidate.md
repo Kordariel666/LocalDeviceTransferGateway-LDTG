@@ -5,6 +5,10 @@ Status: **P6 bestanden; `0.3.0-rc.2` nach der Repository-Bereinigung erneut
 lokal gebaut, privat getaggt und als private GitHub-Prerelease vorbereitet,
 aber nicht öffentlich freigegeben oder signiert**
 
+Nachgelagerter Stand: Der Owner erteilte am 4. September 2026 nach P6
+`GO-APACHE`. Die öffentliche Freigabe ändert den hier dokumentierten
+Quellcommit, Installer und dessen Prüfsummen nicht.
+
 ## Festgelegter Kandidat
 
 | Feld | Wert |
@@ -122,11 +126,12 @@ Fehler im Kerntransfer blockiert P6 dagegen unmittelbar.
 Nach bestandenem P6 gab der Owner Commit, Push, den auf den Quellcommit
 gebundenen Tag und eine private GitHub-Prerelease ausdrücklich frei. Diese
 Vorbereitung wurde am 4. September 2026 abgeschlossen; alle sieben
-Releaseanhänge sind vorhanden. Das Repository bleibt privat und damit besteht
-noch kein öffentliches Supportversprechen.
+Releaseanhänge sind vorhanden. Das Repository blieb bis zur nachgelagerten
+`GO-APACHE`-Entscheidung privat, und bis dahin bestand kein öffentliches
+Supportversprechen.
 
-Nur der Sichtbarkeitswechsel einschließlich der unmittelbar anschließenden
-Prüfung von Private Vulnerability Reporting sowie ein eventueller späterer
-SignPath-Antrag bleiben externe Zustandsänderungen. Die noch offene öffentliche
-Entscheidung ist in
-[`docs/PUBLICATION_DECISION.md`](../../docs/PUBLICATION_DECISION.md) vorbereitet.
+Der nachgelagerte Sichtbarkeitswechsel einschließlich Private Vulnerability
+Reporting und Repository-Schutz ist in
+[`docs/PUBLICATION_DECISION.md`](../../docs/PUBLICATION_DECISION.md)
+dokumentiert. Ein eventueller SignPath-Antrag bleibt eine spätere externe
+Entscheidung.

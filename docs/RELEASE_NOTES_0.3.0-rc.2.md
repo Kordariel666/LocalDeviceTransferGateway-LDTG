@@ -1,7 +1,7 @@
 # LDTG 0.3.0-rc.2 – Release-Notes
 
 Stand: 4. September 2026
-Status: **private, unsignierte Prerelease; noch nicht öffentlich freigegeben**
+Status: **öffentliche, unsignierte Prerelease**
 
 LDTG – Local Device Transfer Gateway überträgt Dateien direkt zwischen einem
 Windows-PC und einem Handy im selben ausdrücklich vertrauten lokalen Netzwerk.
@@ -69,7 +69,7 @@ geprüft. Sie sind wie andere externe Dateien zu behandeln.
 
 LDTG steht unter Apache-2.0, Copyright © 2026 Kordariel666. Die erste Beta nimmt
 Fehlerberichte und Funktionsvorschläge über Issues an; Pull Requests sind
-zunächst nicht geöffnet. Vertrauliche Sicherheitsmeldungen dürfen nicht in ein
+zunächst deaktiviert. Vertrauliche Sicherheitsmeldungen dürfen nicht in ein
 öffentliches Issue geschrieben werden.
 
 ## Kandidatennachweis
@@ -82,8 +82,6 @@ zunächst nicht geöffnet. Vertrauliche Sicherheitsmeldungen dürfen nicht in ei
 - Authenticode: `NotSigned`
 
 Die [GitHub-Prerelease](https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG/releases/tag/v0.3.0-rc.2)
-mit Installer, Prüfsummen, SBOM, Buildmanifest und Lizenznachweisen ist im
-privaten Repository vorbereitet. Sie wird erst durch eine gesonderte
-Entscheidung zur öffentlichen Repositorysichtbarkeit allgemein zugänglich. Die
-gezielte Microsoft-Defender-Prüfung genau des oben gehashten finalen Installers
-wurde am 4. September 2026 ohne Fund abgeschlossen.
+stellt Installer, Prüfsummen, SBOM, Buildmanifest und Lizenznachweise öffentlich
+bereit. Die gezielte Microsoft-Defender-Prüfung genau des oben gehashten finalen
+Installers wurde am 4. September 2026 ohne Fund abgeschlossen.

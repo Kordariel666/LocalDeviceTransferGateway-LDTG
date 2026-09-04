@@ -1,18 +1,18 @@
 # Veröffentlichungsentscheidung
 
 Stand: 4. September 2026
-Status: **private Prerelease vorbereitet; keine öffentliche Freigabe**
+Status: **`GO-APACHE` erteilt; öffentliche Beta freigegeben**
 
-P0 bis P6 sind für den nicht öffentlich freigegebenen, unsignierten Kandidaten
-`0.3.0-rc.2` abgeschlossen. Tag, Push und die GitHub-Prerelease wurden nach
-ausdrücklicher Owner-Bestätigung im privaten Repository vorbereitet. Der
-Sichtbarkeitswechsel bleibt eine getrennte Owner-Entscheidung.
+P0 bis P6 sind für den unsignierten Kandidaten `0.3.0-rc.2` abgeschlossen. Der
+Owner erteilte am 4. September 2026 nach der abschließenden Repository- und
+GitHub-Prüfung `GO-APACHE`. Repository, Tag und GitHub-Prerelease werden damit
+unter Apache-2.0 als erste öffentliche Beta freigegeben.
 
 ## Betrachteter Kandidat
 
 - Quellcommit: `4956cd3de88d6d5d5cff6c3653a71d9695a60c32`
 - Tag: `v0.3.0-rc.2` – angelegt, gepusht und auf den Quellcommit gebunden
-- private Prerelease:
+- öffentliche Prerelease:
   `https://github.com/Kordariel666/LocalDeviceTransferGateway-LDTG/releases/tag/v0.3.0-rc.2`
 - Installer SHA-256:
   `7c7263d37e94cac525ac7de6d5ec1ffaf3c3a3ed680dc13e79017886c19d6f9c`
@@ -24,14 +24,12 @@ Sichtbarkeitswechsel bleibt eine getrennte Owner-Entscheidung.
   Firefox; Best Effort ohne SLA
 - wiederkehrende Kosten: 0 Euro
 
-## Mögliche Entscheidungen
+## Getroffene Entscheidung
 
-- `GO-APACHE`: genau diesen Kandidaten unter Apache-2.0 als ausdrücklich
-  unsignierte erste öffentliche Beta freigeben;
-- `HOLD`: privat und unveröffentlicht lassen, ohne Rückbau;
-- `ARCHIVE`: Entwicklung beenden und keine Beta veröffentlichen;
-- `COMMERCIAL-DISCOVERY`: öffentliche Beta anhalten und zuerst einen getrennten
-  Geschäfts-/Lizenzweg bewerten.
+`GO-APACHE`: Genau dieser Kandidat wird unter Apache-2.0 als ausdrücklich
+unsignierte erste öffentliche Beta freigegeben. Die dokumentierten Grenzen,
+der Issues-only-Beitragsmodus und der Best-effort-Supportrahmen bleiben
+Bestandteil dieser Entscheidung.
 
 `GO-GPL` ist für diesen Kandidaten nicht mehr passend, weil Apache-2.0 bereits
 bewusst aktiviert wurde. Ein Lizenzwechsel wäre ein neues Arbeitspaket und
@@ -49,15 +47,14 @@ Der Owner hat bestätigt:
 5. den begrenzten Support- und Wartungsumfang;
 6. die bekannte unsignierte Windows-Warnung und die dokumentierten
    Plattform-, Stress- und Barrierefreiheitslücken;
-7. dass Commit, Push, Tag und die private GitHub-Prerelease vorbereitet werden
-   dürfen.
+7. dass Commit, Push, Tag und die GitHub-Prerelease vorbereitet und anschließend
+   öffentlich zugänglich gemacht werden dürfen.
 
-Für ein späteres `GO-APACHE` fehlt nur noch die gesonderte Bestätigung, das
-Repository auf öffentlich zu stellen. Dieser Sichtbarkeitswechsel macht Code,
-Tag, Prerelease und deren Anhänge öffentlich.
+Die gesonderte Bestätigung zum öffentlichen Sichtbarkeitswechsel wurde im
+Anschluss an die letzte Freigabeprüfung am 4. September 2026 erteilt.
 
-Private Vulnerability Reporting wird bei einem späteren `GO-APACHE` unmittelbar
-nach dem Sichtbarkeitswechsel praktisch geprüft und muss vor Bereitstellung des
-Binärdownloads funktionieren. Ein eventueller SignPath-Antrag bleibt eine
-spätere, separat zu genehmigende Entscheidung. P6 hat beides nicht aktiviert
-und keine kostenpflichtige Verpflichtung erzeugt.
+Private Vulnerability Reporting, Branch-Schutz und die kostenlosen
+GitHub-Sicherheitsfunktionen werden unmittelbar nach dem Sichtbarkeitswechsel
+aktiviert und geprüft. Ein eventueller SignPath-Antrag bleibt eine spätere,
+separat zu genehmigende Entscheidung. Die öffentliche Beta erzeugt keine
+kostenpflichtige Verpflichtung.
