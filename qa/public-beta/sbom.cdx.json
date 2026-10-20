@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:4956cd3d-0000-4000-8000-95af3687f770",
+  "serialNumber": "urn:uuid:79c38551-0000-4000-8000-ec946eaeea0a",
   "version": 1,
   "metadata": {
     "tools": {
@@ -27,11 +27,11 @@
     "properties": [
       {
         "name": "ldtg:source-revision",
-        "value": "4956cd3de88d6d5d5cff6c3653a71d9695a60c32"
+        "value": "79c3855187be1015797d7527d0d0af28565f7699"
       },
       {
         "name": "ldtg:pnpm-lock-sha256",
-        "value": "95af3687f770be22de3aff4693c25c7f8de5f7882a500726a298b77186fcdaa3"
+        "value": "ec946eaeea0a9e58b3a6674a41d1759367be50e52487e1b8fa6eeaff9b644cb1"
       },
       {
         "name": "ldtg:cargo-lock-sha256",
@@ -1311,6 +1311,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1328,7 +1332,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1354,6 +1358,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1371,7 +1379,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1397,6 +1405,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1414,7 +1426,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1440,6 +1452,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1457,7 +1473,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1483,6 +1499,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1500,7 +1520,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1526,6 +1546,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1543,7 +1567,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1569,6 +1593,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1586,7 +1614,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1612,6 +1640,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1629,7 +1661,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1655,6 +1687,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1672,7 +1708,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1698,6 +1734,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1715,7 +1755,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1741,6 +1781,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1758,7 +1802,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1784,6 +1828,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1801,7 +1849,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1827,6 +1875,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1844,7 +1896,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1870,6 +1922,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1887,7 +1943,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1913,6 +1969,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1930,7 +1990,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1956,6 +2016,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -1973,7 +2037,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -1999,6 +2063,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2016,7 +2084,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2042,6 +2110,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2059,7 +2131,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2085,6 +2157,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2102,7 +2178,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2128,6 +2204,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2145,7 +2225,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2171,6 +2251,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2188,7 +2272,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2214,6 +2298,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2231,7 +2319,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2257,6 +2345,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2274,7 +2366,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2300,6 +2392,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2317,7 +2413,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -2343,6 +2439,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/evanw/esbuild"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/evanw/esbuild#readme"
         }
       ],
       "properties": [
@@ -2360,7 +2460,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3378,7 +3478,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3425,7 +3525,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3472,7 +3572,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3519,7 +3619,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3566,7 +3666,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3613,7 +3713,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3660,7 +3760,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3707,7 +3807,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3754,7 +3854,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3801,7 +3901,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3848,7 +3948,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3895,7 +3995,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3942,7 +4042,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -3989,7 +4089,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4271,7 +4371,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4318,7 +4418,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4365,7 +4465,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4412,7 +4512,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4459,7 +4559,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4506,7 +4606,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4553,7 +4653,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4600,7 +4700,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4647,7 +4747,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -4694,7 +4794,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -6736,14 +6836,14 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/brace-expansion@5.0.9",
+      "bom-ref": "pkg:npm/brace-expansion@5.0.12",
       "name": "brace-expansion",
-      "version": "5.0.9",
+      "version": "5.0.12",
       "scope": "optional",
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "49c43822ebc8105d533253fb66dfaf8c9ffff7394f6f64837315b13376e4f2ceade8619d27b28ed5d09c4e274e3c929e3d6df42c4ff6713ef00b23e1a3dfd6c6"
+          "content": "628bd0debce168b308ac38cd0cc90d4b4d6d79af77aa11211b9c72f1febe47497e770dca8bee6c0a822823de368ae2d94c75a881692d830543854d3d88d12299"
         }
       ],
       "licenses": [
@@ -6751,7 +6851,7 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:npm/brace-expansion@5.0.9",
+      "purl": "pkg:npm/brace-expansion@5.0.12",
       "externalReferences": [
         {
           "type": "vcs",
@@ -8659,7 +8759,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10000,6 +10100,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10017,7 +10121,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10043,6 +10147,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10060,7 +10168,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10086,6 +10194,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10103,7 +10215,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10129,6 +10241,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10146,7 +10262,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10172,6 +10288,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10189,7 +10309,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10215,6 +10335,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10232,7 +10356,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10258,6 +10382,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10275,7 +10403,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10301,6 +10429,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10318,7 +10450,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10344,6 +10476,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10361,7 +10497,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -10387,6 +10523,10 @@
         {
           "type": "vcs",
           "url": "https://github.com/parcel-bundler/lightningcss"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/parcel-bundler/lightningcss#readme"
         }
       ],
       "properties": [
@@ -10404,7 +10544,7 @@
         },
         {
           "name": "ldtg:installed-on-audit-host",
-          "value": "true"
+          "value": "false"
         }
       ]
     },
@@ -12237,14 +12377,14 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/source-map-js@1.2.1",
+      "bom-ref": "pkg:npm/source-map-js@1.2.2",
       "name": "source-map-js",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "scope": "optional",
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "51758c2a12cec1529bef6f0852d40f5f17d853ebac7726ed52b2bff2e184f0240cbeb84ea70bf30c1c23d108522fb31073bbc8b084811bc550f3e203431a5f40"
+          "content": "2868fff18e37c77e5a6550edb7e27898ad61a0b18750b3187d290e0c93508cd0c2de85b53ea3e8c4cc28d292d4b1633f5041b338dfcdc5e1f2c047cd5cd3f757"
         }
       ],
       "licenses": [
@@ -12252,7 +12392,7 @@
           "expression": "BSD-3-Clause"
         }
       ],
-      "purl": "pkg:npm/source-map-js@1.2.1",
+      "purl": "pkg:npm/source-map-js@1.2.2",
       "externalReferences": [
         {
           "type": "vcs",
@@ -13012,14 +13152,14 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/undici@8.10.1",
+      "bom-ref": "pkg:npm/undici@8.10.2",
       "name": "undici",
-      "version": "8.10.1",
+      "version": "8.10.2",
       "scope": "optional",
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "610dd695baa360c98da5dbc31fae230202e3c6e011f7eeb8f5c6a50d685bb2161a79018ed9b4789c8f78391266c08dc9f588682909e9c8638afb4ce5592e4de5"
+          "content": "ff2e3f6c7f58354e618bd348ae93aebc65c5731ae3dc232b57efc0629a300184e91e7f205ff5cf163372efae853e8618d2689085d5bdefb24558a18d841770c9"
         }
       ],
       "licenses": [
@@ -13027,7 +13167,7 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:npm/undici@8.10.1",
+      "purl": "pkg:npm/undici@8.10.2",
       "externalReferences": [
         {
           "type": "vcs",
@@ -45720,7 +45860,7 @@
       ]
     },
     {
-      "ref": "pkg:npm/brace-expansion@5.0.9",
+      "ref": "pkg:npm/brace-expansion@5.0.12",
       "dependsOn": [
         "pkg:npm/balanced-match@4.0.4"
       ]
@@ -45759,7 +45899,7 @@
       "ref": "pkg:npm/css-tree@3.2.1",
       "dependsOn": [
         "pkg:npm/mdn-data@2.27.1",
-        "pkg:npm/source-map-js@1.2.1"
+        "pkg:npm/source-map-js@1.2.2"
       ]
     },
     {
@@ -46117,7 +46257,7 @@
         "pkg:npm/saxes@6.0.0",
         "pkg:npm/symbol-tree@3.2.4",
         "pkg:npm/tough-cookie@6.0.2",
-        "pkg:npm/undici@8.10.1",
+        "pkg:npm/undici@8.10.2",
         "pkg:npm/w3c-xmlserializer@5.0.0",
         "pkg:npm/webidl-conversions@8.0.1",
         "pkg:npm/whatwg-mimetype@5.0.0",
@@ -46250,7 +46390,7 @@
       "dependsOn": [
         "pkg:npm/%40babel/parser@7.29.8",
         "pkg:npm/%40babel/types@7.29.8",
-        "pkg:npm/source-map-js@1.2.1"
+        "pkg:npm/source-map-js@1.2.2"
       ]
     },
     {
@@ -46266,7 +46406,7 @@
     {
       "ref": "pkg:npm/minimatch@10.2.6",
       "dependsOn": [
-        "pkg:npm/brace-expansion@5.0.9"
+        "pkg:npm/brace-expansion@5.0.12"
       ]
     },
     {
@@ -46343,7 +46483,7 @@
       "dependsOn": [
         "pkg:npm/nanoid@3.3.18",
         "pkg:npm/picocolors@1.1.1",
-        "pkg:npm/source-map-js@1.2.1"
+        "pkg:npm/source-map-js@1.2.2"
       ]
     },
     {
@@ -46442,7 +46582,7 @@
       "dependsOn": []
     },
     {
-      "ref": "pkg:npm/source-map-js@1.2.1",
+      "ref": "pkg:npm/source-map-js@1.2.2",
       "dependsOn": []
     },
     {
@@ -46532,7 +46672,7 @@
       "dependsOn": []
     },
     {
-      "ref": "pkg:npm/undici@8.10.1",
+      "ref": "pkg:npm/undici@8.10.2",
       "dependsOn": []
     },
     {

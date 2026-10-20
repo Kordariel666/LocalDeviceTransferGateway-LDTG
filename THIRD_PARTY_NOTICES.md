@@ -8,7 +8,7 @@ packages embedded in the web interfaces and the Cargo packages reachable in
 the `x86_64-pc-windows-msvc` runtime graph. Build-only and test-only tools are
 recorded separately in `qa/public-beta/dependency-licenses.json`.
 
-- pnpm lock SHA-256: `95af3687f770be22de3aff4693c25c7f8de5f7882a500726a298b77186fcdaa3`
+- pnpm lock SHA-256: `ec946eaeea0a9e58b3a6674a41d1759367be50e52487e1b8fa6eeaff9b644cb1`
 - Cargo lock SHA-256: `58ec0bf5866ec981eb1a6babf547584b799ce63910fb74c25240d677eff9ba04`
 - Runtime components: **344**
 - Distinct notice texts: **238**
