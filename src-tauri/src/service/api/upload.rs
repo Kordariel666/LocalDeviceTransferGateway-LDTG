@@ -141,6 +141,11 @@ pub(super) fn wait_for_upload_io_test_gate(state: &TransferServiceState) {
         .lock()
         .expect("upload I/O test gate lock poisoned")
         .clone();
+    wait_for_upload_test_gate(gate);
+}
+
+#[cfg(test)]
+fn wait_for_upload_test_gate(gate: Option<crate::service::state::UploadIoTestGate>) {
     if let Some(gate) = gate {
         let _ = gate.started.send(());
         let (released, wake) = &*gate.release;
@@ -271,36 +276,34 @@ pub(super) async fn create_upload(
             "Die Wiederaufnahme-ID des Uploads ist ungültig.",
         ));
     };
-    if let Some(completed) = state
-        .completed_upload_by_token(&client_token, &name, payload.size, payload.last_modified)
-        .await
-    {
-        return Ok(Json(UploadResponse {
-            upload_id: completed.upload_id,
-            offset: completed.total_bytes,
-            total_bytes: completed.total_bytes,
-            chunk_size: CHUNK_SIZE,
-            service_id: state.service_id.clone(),
-            last_modified: completed.last_modified,
-        }));
-    }
+    // Always take publication before state: publishers need state only after I/O.
+    let publication_lock = state.upload_publication_lock.clone().lock_owned().await;
     let reservation_lock = state.upload_fs_lock.clone().lock_owned().await;
-    let io_permit = state
-        .begin_upload_io(client.ip())
-        .await
-        .ok_or_else(upload_io_busy)?;
     let task_state = state.clone();
     let create = tokio::spawn(async move {
+        let _publication_lock = publication_lock;
         let _reservation_lock = reservation_lock;
         ensure_session_active(&task_state, &session).await?;
-        let active_uploads: Vec<_> = task_state.uploads.lock().await.values().cloned().collect();
-        if active_uploads.len() >= 64 {
-            return Err(ApiFailure::new(
-                StatusCode::TOO_MANY_REQUESTS,
-                "TOO_MANY_UPLOADS",
-                "Es sind bereits zu viele unvollständige Uploads vorhanden.",
-            ));
+        if let Some(completed) = task_state
+            .completed_upload_by_token(
+                &client_token,
+                &name,
+                payload.size,
+                payload.last_modified,
+                &session,
+            )
+            .await
+        {
+            return Ok(UploadResponse {
+                upload_id: completed.upload_id,
+                offset: completed.total_bytes,
+                total_bytes: completed.total_bytes,
+                chunk_size: CHUNK_SIZE,
+                service_id: task_state.service_id.clone(),
+                last_modified: completed.last_modified,
+            });
         }
+        let active_uploads: Vec<_> = task_state.uploads.lock().await.values().cloned().collect();
         let mut address_uploads = 0_usize;
         for upload in &active_uploads {
             let upload = upload.lock().await;
@@ -324,6 +327,13 @@ pub(super) async fn create_upload(
                 address_uploads += 1;
             }
         }
+        if active_uploads.len() >= 64 {
+            return Err(ApiFailure::new(
+                StatusCode::TOO_MANY_REQUESTS,
+                "TOO_MANY_UPLOADS",
+                "Es sind bereits zu viele unvollständige Uploads vorhanden.",
+            ));
+        }
         if address_uploads >= MAX_UPLOADS_PER_ADDRESS {
             return Err(ApiFailure::new(
                 StatusCode::TOO_MANY_REQUESTS,
@@ -332,6 +342,10 @@ pub(super) async fn create_upload(
             ));
         }
 
+        let io_permit = task_state
+            .begin_upload_io(client.ip())
+            .await
+            .ok_or_else(upload_io_busy)?;
         let id = Uuid::new_v4().to_string();
         let partial_dir = task_state.partial_dir.as_ref().cloned().ok_or_else(|| {
             ApiFailure::new(
@@ -509,7 +523,9 @@ pub(super) async fn upload_status(
         )
     })?;
     let session = authorized(&state, &headers, client.ip(), false).await?;
-    if let Some(completed) = state.completed_upload(&id, session.address).await {
+    let _filesystem = state.upload_fs_lock.lock().await;
+    ensure_session_active(&state, &session).await?;
+    if let Some(completed) = state.completed_upload(&id, &session).await {
         return Ok(Json(UploadResponse {
             upload_id: completed.upload_id,
             offset: completed.total_bytes,
@@ -784,10 +800,13 @@ pub(super) async fn finalize_upload_owned(
                 anchor,
             )
         };
+        let _publication = state.upload_publication_lock.lock().await;
         let publish_name = requested_name.clone();
         let publish_path = partial_path.clone();
         let publish_cancel = cancel_signal.clone();
         let cleanup_file = file.clone();
+        #[cfg(test)]
+        let publish_gate = state.upload_publish_test_gate.lock().unwrap().clone();
         let (target, io_permit) = tokio::task::spawn_blocking(move || {
             let result = (|| -> ApiResult<PathBuf> {
                 let actual_size = file
@@ -837,6 +856,8 @@ pub(super) async fn finalize_upload_owned(
                                 "Datei konnte nicht endgültig übernommen werden.",
                             )
                         })?;
+                #[cfg(test)]
+                wait_for_upload_test_gate(publish_gate);
                 if publish_cancel.load(AtomicOrdering::Acquire) {
                     let _ = delete_open_upload(&file, &target);
                     return Err(ApiFailure::new(
@@ -900,7 +921,14 @@ pub(super) async fn finalize_upload_owned(
         }
         state.uploads.lock().await.remove(&id);
         state.complete_upload_budget(total);
-        drop(_filesystem);
+        #[cfg(test)]
+        {
+            let gate = state.upload_receipt_test_gate.lock().unwrap().clone();
+            if let Some(gate) = gate {
+                gate.0.notify_one();
+                gate.1.notified().await;
+            }
+        }
         state
             .remember_completed_upload(CompletedUpload::new(
                 id.clone(),
@@ -912,6 +940,8 @@ pub(super) async fn finalize_upload_owned(
                 client_token,
             ))
             .await;
+        drop(_filesystem);
+        drop(_publication);
         state
             .update_transfer(&transfer_id, total, Some(TransferState::Complete))
             .await;
@@ -939,13 +969,13 @@ pub(super) async fn complete_upload(
         )
     })?;
     let session = authorized(&state, &headers, client.ip(), true).await?;
-    if let Some(completed) = state.completed_upload(&id, session.address).await {
+    let filesystem = state.upload_fs_lock.lock().await;
+    ensure_session_active(&state, &session).await?;
+    if let Some(completed) = state.completed_upload(&id, &session).await {
         return Ok(Json(CompleteResponse {
             name: completed.name,
         }));
     }
-    let filesystem = state.upload_fs_lock.lock().await;
-    ensure_session_active(&state, &session).await?;
     let record = owned_upload(&state, &id, &session).await?;
     let record_guard = record.lock().await;
     if record_guard.cancelled {

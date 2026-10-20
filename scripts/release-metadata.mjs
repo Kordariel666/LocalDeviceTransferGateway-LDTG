@@ -105,7 +105,10 @@ const noticeText = readFileSync(join(root, "NOTICE"), "utf8");
 if (!noticeText.includes("Copyright 2026 Kordariel666") || !noticeText.includes("Apache License, Version 2.0")) {
   fail("NOTICE enthaelt nicht den erwarteten LDTG-Copyright- und Lizenzhinweis.");
 }
-run("node", ["scripts/third-party-notices.mjs", "--check"]);
+// Source preflight must work before installed packages or a Cargo cache exist.
+if (!process.argv.includes("--source-only")) {
+  run("node", ["scripts/third-party-notices.mjs", "--check"]);
+}
 const thirdPartyNoticesPath = join(root, "THIRD_PARTY_NOTICES.md");
 const thirdPartyNoticesText = readFileSync(thirdPartyNoticesPath, "utf8");
 if (!thirdPartyNoticesText.includes("# Third-party notices for LDTG") ||
@@ -209,6 +212,9 @@ const result = {
 
 const outputArgument = argumentValue("--output=");
 const revision = argumentValue("--revision=");
+if (outputArgument && process.argv.includes("--source-only")) {
+  fail("--source-only darf keine Releaseartefakte erzeugen.");
+}
 if (outputArgument) {
   if (!/^[0-9a-f]{40}$/i.test(revision ?? "")) fail("--revision muss ein vollstaendiger Commit-SHA sein.");
   const head = run("git", ["rev-parse", "HEAD"]).toLowerCase();

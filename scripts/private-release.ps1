@@ -195,10 +195,9 @@ try {
 
     Assert-CargoBinaryLayout
 
-    $metadataJson = Invoke-Captured -Command 'node' -CommandArguments @('scripts/release-metadata.mjs', '--check', '--json')
+    $metadataJson = Invoke-Captured -Command 'node' -CommandArguments @('scripts/release-metadata.mjs', '--check', '--source-only', '--json')
     $metadata = $metadataJson | ConvertFrom-Json
     Write-Host "Releaseeingaben validiert: LDTG $($metadata.version), Commit $revision"
-    if ($ValidateOnly) { return }
 
     if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
         $OutputDirectory = Join-Path $repoRoot "artifacts/private-release/$($metadata.version)/$($revision.Substring(0, 12))"
@@ -232,6 +231,11 @@ try {
 
     Invoke-Logged -Label 'Install pnpm dependencies from lockfile' -Command 'pnpm' -CommandArguments @('install', '--frozen-lockfile') -LogPath $logPath
     Invoke-Logged -Label 'Fetch Cargo dependencies from lockfile' -Command 'cargo' -CommandArguments @('fetch', '--manifest-path', 'src-tauri/Cargo.toml', '--locked') -LogPath $logPath
+
+    # Installed notice validation runs only after both locked bootstraps.
+    $metadataJson = Invoke-Captured -Command 'node' -CommandArguments @('scripts/release-metadata.mjs', '--check', '--json')
+    $metadata = $metadataJson | ConvertFrom-Json
+    if ($ValidateOnly) { return }
 
     $previousCargoOffline = Get-OptionalEnvironmentValue -Name 'CARGO_NET_OFFLINE'
     [Environment]::SetEnvironmentVariable('CARGO_NET_OFFLINE', 'true')

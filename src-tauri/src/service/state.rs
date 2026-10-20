@@ -307,6 +307,7 @@ pub struct CompletedUpload {
     pub total_bytes: u64,
     pub last_modified: u64,
     pub client_token: String,
+    pub recovery_session: Option<String>,
     completed_at: Instant,
 }
 
@@ -328,6 +329,7 @@ impl CompletedUpload {
             total_bytes,
             last_modified,
             client_token,
+            recovery_session: None,
             completed_at: Instant::now(),
         }
     }
@@ -416,8 +418,14 @@ pub struct TransferServiceState {
     pub last_activity_unix: AtomicI64,
     pub app: Option<AppHandle>,
     pub upload_fs_lock: Arc<Mutex<()>>,
+    // Scan/publication ordering is separate from cancellation and session cleanup.
+    pub upload_publication_lock: Arc<Mutex<()>>,
     #[cfg(test)]
     pub upload_io_test_gate: StdMutex<Option<UploadIoTestGate>>,
+    #[cfg(test)]
+    pub upload_publish_test_gate: StdMutex<Option<UploadIoTestGate>>,
+    #[cfg(test)]
+    pub upload_receipt_test_gate: StdMutex<Option<Arc<(tokio::sync::Notify, tokio::sync::Notify)>>>,
 }
 
 #[cfg(test)]
@@ -606,8 +614,13 @@ impl TransferServiceState {
             last_activity_unix: AtomicI64::new(Utc::now().timestamp()),
             app,
             upload_fs_lock: Arc::new(Mutex::new(())),
+            upload_publication_lock: Arc::new(Mutex::new(())),
             #[cfg(test)]
             upload_io_test_gate: StdMutex::new(None),
+            #[cfg(test)]
+            upload_publish_test_gate: StdMutex::new(None),
+            #[cfg(test)]
+            upload_receipt_test_gate: StdMutex::new(None),
         })
     }
 

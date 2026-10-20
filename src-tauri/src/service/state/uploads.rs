@@ -1,6 +1,7 @@
 use super::*;
 
 impl TransferServiceState {
+    // Caller holds upload_publication_lock through scan and reservation/commit.
     pub fn refresh_inbox_usage(&self) -> Result<(), String> {
         let (completed_bytes, completed_files) = scan_inbox_usage(self.roots.upload.as_deref())?;
         let mut usage = self.inbox_usage.lock().expect("inbox usage lock poisoned");
@@ -40,6 +41,17 @@ impl TransferServiceState {
     pub fn release_upload_bytes(&self, bytes: u64) {
         let mut usage = self.inbox_usage.lock().expect("inbox usage lock poisoned");
         usage.active_bytes = usage.active_bytes.saturating_sub(bytes);
+    }
+
+    #[cfg(test)]
+    pub fn inbox_usage_for_test(&self) -> (u64, u64, u64, u64) {
+        let usage = self.inbox_usage.lock().unwrap();
+        (
+            usage.completed_files,
+            usage.completed_bytes,
+            usage.active_files,
+            usage.active_bytes,
+        )
     }
 
     #[cfg(test)]
@@ -85,7 +97,7 @@ impl TransferServiceState {
     pub async fn completed_upload(
         &self,
         id: &str,
-        owner_address: IpAddr,
+        session: &SessionRecord,
     ) -> Option<CompletedUpload> {
         const RECEIPT_TTL: Duration = Duration::from_secs(24 * 60 * 60);
         let now = Instant::now();
@@ -93,7 +105,10 @@ impl TransferServiceState {
         receipts.retain(|_, item| now.saturating_duration_since(item.completed_at) < RECEIPT_TTL);
         receipts
             .get(id)
-            .filter(|item| item.owner_address == owner_address)
+            .filter(|item| {
+                item.owner_address == session.address
+                    || item.recovery_session.as_deref() == Some(session.id.as_str())
+            })
             .cloned()
     }
 
@@ -103,20 +118,26 @@ impl TransferServiceState {
         name: &str,
         total_bytes: u64,
         last_modified: u64,
+        session: &SessionRecord,
     ) -> Option<CompletedUpload> {
         const RECEIPT_TTL: Duration = Duration::from_secs(24 * 60 * 60);
         let now = Instant::now();
         let mut receipts = self.completed_uploads.lock().await;
         receipts.retain(|_, item| now.saturating_duration_since(item.completed_at) < RECEIPT_TTL);
         receipts
-            .values()
+            .values_mut()
             .find(|item| {
                 item.client_token == token
                     && item.requested_name == name
                     && item.total_bytes == total_bytes
                     && item.last_modified == last_modified
             })
-            .cloned()
+            .map(|item| {
+                // Token proof grants receipt access only to this authenticated session.
+                // Retaining only the latest recovery keeps storage bounded.
+                item.recovery_session = Some(session.id.clone());
+                item.clone()
+            })
     }
 
     pub fn schedule_upload_delete(

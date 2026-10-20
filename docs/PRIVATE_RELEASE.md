@@ -26,8 +26,8 @@ Ein kanonischer Dry-Run akzeptiert nur:
   und Clippy;
 - vollständige Commit-Hashes für jede externe GitHub Action.
 
-`pnpm release:check` prüft diese Bedingungen ohne ein Paket zu bauen. Der
-kanonische lokale Lauf wird so gestartet:
+`pnpm release:check` benötigt bereits installierte/geholte Lockfile-Abhängigkeiten,
+weil es installierte Drittanbieterhinweise prüft. Der kanonische lokale Lauf beginnt mit:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/private-release.ps1 `
@@ -36,8 +36,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/private-release.ps1 
 
 Ein abweichender Commit, ein schmutziger Arbeitsbaum, eine Versionsabweichung,
 ein überholter Audit oder eine nicht fixierte Action beendet den Lauf vor
-Installation, Test und Paketierung. Anschließend werden Abhängigkeiten nur aus
-den Lockfiles installiert, der vollständige `pnpm check` läuft vor
+Installation, Test und Paketierung. Die erste Metadatenprüfung verwendet
+`--source-only` und benötigt weder `node_modules` noch einen Cargo-Paketcache.
+Danach werden Abhängigkeiten aus den Lockfiles installiert/geholt und die
+vollständige Metadaten-/Noticeprüfung ausgeführt. `--source-only` darf keine
+SBOM-/Releaseartefakte erzeugen und ersetzt niemals die vollständige Prüfung.
+PowerShell `-ValidateOnly` führt ebenfalls Bootstrap und Noticeprüfung aus,
+schreibt ein Buildprotokoll ins Ausgabeverzeichnis und endet vor Qualitätstests
+und Paketbau. Wie ein vollständiger Lauf benötigt es ein leeres Ausgabeverzeichnis.
+Der vollständige `pnpm check` läuft vor
 `pnpm build`, und Cargo arbeitet nach dem kontrollierten Fetch offline. Eine
 durch den Build veränderte Quelldatei lässt den Lauf ebenfalls fehlschlagen.
 

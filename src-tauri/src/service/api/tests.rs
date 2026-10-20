@@ -1314,6 +1314,55 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
 
     let changed_address = Ipv4Addr::new(192, 168, 10, 51);
     let (changed_cookie, changed_csrf) = session_headers_for(&state, changed_address).await;
+    let (foreign_cookie, foreign_csrf) = session_headers_for(&state, changed_address).await;
+    for (method, suffix) in [(Method::GET, ""), (Method::POST, "/complete")] {
+        let response = app
+            .clone()
+            .oneshot(upload_request(
+                method,
+                &format!("/api/v1/uploads/{id}{suffix}"),
+                Body::empty(),
+                &changed_cookie,
+                &changed_csrf,
+                changed_address,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+    // A valid session plus an incorrect token must not grant receipt access.
+    let wrong_body = create_body.replace(
+        "0123456789abcdef0123456789abcdef",
+        "ffffffffffffffffffffffffffffffff",
+    );
+    let response = app
+        .clone()
+        .oneshot(upload_request(
+            Method::POST,
+            "/api/v1/uploads",
+            wrong_body,
+            &foreign_cookie,
+            &foreign_csrf,
+            changed_address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_ne!(json(response).await["uploadId"], id);
+    // CSRF failure must not authorize even when the token is correct.
+    let response = app
+        .clone()
+        .oneshot(upload_request(
+            Method::POST,
+            "/api/v1/uploads",
+            create_body,
+            &foreign_cookie,
+            "wrong",
+            changed_address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
     let mut changed_recreate = request_from(
         Method::POST,
         "/api/v1/uploads",
@@ -1331,9 +1380,57 @@ async fn completion_receipt_and_client_token_make_retries_idempotent() {
     changed_recreate
         .headers_mut()
         .insert("x-ldtg-csrf", HeaderValue::from_str(&changed_csrf).unwrap());
-    let changed_recreated = json(app.oneshot(changed_recreate).await.unwrap()).await;
+    let changed_recreated = json(app.clone().oneshot(changed_recreate).await.unwrap()).await;
     assert_eq!(changed_recreated["uploadId"], id);
     assert_eq!(changed_recreated["offset"], 4);
+    for (method, suffix) in [(Method::GET, ""), (Method::POST, "/complete")] {
+        let response = app
+            .clone()
+            .oneshot(upload_request(
+                method,
+                &format!("/api/v1/uploads/{id}{suffix}"),
+                Body::empty(),
+                &changed_cookie,
+                &changed_csrf,
+                changed_address,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let value = json(response).await;
+        if suffix.is_empty() {
+            assert_eq!(value["offset"], 4);
+        } else {
+            assert_eq!(value["name"], first["name"]);
+        }
+    }
+    let response = app
+        .clone()
+        .oneshot(upload_request(
+            Method::POST,
+            &format!("/api/v1/uploads/{id}/complete"),
+            Body::empty(),
+            &foreign_cookie,
+            &foreign_csrf,
+            changed_address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    // An old cookie from another IP remains invalid after token recovery.
+    let response = app
+        .oneshot(upload_request(
+            Method::POST,
+            &format!("/api/v1/uploads/{id}/complete"),
+            Body::empty(),
+            &cookie,
+            &csrf,
+            changed_address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
     assert_eq!(
         fs::read_dir(temp.path())
             .unwrap()
@@ -1438,4 +1535,505 @@ async fn limits_incomplete_uploads_per_client_address() {
     let response = app.oneshot(rejected).await.unwrap();
     assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
     assert_eq!(json(response).await["code"], "UPLOAD_CLIENT_LIMIT");
+}
+
+fn upload_request(
+    method: Method,
+    uri: &str,
+    body: impl Into<Body>,
+    cookie: &str,
+    csrf: &str,
+    address: Ipv4Addr,
+) -> Request<Body> {
+    let mut req = request_from(method, uri, body.into(), address);
+    req.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
+    req.headers_mut()
+        .insert(header::COOKIE, HeaderValue::from_str(cookie).unwrap());
+    req.headers_mut()
+        .insert("x-ldtg-csrf", HeaderValue::from_str(csrf).unwrap());
+    req
+}
+
+struct PublicationGate {
+    started: Option<std::sync::mpsc::Receiver<()>>,
+    release: Arc<(std::sync::Mutex<bool>, Condvar)>,
+}
+
+impl PublicationGate {
+    fn new(state: &TransferServiceState) -> Self {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let release = Arc::new((std::sync::Mutex::new(false), Condvar::new()));
+        *state.upload_publish_test_gate.lock().unwrap() = Some(UploadIoTestGate {
+            started: sender,
+            release: release.clone(),
+        });
+        Self {
+            started: Some(receiver),
+            release,
+        }
+    }
+
+    async fn wait(&mut self) {
+        let receiver = self.started.take().unwrap();
+        tokio::task::spawn_blocking(move || receiver.recv_timeout(Duration::from_secs(5)).unwrap())
+            .await
+            .unwrap();
+    }
+}
+
+impl Drop for PublicationGate {
+    fn drop(&mut self) {
+        *self.release.0.lock().unwrap() = true;
+        self.release.1.notify_all();
+    }
+}
+
+async fn assert_pending<F: std::future::Future>(mut future: std::pin::Pin<&mut F>) {
+    std::future::poll_fn(|cx| {
+        assert!(future.as_mut().poll(cx).is_pending());
+        std::task::Poll::Ready(())
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn waiting_create_retries_and_quota_scan_observe_one_publication() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut state = test_state(temp.path());
+    let settings = &mut Arc::get_mut(&mut state).unwrap().settings;
+    settings.max_inbox_files = 2;
+    settings.max_inbox_bytes = 8;
+    let (cookie, csrf) = session_headers(&state).await;
+    let address = Ipv4Addr::new(192, 168, 10, 50);
+    let app = router(state.clone());
+    let body = r#"{"name":"once.bin","size":4,"lastModified":1,"clientToken":"0123456789abcdef0123456789abcdef"}"#;
+    let created = json(
+        app.clone()
+            .oneshot(upload_request(
+                Method::POST,
+                "/api/v1/uploads",
+                body,
+                &cookie,
+                &csrf,
+                address,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let id = created["uploadId"].as_str().unwrap();
+    let mut chunk = upload_request(
+        Method::PATCH,
+        &format!("/api/v1/uploads/{id}"),
+        "data",
+        &cookie,
+        &csrf,
+        address,
+    );
+    chunk
+        .headers_mut()
+        .insert("upload-offset", HeaderValue::from_static("0"));
+    assert_eq!(
+        app.clone().oneshot(chunk).await.unwrap().status(),
+        StatusCode::OK
+    );
+    let mut gate = PublicationGate::new(&state);
+    let complete = tokio::spawn(app.clone().oneshot(upload_request(
+        Method::POST,
+        &format!("/api/v1/uploads/{id}/complete"),
+        Body::empty(),
+        &cookie,
+        &csrf,
+        address,
+    )));
+    gate.wait().await;
+    assert_eq!(
+        fs::read_dir(temp.path())
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name() != ".ldtg")
+            .count(),
+        1
+    );
+    let retry = app.clone().oneshot(upload_request(
+        Method::POST,
+        "/api/v1/uploads",
+        body,
+        &cookie,
+        &csrf,
+        address,
+    ));
+    let next = app.clone().oneshot(upload_request(
+        Method::POST,
+        "/api/v1/uploads",
+        r#"{"name":"next.bin","size":4,"lastModified":2}"#,
+        &cookie,
+        &csrf,
+        address,
+    ));
+    tokio::pin!(retry, next);
+    assert_pending(retry.as_mut()).await;
+    assert_pending(next.as_mut()).await;
+    drop(gate);
+    assert_eq!(complete.await.unwrap().unwrap().status(), StatusCode::OK);
+    let retried = json(retry.await.unwrap()).await;
+    assert_eq!(retried["uploadId"], id);
+    assert_eq!(retried["offset"], 4);
+    let response = next.await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let next_id = json(response).await["uploadId"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert_eq!(state.inbox_usage_for_test(), (1, 4, 1, 0));
+    let mut chunk = upload_request(
+        Method::PATCH,
+        &format!("/api/v1/uploads/{next_id}"),
+        "more",
+        &cookie,
+        &csrf,
+        address,
+    );
+    chunk
+        .headers_mut()
+        .insert("upload-offset", HeaderValue::from_static("0"));
+    assert_eq!(
+        app.clone().oneshot(chunk).await.unwrap().status(),
+        StatusCode::OK
+    );
+    assert_eq!(state.inbox_usage_for_test(), (1, 4, 1, 4));
+    assert_eq!(
+        app.clone()
+            .oneshot(upload_request(
+                Method::POST,
+                &format!("/api/v1/uploads/{next_id}/complete"),
+                Body::empty(),
+                &cookie,
+                &csrf,
+                address
+            ))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::OK
+    );
+    assert_eq!(state.inbox_usage_for_test(), (2, 8, 0, 0));
+    assert_eq!(
+        fs::read_dir(state.partial_dir.as_ref().unwrap())
+            .unwrap()
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|x| x == "part"))
+            .count(),
+        0
+    );
+}
+
+#[tokio::test]
+async fn active_token_retry_succeeds_at_full_global_and_io_capacity() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path());
+    let (cookie, csrf) = session_headers(&state).await;
+    let address = Ipv4Addr::new(192, 168, 10, 50);
+    let app = router(state.clone());
+    let body = r#"{"name":"full.bin","size":0,"lastModified":1,"clientToken":"0123456789abcdef0123456789abcdef"}"#;
+    let created = json(
+        app.clone()
+            .oneshot(upload_request(
+                Method::POST,
+                "/api/v1/uploads",
+                body,
+                &cookie,
+                &csrf,
+                address,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let id = created["uploadId"].as_str().unwrap();
+    // Saturate the global record table; aliases avoid 63 unnecessary filesystem operations.
+    let record = state.uploads.lock().await.get(id).unwrap().clone();
+    for index in 1..64 {
+        state
+            .uploads
+            .lock()
+            .await
+            .insert(format!("capacity-{index}"), record.clone());
+    }
+    let _io1 = state.begin_upload_io(IpAddr::V4(address)).await.unwrap();
+    let _io2 = state.begin_upload_io(IpAddr::V4(address)).await.unwrap();
+    let response = app
+        .clone()
+        .oneshot(upload_request(
+            Method::POST,
+            "/api/v1/uploads",
+            body,
+            &cookie,
+            &csrf,
+            address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(json(response).await["uploadId"], id);
+    let response = app
+        .oneshot(upload_request(
+            Method::POST,
+            "/api/v1/uploads",
+            r#"{"name":"new.bin","size":0,"lastModified":1}"#,
+            &cookie,
+            &csrf,
+            address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(json(response).await["code"], "TOO_MANY_UPLOADS");
+    assert_eq!(state.inbox_usage_for_test(), (0, 0, 1, 0));
+}
+
+#[tokio::test]
+async fn cancelling_a_paused_publication_does_not_wait_for_filesystem_io() {
+    cancelled_publication_case(false).await;
+}
+
+#[tokio::test]
+async fn shutdown_cleanup_does_not_wait_for_a_paused_publication() {
+    cancelled_publication_case(true).await;
+}
+
+async fn cancelled_publication_case(shutdown: bool) {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path());
+    let (cookie, csrf) = session_headers(&state).await;
+    let address = Ipv4Addr::new(192, 168, 10, 50);
+    let app = router(state.clone());
+    let created = json(
+        app.clone()
+            .oneshot(upload_request(
+                Method::POST,
+                "/api/v1/uploads",
+                r#"{"name":"cancel.bin","size":0,"lastModified":1}"#,
+                &cookie,
+                &csrf,
+                address,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let id = created["uploadId"].as_str().unwrap();
+    let mut gate = PublicationGate::new(&state);
+    let complete = tokio::spawn(app.clone().oneshot(upload_request(
+        Method::POST,
+        &format!("/api/v1/uploads/{id}/complete"),
+        Body::empty(),
+        &cookie,
+        &csrf,
+        address,
+    )));
+    gate.wait().await;
+    if shutdown {
+        tokio::time::timeout(Duration::from_secs(2), state.cleanup_partials())
+            .await
+            .expect("shutdown cleanup must not await publication I/O");
+    } else {
+        let cancelled = tokio::time::timeout(
+            Duration::from_secs(2),
+            app.clone().oneshot(upload_request(
+                Method::DELETE,
+                &format!("/api/v1/uploads/{id}"),
+                Body::empty(),
+                &cookie,
+                &csrf,
+                address,
+            )),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert_eq!(cancelled.status(), StatusCode::NO_CONTENT);
+    }
+    assert_eq!(state.inbox_usage_for_test(), (0, 0, 0, 0));
+    drop(gate);
+    assert_eq!(
+        complete.await.unwrap().unwrap().status(),
+        StatusCode::NOT_FOUND
+    );
+    // Windows deletion becomes visible after the scheduled cleanup closes its last handle.
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while fs::read_dir(temp.path())
+            .unwrap()
+            .flatten()
+            .any(|e| e.file_name() != ".ldtg")
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("cancelled publication must disappear once cleanup closes its handles");
+    let next = app
+        .oneshot(upload_request(
+            Method::POST,
+            "/api/v1/uploads",
+            r#"{"name":"after.bin","size":0,"lastModified":1}"#,
+            &cookie,
+            &csrf,
+            address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(next.status(), StatusCode::OK);
+    assert_eq!(state.inbox_usage_for_test(), (0, 0, 1, 0));
+}
+
+#[tokio::test]
+async fn failed_publication_keeps_reservations_until_cancelled() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path());
+    let (cookie, csrf) = session_headers(&state).await;
+    let address = Ipv4Addr::new(192, 168, 10, 50);
+    let app = router(state.clone());
+    let created = json(
+        app.clone()
+            .oneshot(upload_request(
+                Method::POST,
+                "/api/v1/uploads",
+                r#"{"name":"broken.bin","size":4,"lastModified":1}"#,
+                &cookie,
+                &csrf,
+                address,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let id = created["uploadId"].as_str().unwrap();
+    let mut chunk = upload_request(
+        Method::PATCH,
+        &format!("/api/v1/uploads/{id}"),
+        "data",
+        &cookie,
+        &csrf,
+        address,
+    );
+    chunk
+        .headers_mut()
+        .insert("upload-offset", HeaderValue::from_static("0"));
+    assert_eq!(
+        app.clone().oneshot(chunk).await.unwrap().status(),
+        StatusCode::OK
+    );
+    let record = state.uploads.lock().await.get(id).unwrap().clone();
+    record.lock().await.partial_file.set_len(3).unwrap();
+    let response = app
+        .clone()
+        .oneshot(upload_request(
+            Method::POST,
+            &format!("/api/v1/uploads/{id}/complete"),
+            Body::empty(),
+            &cookie,
+            &csrf,
+            address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+    assert_eq!(json(response).await["code"], "FINAL_SIZE_MISMATCH");
+    assert_eq!(state.inbox_usage_for_test(), (0, 0, 1, 4));
+    assert!(!record.lock().await.finalizing);
+    assert_eq!(
+        app.oneshot(upload_request(
+            Method::DELETE,
+            &format!("/api/v1/uploads/{id}"),
+            Body::empty(),
+            &cookie,
+            &csrf,
+            address
+        ))
+        .await
+        .unwrap()
+        .status(),
+        StatusCode::NO_CONTENT
+    );
+    assert_eq!(state.inbox_usage_for_test(), (0, 0, 0, 0));
+    assert!(state.completed_uploads.lock().await.is_empty());
+}
+
+#[tokio::test]
+async fn status_and_complete_wait_for_the_active_to_receipt_transition() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path());
+    let (cookie, csrf) = session_headers(&state).await;
+    let address = Ipv4Addr::new(192, 168, 10, 50);
+    let app = router(state.clone());
+    let created = json(
+        app.clone()
+            .oneshot(upload_request(
+                Method::POST,
+                "/api/v1/uploads",
+                r#"{"name":"transition.bin","size":0,"lastModified":1}"#,
+                &cookie,
+                &csrf,
+                address,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let id = created["uploadId"].as_str().unwrap();
+    let gate = Arc::new((tokio::sync::Notify::new(), tokio::sync::Notify::new()));
+    *state.upload_receipt_test_gate.lock().unwrap() = Some(gate.clone());
+    struct ReleaseReceiptGate(Arc<(tokio::sync::Notify, tokio::sync::Notify)>);
+    impl Drop for ReleaseReceiptGate {
+        fn drop(&mut self) {
+            self.0 .1.notify_one();
+        }
+    }
+    let release = ReleaseReceiptGate(gate.clone());
+    let complete_uri = format!("/api/v1/uploads/{id}/complete");
+    let complete = tokio::spawn(app.clone().oneshot(upload_request(
+        Method::POST,
+        &complete_uri,
+        Body::empty(),
+        &cookie,
+        &csrf,
+        address,
+    )));
+    tokio::time::timeout(Duration::from_secs(2), gate.0.notified())
+        .await
+        .unwrap();
+    assert!(state.uploads.lock().await.is_empty());
+    assert!(state.completed_uploads.lock().await.is_empty());
+    let status = app.clone().oneshot(upload_request(
+        Method::GET,
+        &format!("/api/v1/uploads/{id}"),
+        Body::empty(),
+        &cookie,
+        &csrf,
+        address,
+    ));
+    let retry = app.oneshot(upload_request(
+        Method::POST,
+        &complete_uri,
+        Body::empty(),
+        &cookie,
+        &csrf,
+        address,
+    ));
+    tokio::pin!(status, retry);
+    assert_pending(status.as_mut()).await;
+    assert_pending(retry.as_mut()).await;
+    drop(release);
+    let completed = json(complete.await.unwrap().unwrap()).await;
+    let response = status.await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(json(response).await["uploadId"], id);
+    let response = retry.await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(json(response).await["name"], completed["name"]);
+    assert_eq!(state.inbox_usage_for_test(), (1, 0, 0, 0));
 }
