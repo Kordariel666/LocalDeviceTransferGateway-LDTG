@@ -231,3 +231,24 @@ Range-Downloads binden mehrere Requests nicht an eine unveränderliche
 Dateiversion; externe Änderungen können Mischdaten ergeben. Siehe R01 in den
 lokalen, ungetrackten P02-Befunden (`docs/audit/P02_FINDINGS.md`);
 P03b ändert diese Produktgrenze nicht.
+
+## P04a: rekursive ZIP-Downloads
+
+`GET /api/v1/download-folder` erweitert den lesenden Zugriff ausschließlich auf
+bereits freigegebene Inhalte. Der begrenzte Metadatenscan und jede spätere
+Dateiöffnung verwenden bestehende Pfad-/Root-/Handleprüfungen. Symlinks,
+Junctions/Reparse Points und versteckte/System-/verwaltete Einträge werden
+nicht exportiert. Archivnamen sind relative, geprüfte Komponenten; ZIP-Slip-
+Namen, ADS und Windows-Gerätenamen werden abgewiesen. Der Download verwendet
+bestehende Sitzungs-/IP-/Request-/Downloadlimits auch während der Vorbereitung.
+
+Zusätzliche feste Grenzen für Archivgröße, Anzahl, Tiefe, Namen, Scanarbeit und
+Scanzeit begrenzen Rekursions-/Metadaten-DoS. STORE vermeidet Kompressionsarbeit;
+Bytepuffer sind fest begrenzt und HTTP-Backpressure steuert den Produzenten.
+Body-Drop verwirft die Arbeit, Sitzungswiderruf und Ablauf beenden Reads;
+Blocking-Scans prüfen ein Abbruchsignal zwischen Einträgen. Ein einzelner
+hängender OS-Dateisystemaufruf bleibt nicht sofort abbrechbar, belegt aber nur
+einen begrenzten Filesystem-Slot. Keine temporären ZIPs und keine zusätzlichen
+Schreibrechte. Quellenänderungen bleiben ohne Snapshot möglich; unvollständige
+Streams sind keine erfolgreichen Archive. Details und Nachweisgrenzen:
+[Feature-Dokumentation](features/P04A_FOLDER_DOWNLOAD.md).

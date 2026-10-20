@@ -9,7 +9,7 @@ use axum::body::to_bytes;
 use std::{io::Write, net::Ipv4Addr, sync::Condvar};
 use tower::ServiceExt;
 
-fn test_state(root: &Path) -> Arc<TransferServiceState> {
+pub(super) fn test_state(root: &Path) -> Arc<TransferServiceState> {
     // Production roots are canonicalized by `prepare_roots`. Mirror that
     // invariant here as Windows may otherwise compare a `\\?\` path with
     // the non-canonical temporary-directory spelling.
@@ -53,7 +53,7 @@ fn test_state(root: &Path) -> Arc<TransferServiceState> {
     state
 }
 
-fn request(method: Method, uri: &str, body: Body) -> Request<Body> {
+pub(super) fn request(method: Method, uri: &str, body: Body) -> Request<Body> {
     request_from(method, uri, body, Ipv4Addr::new(192, 168, 10, 50))
 }
 
@@ -88,7 +88,7 @@ async fn session_headers_for(state: &TransferServiceState, address: Ipv4Addr) ->
     (format!("ldtg_session={}", session.token), session.csrf)
 }
 
-async fn session_headers(state: &TransferServiceState) -> (String, String) {
+pub(super) async fn session_headers(state: &TransferServiceState) -> (String, String) {
     session_headers_for(state, Ipv4Addr::new(192, 168, 10, 50)).await
 }
 

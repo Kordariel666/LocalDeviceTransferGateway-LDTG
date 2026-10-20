@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(Deserialize)]
 pub(super) struct FileQuery {
-    path: String,
+    pub(super) path: String,
 }
 
 pub(super) fn parse_range(headers: &HeaderMap, size: u64) -> ApiResult<(u64, u64, bool)> {
@@ -115,13 +115,13 @@ pub(super) fn download_headers(
 }
 
 pub(super) struct DownloadGuard {
-    state: Arc<TransferServiceState>,
-    lease: Option<DownloadLease>,
-    bytes: u64,
-    complete: bool,
+    pub(super) state: Arc<TransferServiceState>,
+    pub(super) lease: Option<DownloadLease>,
+    pub(super) bytes: u64,
+    pub(super) complete: bool,
 }
 impl DownloadGuard {
-    fn mark_complete(&mut self) {
+    pub(super) fn mark_complete(&mut self) {
         self.complete = true;
     }
 }

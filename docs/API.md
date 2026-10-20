@@ -9,6 +9,7 @@ Alle Pfade beginnen mit `/api/v1`. Antworten werden nicht gecacht. Schreibende A
 | `POST` | `/logout` | eigene Sitzung widerrufen |
 | `GET` | `/downloads` | read-only Ordnerseite mit maximal 200 Einträgen und sitzungsgebundenem Cursor plus Seitensequenz |
 | `GET`, `HEAD` | `/download` | einzelne Datei als Attachment, einschließlich Range |
+| `GET` | `/download-folder?path=…` | vollständiger Ordner als begrenzter ZIP-Stream, einschließlich leerer Unterordner; kein Range/HEAD |
 | `POST` | `/uploads` | neue fortsetzbare Teilübertragung anlegen |
 | `GET` | `/uploads/{id}` | vom Server bestätigten Offset lesen |
 | `PATCH` | `/uploads/{id}` | nächsten Block am exakten Offset schreiben |
@@ -43,3 +44,16 @@ Ressourcengrenzen sind Teil des Protokolls: maximal 12 laufende Downloads insges
 Uploadmetadaten und die Codeanmeldung besitzen enge Body-Limits; Datenblöcke bleiben auf 8 MiB begrenzt und werden erst nach Sitzung, CSRF, Uploadexistenz, Uploadbesitz sowie einem Permit für genau einen aktiven Block dieser Upload-ID gepuffert. Global sind höchstens 8 aktive Uploadblöcke zugelassen; weitere erhalten `UPLOAD_CHUNK_BUSY`, bevor ihr Body gelesen wird. Nach dem Puffern wird ein Slot des fairen Upload-I/O-Pools benötigt. Die PATCH-Antwort bestätigt einen neuen `upload-offset` erst, nachdem der Block positionsfest geschrieben, mit `sync_data` dauerhaft an das Betriebssystem übergeben und Offset, Bytebudget sowie Transferstatus gemeinsam aktualisiert wurden. Ein abgebrochener HTTP-Waiter trennt diese dienstbesessene Arbeit nicht ab; bei einem Fehler bleiben der vorherige Offset, das Bytebudget und der Transferstatus gültig. Pro bestätigtem Block wird genau ein Fortschrittsereignis erzeugt. Ein Upload wird nach 30 Minuten ohne erfolgreich gespeicherten Block oder nach 24 Stunden absolut verworfen, ohne dadurch die Browsersitzung zu beenden. `POST /uploads/{id}/complete` linearisiert einen dienstbesessenen Commit und unterliegt deshalb nicht dem allgemeinen Request-Timeout. Sobald `finalizing` begonnen hat, erhält ein weiterer Chunk `UPLOAD_FINALIZING`; Abbruch oder Dienststopp signalisieren sofort, während Veröffentlichung und exklusive Bereinigung dienstbesessen zu einem eindeutigen Ergebnis laufen. Jede erfolgreich veröffentlichte Datei erhält unabhängig vom vorhandenen Inbox-Inhalt einen zufälligen zwölfstelligen Hex-Zusatz; die Antwort enthält den tatsächlichen gespeicherten Namen. Die atomare No-Replace-Veröffentlichung verhindert weiterhin Überschreiben. Die Mobile-App bindet Pause/Retry/Fortsetzung nur an das aktuell ausgewählte in-memory `File`-Objekt und dessen Server-ID; eine neue Dateiauswahl übernimmt keine frühere Teilübertragung anhand von Name, Größe oder Änderungszeit. Eine laufende Create-Anfrage wird nicht auf Transportebene abgebrochen: Die App unterbricht lediglich das Warten der aktuellen Queue-Arbeit, verfolgt dieselbe Promise weiter und verwendet die Antwort bei einer Fortsetzung wieder. Die Server-ID wird bei bereits ausgelöstem Abbruch anschließend best-effort gelöscht, damit keine unsichtbare Teilübertragung zurückbleibt. Mobile Retry-Verzögerungen sind abbrechbar; strukturierte PATCH-Fehler behalten `code` und `message` der API-Antwort.
 
 Eine Ordnerseite untersucht serverseitig nur eine feste Zahl von Verzeichniseinträgen. Die erste Anfrage sendet `path` und optional `q`. Eine Folgeseite sendet zusätzlich den zurückgegebenen `nextCursor` und `nextPage`; `q` muss dem Feld `query` der vorherigen Antwort entsprechen. Derselbe Cursor mit derselben Seitensequenz liefert bei einem verlorenen Response dieselben Eintragsmetadaten erneut, einschließlich der letzten Seite. Abgelaufene, fremde oder zu einem anderen Pfad/Filter gehörende Cursor werden abgewiesen. Es gelten höchstens 4 aktive Cursor pro Sitzung, 8 pro Client-IP und 64 global. Erschöpfte Cursor bleiben nur für das kurze Replayfenster erhalten und zählen nicht als aktive Cursor. Die Sortierung erfolgt stabil innerhalb der jeweiligen Seite, ohne das gesamte Verzeichnis erneut einzulesen.
+
+ZIP-Ordnerdownloads ignorieren Listingfilter und Pagination und enthalten einen
+obersten Ordner mit erhaltenen relativen Pfaden. Es gelten feste Grenzen von
+1 GiB inklusive ZIP-Overhead, 10.000 Einträgen, 32 Ebenen, 1.024 Bytes pro
+Archivname, insgesamt 4 MiB Archivnamen und 20.000 untersuchten Einträgen.
+Der Metadatenscan hat 30 Sekunden Zeit und nutzt dieselben Dateisystem-Permits;
+Vorbereitung und Versand teilen die bestehenden Downloadslots. Überschreitungen
+liefern `ARCHIVE_LIMIT` (413), Scanfristen `ARCHIVE_SCAN_CANCELLED` (408),
+Range `ARCHIVE_RANGE_UNSUPPORTED` (416), HEAD 405. Fehler nach Versandbeginn
+brechen den Body ab. ZIPs sind ungepackt (STORE), ohne Snapshot, Range-Resume
+oder temporäre Archivdatei. Ausgeschlossene Link-/System-/versteckte Inhalte,
+Abbruchverhalten und Browserannahmen beschreibt
+[P04a](features/P04A_FOLDER_DOWNLOAD.md).

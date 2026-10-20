@@ -52,13 +52,17 @@ export function DirectoryBrowser({
           </button>
         ))}
       </div>
+      {directory && <p><a href={`/api/v1/download-folder?path=${encodeURIComponent(path)}`} download>{text.downloadFolderZip}</a></p>}
       {error && <div className="error-box">{error}</div>}
       <div className="file-list">
         {directory?.entries.map((entry) => entry.kind === "directory" ? (
-          <button className="file-row folder-row" type="button" key={entry.path} onClick={() => void onLoad(entry.path)}>
-            <span><strong><bdi className="untrusted-name">{entry.name}</bdi></strong><small>{text.folder}</small></span>
-            <b>{text.openFolder}</b>
-          </button>
+          <div className="folder-download" key={entry.path}>
+            <button className="file-row folder-row" type="button" onClick={() => void onLoad(entry.path)}>
+              <span><strong><bdi className="untrusted-name">{entry.name}</bdi></strong><small>{text.folder}</small></span>
+              <b>{text.openFolder}</b>
+            </button>
+            <a href={`/api/v1/download-folder?path=${encodeURIComponent(entry.path)}`} download aria-label={`${entry.name}: ${text.downloadFolderZip}`}>{text.downloadZip}</a>
+          </div>
         ) : (
           <a className="file-row file-download-row" key={entry.path} href={`/api/v1/download?path=${encodeURIComponent(entry.path)}`} download>
             <span>

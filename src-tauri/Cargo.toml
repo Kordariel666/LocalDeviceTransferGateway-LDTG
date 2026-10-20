@@ -34,7 +34,9 @@ axum = { version = "0.8", features = ["http1", "json", "tokio"] }
 async-stream = "0.3"
 base64 = "0.23"
 chrono = { version = "0.4", features = ["serde"] }
+crc32fast = "1"
 fs2 = "0.4"
+futures-core = "0.3"
 hyper = { version = "1", features = ["http1", "server"] }
 hyper-util = { version = "0.1", features = ["http1", "server", "service", "tokio"] }
 if-addrs = "0.15"

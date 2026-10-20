@@ -53,6 +53,7 @@ mod auth;
 mod common;
 mod directory;
 mod download;
+mod folder_download;
 mod upload;
 
 use assets::*;
@@ -76,6 +77,10 @@ pub fn router(state: Arc<TransferServiceState>) -> Router {
         .route("/api/v1/logout", post(logout))
         .route("/api/v1/downloads", get(list_downloads))
         .route("/api/v1/download", get(download).head(download_head))
+        .route(
+            "/api/v1/download-folder",
+            get(folder_download::download_folder).head(method_not_allowed),
+        )
         .route(
             "/api/v1/uploads",
             post(create_upload).layer(DefaultBodyLimit::max(32 * 1024)),
