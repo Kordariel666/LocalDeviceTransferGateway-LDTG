@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import process from "node:process";
+import { npmRegistryUrl } from "./npm-registry-url.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const outputDirectory = join(root, "qa", "public-beta");
@@ -254,7 +255,7 @@ function cachedNpmMetadata() {
 }
 
 async function registryMetadata(name, version) {
-  const response = await fetch(`https://registry.npmjs.org/${name.replace("/", "%2F")}`);
+  const response = await fetch(npmRegistryUrl(name));
   if (!response.ok) throw new Error(`npm registry lieferte ${response.status} fuer ${name}@${version}`);
   const document = await response.json();
   const manifest = document.versions?.[version];

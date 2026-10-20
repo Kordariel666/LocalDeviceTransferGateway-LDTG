@@ -460,8 +460,10 @@ fn migrate_value(mut value: Value) -> Result<AppSettings, String> {
             }
         };
     }
+    // Serde type errors can include the rejected value (paths or network names).
+    // Only expose the failure category, never configuration contents.
     let settings: AppSettings = serde_json::from_value(value)
-        .map_err(|error| format!("Die Einstellungsfelder sind ungültig: {error}"))?;
+        .map_err(|_| "Die Einstellungsfelder sind ungültig.".to_string())?;
     settings
         .validate()
         .map_err(|error| format!("Die Einstellungen sind semantisch ungültig: {error}"))?;
@@ -583,6 +585,81 @@ pub fn settings_path(config_dir: PathBuf) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn invalid_setting_values_never_appear_in_errors_or_load_warnings() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("settings.json");
+        let confidential = "CONFIDENTIAL-path-network-or-token";
+        let original = serde_json::to_value(AppSettings::default()).unwrap();
+        for pointer in [
+            "/port",
+            "/maxInboxFiles",
+            "/profiles/0/downloadShare/enabled",
+            "/profiles/0/overrides/port",
+        ] {
+            let mut value = original.clone();
+            // Overrides are optional; insert this test's malformed override explicitly.
+            value["profiles"][0]["overrides"]["port"] = Value::Null;
+            *value.pointer_mut(pointer).unwrap() = Value::String(confidential.into());
+            let error = migrate_value(value.clone()).unwrap_err();
+            assert_eq!(error, "Die Einstellungsfelder sind ungültig.");
+
+            let bytes = serde_json::to_vec(&value).unwrap();
+            fs::write(&path, &bytes).unwrap();
+            let loaded = load(&path);
+            let warning = loaded.warning.unwrap();
+            assert!(warning.contains("Die Einstellungsfelder sind ungültig."));
+            assert!(!warning.contains(confidential));
+            assert_eq!(loaded.settings, AppSettings::default());
+            assert_eq!(fs::read(&path).unwrap(), bytes);
+        }
+    }
+
+    #[test]
+    fn remembering_and_evicting_trusted_networks_emits_no_logs() {
+        use std::sync::{Arc, Mutex};
+
+        #[derive(Clone)]
+        struct LogWriter(Arc<Mutex<Vec<u8>>>);
+        impl Write for LogWriter {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                self.0.lock().unwrap().extend_from_slice(bytes);
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+        let output = Arc::new(Mutex::new(Vec::new()));
+        let writer = LogWriter(output.clone());
+        let subscriber = tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::TRACE)
+            .with_writer(move || writer.clone())
+            .finish();
+        tracing::subscriber::with_default(subscriber, || {
+            tracing::info!("capture-ready");
+            assert!(!output.lock().unwrap().is_empty());
+            output.lock().unwrap().clear();
+            let mut settings = AppSettings::default();
+            for index in 0..=MAX_TRUSTED_NETWORKS {
+                settings.remember_trusted_network(TrustedNetwork {
+                    id: format!("confidential-network-{index}"),
+                    name: "confidential-network-name".into(),
+                    category: "Privat".into(),
+                    last_used_at: None,
+                });
+            }
+            assert_eq!(settings.trusted_networks.len(), MAX_TRUSTED_NETWORKS);
+            assert_eq!(settings.trusted_networks[0].id, "confidential-network-1");
+            let mut replacement = settings.trusted_networks[0].clone();
+            replacement.name = "updated-confidential-name".into();
+            settings.remember_trusted_network(replacement.clone());
+            assert_eq!(settings.trusted_networks.len(), MAX_TRUSTED_NETWORKS);
+            assert_eq!(settings.trusted_networks.last(), Some(&replacement));
+        });
+        assert!(output.lock().unwrap().is_empty());
+    }
 
     #[test]
     fn saves_and_loads_versioned_settings() {
