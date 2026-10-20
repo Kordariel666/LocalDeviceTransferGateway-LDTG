@@ -2037,3 +2037,90 @@ async fn status_and_complete_wait_for_the_active_to_receipt_transition() {
     assert_eq!(json(response).await["name"], completed["name"]);
     assert_eq!(state.inbox_usage_for_test(), (1, 0, 0, 0));
 }
+
+#[tokio::test]
+async fn cancelling_failed_partials_frees_an_address_slot_and_removes_partial() {
+    let temp = tempfile::tempdir().unwrap();
+    let state = test_state(temp.path());
+    let (cookie, csrf) = session_headers(&state).await;
+    let app = router(state.clone());
+    let address = Ipv4Addr::new(192, 168, 10, 50);
+    let mut ids = Vec::new();
+    for index in 0..MAX_UPLOADS_PER_ADDRESS {
+        let response = app
+            .clone()
+            .oneshot(upload_request(
+                Method::POST,
+                "/api/v1/uploads",
+                format!(r#"{{"name":"failed-{index}.bin","size":1,"lastModified":1}}"#),
+                &cookie,
+                &csrf,
+                address,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let id = json(response).await["uploadId"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let failed = app
+            .clone()
+            .oneshot(upload_request(
+                Method::POST,
+                &format!("/api/v1/uploads/{id}/complete"),
+                Body::empty(),
+                &cookie,
+                &csrf,
+                address,
+            ))
+            .await
+            .unwrap();
+        assert!(!failed.status().is_success());
+        ids.push(id);
+    }
+    let create = || {
+        upload_request(
+            Method::POST,
+            "/api/v1/uploads",
+            r#"{"name":"next.bin","size":1,"lastModified":1}"#,
+            &cookie,
+            &csrf,
+            address,
+        )
+    };
+    assert_eq!(
+        app.clone().oneshot(create()).await.unwrap().status(),
+        StatusCode::TOO_MANY_REQUESTS
+    );
+    let partial = state.uploads.lock().await[&ids[0]]
+        .lock()
+        .await
+        .partial_path
+        .clone();
+    let cancelled = app
+        .clone()
+        .oneshot(upload_request(
+            Method::DELETE,
+            &format!("/api/v1/uploads/{}", ids[0]),
+            Body::empty(),
+            &cookie,
+            &csrf,
+            address,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(cancelled.status(), StatusCode::NO_CONTENT);
+    assert_eq!(
+        app.clone().oneshot(create()).await.unwrap().status(),
+        StatusCode::OK
+    );
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while partial.exists() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("cancelled partial must be removed");
+    assert_eq!(state.uploads.lock().await.len(), MAX_UPLOADS_PER_ADDRESS);
+}

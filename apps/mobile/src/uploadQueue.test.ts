@@ -223,3 +223,29 @@ describe("abortableDelay", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+
+describe("P03b regression boundaries", () => {
+  it.each(["uploading", "finalizing", "failed", "cancelled", "paused", "queued"] as const)("bestätigt %s auch bei allen Bytes und leeren Dateien nicht als 100 Prozent", (state) => {
+    for (const size of [0, 4]) {
+      const queue = uploadQueueReducer(initialUploadQueue, { type: "enqueue", items: [
+        { ...upload("a", state), file: new File([new Uint8Array(size)], "a"), progress: 100, transferredBytes: size },
+        { ...upload("b", "complete"), progress: 100, transferredBytes: 1 },
+      ] });
+      expect(uploadQueueSummary(queue).progress).toBe(99);
+    }
+  });
+
+  it("hält fehlgeschlagene Bereinigung bis zur Bestätigung wiederholbar und entfernt nur lokal sichere Einträge", () => {
+    let state = uploadQueueReducer(initialUploadQueue, { type: "enqueue", items: [{ ...upload("a", "failed"), uploadId: "partial" }] });
+    state = uploadQueueReducer(state, { type: "cancel", id: "a", message: "cancel", at: 1 });
+    state = uploadQueueReducer(state, { type: "cleanup-result", id: "a", uploadId: "partial", success: false, message: "offline" });
+    expect(uploadQueueReducer(state, { type: "clear-finished" }).items.a.uploadId).toBe("partial");
+    expect(uploadQueueReducer(state, { type: "remove", id: "a" })).toBe(state);
+    state = uploadQueueReducer(state, { type: "cleanup-result", id: "a", uploadId: "partial", success: true, message: "clean" });
+    expect(state.items.a.uploadId).toBeUndefined();
+    state = uploadQueueReducer(state, { type: "remove", id: "a" });
+    expect(state.order).toEqual([]);
+    expect(state.pending).toEqual([]);
+  });
+});

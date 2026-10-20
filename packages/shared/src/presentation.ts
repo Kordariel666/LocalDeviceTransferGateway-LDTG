@@ -30,8 +30,8 @@ function timestamp(value: string | number | null): number | null {
 export function formatBytes(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "0 B";
   const units = ["B", "KiB", "MiB", "GiB", "TiB"];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: index ? 1 : 0 }).format(value / 1024 ** index)} ${units[index]}`;
+  const index = Math.max(0, Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1));
+  return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: index || value < 1 ? 1 : 0 }).format(value / 1024 ** index)} ${units[index]}`;
 }
 
 export function formatDateTime(value: string | number): string {
@@ -55,6 +55,7 @@ export function formatDuration(value: number): string {
 
 export function formatRate(bytesPerSecond: number): string {
   if (!Number.isFinite(bytesPerSecond) || bytesPerSecond <= 0) return "–";
+  if (bytesPerSecond < 0.1) return "< 0,1 B/s";
   return `${formatBytes(bytesPerSecond)}/s`;
 }
 

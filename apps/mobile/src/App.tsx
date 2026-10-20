@@ -300,7 +300,7 @@ export function App() {
         }
         const current = uploadQueueRef.current.items[item.id];
         if (!current || current.state === "cancelled") {
-          void removeServerUpload(created.uploadId);
+          void cleanupCancelledUpload(item.id, created.uploadId);
         }
         return created;
       }).finally(() => {
@@ -321,13 +321,21 @@ export function App() {
 
   async function removeServerUpload(uploadId: string) {
     const currentSession = sessionRef.current;
-    if (!currentSession) return;
+    if (!currentSession) return false;
     try {
       await api(`/api/v1/uploads/${encodeURIComponent(uploadId)}`, {
         method: "DELETE",
         headers: { "X-LDTG-CSRF": currentSession.csrfToken },
       });
-    } catch { /* Best effort */ }
+      return true;
+    } catch (error) {
+      return error instanceof HttpError && error.status === 404;
+    }
+  }
+
+  async function cleanupCancelledUpload(id: string, uploadId: string) {
+    const success = await removeServerUpload(uploadId);
+    updateQueue({ type: "cleanup-result", id, uploadId, success, message: success ? text.cancelled : text.cleanupFailed });
   }
 
   async function processUpload(item: UploadItem) {
@@ -336,11 +344,11 @@ export function App() {
     workInterrupts.current.set(item.id, interrupt);
     try {
       const created = await getOrCreateUpload(item);
-      updateQueue({ type: "set-upload-id", id: item.id, uploadId: created.uploadId });
       if (uploadQueueRef.current.items[item.id]?.state === "queued" && sessionRef.current) {
         updateQueue({ type: "claim", id: item.id, message: text.preparing, at: Date.now() });
       }
       ensureUploadActive(item.id);
+      updateQueue({ type: "set-upload-id", id: item.id, uploadId: created.uploadId });
       let offset = created.offset;
       while (offset < item.file.size) {
         ensureUploadActive(item.id);
@@ -442,11 +450,9 @@ export function App() {
   async function cancelUpload(item: UploadItem) {
     const current = uploadQueueRef.current.items[item.id] ?? item;
     if (current.state === "finalizing" || current.state === "complete") return;
-    updateQueue({ type: "cancel", id: item.id, message: text.cancelled, at: Date.now() });
+    updateQueue({ type: "cancel", id: item.id, message: current.uploadId ? text.cleanupPending : text.cancelled, at: Date.now() });
     abortUploadWork(item.id);
-    if (current.uploadId && sessionRef.current) {
-      await removeServerUpload(current.uploadId);
-    }
+    if (current.uploadId) await cleanupCancelledUpload(item.id, current.uploadId);
   }
 
   function pauseUpload(item: UploadItem) {
@@ -487,7 +493,7 @@ export function App() {
 
   function removeQueuedUpload(item: UploadItem) {
     const current = uploadQueueRef.current.items[item.id];
-    if (current?.state !== "queued") return;
+    if (current?.state !== "queued" && !(current?.state === "cancelled" && !current.uploadId)) return;
     updateQueue({ type: "remove", id: item.id });
     abortUploadWork(item.id);
     if (current.uploadId && sessionRef.current) void removeServerUpload(current.uploadId);

@@ -16,6 +16,57 @@ function json(value: unknown, status = 200): Response {
 }
 
 describe("mobile Oberfläche", () => {
+  it("entfernt einen vor der Serveranlage fehlgeschlagenen Upload ohne DELETE", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(json({ serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null }))
+      .mockResolvedValueOnce(json({ code: "UPLOAD_REJECTED", message: "Datei abgelehnt" }, 400));
+    render(<App />);
+    await userEvent.upload(await screen.findByLabelText(/Dateien auswählen/), new File(["A"], "rejected.bin"));
+    await screen.findByText("Fehlgeschlagen", { selector: ".upload-state" });
+    fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Entfernen" }));
+    expect(screen.queryByText("rejected.bin")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["offline", "server", "missing"])("bereinigt fehlgeschlagene Uploads sicher: %s", async (failure) => {
+    let deletes = 0;
+    let finishCleanup!: (response: Response) => void;
+    const cleanupResponse = new Promise<Response>((resolve) => { finishCleanup = resolve; });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      if (input === "/api/v1/session") return json({ serviceId: "dienst", csrfToken: "csrf", downloadEnabled: false, uploadEnabled: true, maxUploadBytes: null });
+      if (input === "/api/v1/uploads") return json({ uploadId: "failed", offset: 4, totalBytes: 4, chunkSize: 4, serviceId: "dienst", lastModified: 1 });
+      if (input === "/api/v1/uploads/failed/complete") return json({ code: "FINALIZE_FAILED", message: "Abschluss abgelehnt" }, 400);
+      if (input === "/api/v1/uploads/failed" && init?.method === "DELETE") {
+        deletes += 1;
+        if (deletes === 1) {
+          if (failure === "offline") throw new TypeError("Offline");
+          return json({ code: "CLEANUP_FAILED", message: "Nicht bereinigt" }, failure === "missing" ? 404 : 500);
+        }
+        return cleanupResponse;
+      }
+      throw new Error(`Unerwartete Anfrage: ${String(input)}`);
+    });
+    render(<App />);
+    await userEvent.upload(await screen.findByLabelText(/Dateien auswählen/), new File(["AAAA"], "failed.bin", { lastModified: 1 }));
+    await screen.findByText("Fehlgeschlagen", { selector: ".upload-state" });
+    expect(screen.getByRole("progressbar", { name: "Gesamtfortschritt aller ausgewählten Dateien" }).getAttribute("value")).not.toBe("100");
+    fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
+    if (failure !== "missing") {
+      await screen.findByText(/Serverbereinigung nicht bestätigt/);
+      expect(screen.queryByRole("button", { name: "Entfernen" })).toBeNull();
+      expect(screen.getByRole("button", { name: "Erledigte entfernen" })).toHaveProperty("disabled", true);
+      fireEvent.click(screen.getByRole("button", { name: "Serverbereinigung wiederholen" }));
+      expect(screen.getByRole("button", { name: "Erledigte entfernen" })).toHaveProperty("disabled", true);
+      await act(async () => finishCleanup(new Response(null, { status: 204 })));
+    }
+    fireEvent.click(await screen.findByRole("button", { name: "Entfernen" }));
+    expect(screen.queryByText("failed.bin")).toBeNull();
+    const deleteCalls = fetchMock.mock.calls.filter(([, init]) => init?.method === "DELETE");
+    expect(deleteCalls).toHaveLength(failure === "missing" ? 1 : 2);
+    expect(deleteCalls[0][1]?.headers).toEqual({ "X-LDTG-CSRF": "csrf" });
+  });
+
   it("meldet sich mit dem separaten Code an und zeigt beide Rollen", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(json({ code: "AUTH_REQUIRED", message: "Bitte anmelden" }, 401))
@@ -385,6 +436,8 @@ describe("mobile Oberfläche", () => {
     await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) =>
       url === "/api/v1/uploads/upload-cancelled" && init?.method === "DELETE")).toBe(true));
     expect(chunkSends).toBe(0);
+    fireEvent.click(await screen.findByRole("button", { name: "Entfernen" }));
+    expect(screen.queryByText("cancel-create.bin")).toBeNull();
   });
 
   it("startet nach einer Pause im Retry-Backoff keinen weiteren Block", async () => {
@@ -627,8 +680,11 @@ describe("mobile Oberfläche", () => {
     const finalizing = await screen.findByText("Wird abgeschlossen", { selector: ".upload-state" });
     const item = finalizing.closest("article")!;
     expect(item.querySelector("button")).toBeNull();
+    expect(screen.getByRole("progressbar", { name: "Gesamtfortschritt aller ausgewählten Dateien" })).toHaveProperty("value", 99);
+    expect(screen.getByText(/0 von 1 Dateien erledigt/)).toBeTruthy();
     finish(json({ name: "final.bin" }));
     expect(await screen.findByText("Abgeschlossen", { selector: ".upload-state" })).toBeTruthy();
+    expect(screen.getByRole("progressbar", { name: "Gesamtfortschritt aller ausgewählten Dateien" })).toHaveProperty("value", 100);
     fireEvent.click(screen.getByRole("button", { name: "Erledigte entfernen" }));
     expect(screen.queryByText("final.bin")).toBeNull();
   });

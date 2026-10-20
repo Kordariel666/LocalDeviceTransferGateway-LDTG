@@ -71,7 +71,7 @@ export function UploadQueueView({
   const hasPausable = uploads.some((item) => item.state === "queued" || item.state === "uploading");
   const hasPaused = uploads.some((item) => item.state === "paused");
   const hasFailed = uploads.some((item) => item.state === "failed");
-  const hasFinished = uploads.some((item) => item.state === "complete" || item.state === "cancelled");
+  const hasFinished = uploads.some((item) => item.state === "complete" || (item.state === "cancelled" && !item.uploadId));
   const hasTimedActiveUpload = uploads.some((item) => item.state === "uploading" || item.state === "finalizing");
   const [now, setNow] = useState(() => uploads.reduce(
     (latest, item) => Math.max(latest, item.timing.lastProgressAt ?? item.timing.startedAt ?? 0),
@@ -157,7 +157,17 @@ export function UploadQueueView({
                 <button type="button" onClick={() => void onCancel(item)}>{text.cancel}</button>
               </div>
             )}
-            {item.state === "failed" && <button type="button" className="retry-button" onClick={() => onRetry(item)}>{text.retry}</button>}
+            {item.state === "failed" && (
+              <div className="upload-actions">
+                <button type="button" className="retry-button" onClick={() => onRetry(item)}>{text.retry}</button>
+                <button type="button" onClick={() => void onCancel(item)}>{text.cancel}</button>
+              </div>
+            )}
+            {item.state === "cancelled" && (
+              item.uploadId
+                ? <button type="button" onClick={() => void onCancel(item)}>{text.retryCleanup}</button>
+                : <button type="button" onClick={() => onRemoveQueued(item)}>{text.remove}</button>
+            )}
           </article>
         ))}
         {!uploads.length && <p className="empty">{text.noFiles}</p>}

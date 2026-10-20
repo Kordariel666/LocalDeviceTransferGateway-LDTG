@@ -56,6 +56,7 @@ export type UploadQueueAction =
   | { type: "retry"; id: string; message: string }
   | { type: "retry-failed"; message: string }
   | { type: "cancel"; id: string; message: string; at: number }
+  | { type: "cleanup-result"; id: string; uploadId: string; success: boolean; message: string }
   | { type: "remove"; id: string }
   | { type: "clear-finished" }
   | { type: "finalize"; id: string; message: string }
@@ -276,8 +277,13 @@ export function uploadQueueReducer(
           : item,
         without(state.pending, action.id),
       );
+    case "cleanup-result":
+      return updateItem(state, action.id, (item) => item.state === "cancelled" && item.uploadId === action.uploadId
+        ? { ...item, uploadId: action.success ? undefined : item.uploadId, message: action.message }
+        : item);
     case "remove": {
-      if (state.items[action.id]?.state !== "queued") return state;
+      const item = state.items[action.id];
+      if (item?.state !== "queued" && !(item?.state === "cancelled" && !item.uploadId)) return state;
       const items = { ...state.items };
       delete items[action.id];
       return {
@@ -290,7 +296,7 @@ export function uploadQueueReducer(
     case "clear-finished": {
       const finished = new Set(state.order.filter((id) => {
         const itemState = state.items[id]?.state;
-        return itemState === "complete" || itemState === "cancelled";
+        return itemState === "complete" || (itemState === "cancelled" && !state.items[id].uploadId);
       }));
       if (!finished.size) return state;
       const items = { ...state.items };
@@ -396,7 +402,8 @@ export function uploadQueueSummary(state: UploadQueueState): UploadQueueSummary 
     finishedFiles: items.filter((item) => item.state === "complete" || item.state === "cancelled").length,
     totalBytes,
     transferredBytes: Math.round(transferredBytesExact),
-    progress,
+    // Delivered bytes do not confirm a successful server commit, including empty files.
+    progress: items.some((item) => item.state !== "complete") ? Math.min(99, progress) : progress,
   };
 }
 
